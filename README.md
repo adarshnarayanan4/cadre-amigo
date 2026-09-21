@@ -15,22 +15,6 @@ So far I have worked through:
 - Thermal
 - Power
 
-The general flow is:
-
-```text
-Orbit
-  ↓
-Attitude
-  ↓
-Sun
-  ↓
-Solar
-  ↓
-Thermal
-  ↓
-Power
-```
-
 ## Folder Layout
 
 ```text
