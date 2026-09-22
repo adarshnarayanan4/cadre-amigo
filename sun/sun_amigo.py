@@ -1,13 +1,26 @@
 import amigo as am
 import numpy as np
 
-from orbit.orbit_reference import (orbital_elements_to_state, calculate_orbital_period)
+from orbit.orbit_reference import (
+    orbital_elements_to_state,
+    calculate_orbital_period,
+)
 
-from orbit.orbit_amigo import (build_reference_trajectory)
+from orbit.orbit_amigo import build_reference_trajectory
 
-from attitude.attitude_reference import (attitude_from_orbit, attitude_roll, combine_rotation_matrices)
+from attitude.attitude_reference import (
+    attitude_from_orbit,
+    attitude_roll,
+    combine_rotation_matrices,
+)
 
-from sun.sun_reference import (sun_position_eci, sun_position_body, sun_position_spherical, sun_line_of_sight)
+from sun.sun_reference import (
+    sun_position_eci,
+    sun_position_body,
+    sun_position_spherical,
+    sun_line_of_sight,
+)
+
 
 # CADRE Sun_PositionECI
 class SunPositionECI(am.Component):
@@ -28,7 +41,9 @@ class SunPositionECI(am.Component):
         T = LD + t / 3600.0 / 24.0
         L = d2r * 280.460 + d2r * 0.9856474 * T
         g = d2r * 357.528 + d2r * 0.9856003 * T
-        Lambda = L + d2r * 1.914666 * am.sin(g) + d2r * 0.01999464 * am.sin(2.0 * g)
+        Lambda = (
+            L + d2r * 1.914666 * am.sin(g) + d2r * 0.01999464 * am.sin(2.0 * g)
+        )
         eps = d2r * 23.439 - d2r * 3.56e-7 * T
 
         x = am.cos(Lambda)
@@ -48,13 +63,13 @@ class SunPositionBody(am.Component):
         self.add_constraint("res", shape=(3,))
 
     def compute(self):
-        O = self.inputs["O_BI"]
+        rotation = self.inputs["O_BI"]
         r_I = self.inputs["r_e2s_I"]
         r_B = self.inputs["r_e2s_B"]
 
-        x = O[0] * r_I[0] + O[1] * r_I[1] + O[2] * r_I[2]
-        y = O[3] * r_I[0] + O[4] * r_I[1] + O[5] * r_I[2]
-        z = O[6] * r_I[0] + O[7] * r_I[1] + O[8] * r_I[2]
+        x = rotation[0] * r_I[0] + rotation[1] * r_I[1] + rotation[2] * r_I[2]
+        y = rotation[3] * r_I[0] + rotation[4] * r_I[1] + rotation[5] * r_I[2]
+        z = rotation[6] * r_I[0] + rotation[7] * r_I[1] + rotation[8] * r_I[2]
 
         self.constraints["res"] = [r_B[0] - x, r_B[1] - y, r_B[2] - z]
 
@@ -67,6 +82,7 @@ def extract_vector(x, variable_name, n, width):
         values[:, i] = x[f"{variable_name}[:, {i}]"]
 
     return values
+
 
 # CADRE Sun_PositionSpherical
 class SunPositionSpherical(am.Component):
@@ -86,13 +102,15 @@ class SunPositionSpherical(am.Component):
         y = r[1]
         z = r[2]
 
-        radius = (x*x + y*y + z*z)**0.5
-        horizontal = (x*x + y*y)**0.5
+        radius = (x * x + y * y + z * z) ** 0.5
+        horizontal = (x * x + y * y) ** 0.5
 
         azimuth_res = am.sin(azimuth) * x - am.cos(azimuth) * y
         elevation_res = am.cos(elevation) - z / radius
 
         self.constraints["res"] = [azimuth_res, elevation_res]
+
+
 # Full sunlight
 class SunLOSVisible(am.Component):
     def __init__(self):
@@ -138,11 +156,14 @@ class SunLOSTransition(am.Component):
         cross_x = r_b[1] * r_s[2] - r_b[2] * r_s[1]
         cross_y = r_b[2] * r_s[0] - r_b[0] * r_s[2]
         cross_z = r_b[0] * r_s[1] - r_b[1] * r_s[0]
-        dist = (cross_x * cross_x + cross_y * cross_y + cross_z * cross_z)**0.5
+        dist = (
+            cross_x * cross_x + cross_y * cross_y + cross_z * cross_z
+        ) ** 0.5
         x = (dist - r1) / (r2 - r1)
         LOS_calc = 3.0 * x**2 - 2.0 * x**3
 
         self.constraints["res"] = LOS - LOS_calc
+
 
 def main():
     # Initial orbit state
@@ -158,7 +179,9 @@ def main():
     q0 = np.concatenate((r0, v0))
 
     # Time grid
-    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
+    orbital_period = calculate_orbital_period(
+        alt_perigee=500.0, alt_apogee=500.0
+    )
     num_time_steps = 568
     num_nodes = num_time_steps + 1
     dt = orbital_period / num_time_steps
@@ -178,7 +201,9 @@ def main():
     print(dt)
 
     # Reference orbit
-    reference_states, reference_rates = build_reference_trajectory(q0, dt, num_time_steps)
+    reference_states, reference_rates = build_reference_trajectory(
+        q0, dt, num_time_steps
+    )
 
     # Reference attitude
     gamma_reference = np.zeros(num_nodes)
@@ -190,7 +215,9 @@ def main():
     # Reference Sun
     r_e2s_I_reference = sun_position_eci(times)
     r_e2s_B_reference = sun_position_body(O_BI_reference, r_e2s_I_reference)
-    azimuth_reference, elevation_reference = sun_position_spherical(r_e2s_B_reference)
+    azimuth_reference, elevation_reference = sun_position_spherical(
+        r_e2s_B_reference
+    )
     LOS_reference = sun_line_of_sight(reference_states, r_e2s_I_reference)
 
     # Classify LOS regions
@@ -248,7 +275,9 @@ def main():
     model.add_component("sun_spherical", num_nodes, sun_spherical)
     model.add_component("los_visible", len(visible_indices), los_visible)
     model.add_component("los_eclipse", len(eclipse_indices), los_eclipse)
-    model.add_component("los_transition", len(transition_indices), los_transition)
+    model.add_component(
+        "los_transition", len(transition_indices), los_transition
+    )
 
     # Sun ECI to Sun body
     model.link("sun_eci.r_e2s_I", "sun_body.r_e2s_I")
@@ -269,29 +298,51 @@ def main():
 
     # Sun initial guesses
     for i in range(3):
-        model.set_meta("value", f"sun_eci.r_e2s_I[:, {i}]", r_e2s_I_reference[:, i])
-        model.set_meta("value", f"sun_body.r_e2s_B[:, {i}]", r_e2s_B_reference[:, i])
+        model.set_meta(
+            "value", f"sun_eci.r_e2s_I[:, {i}]", r_e2s_I_reference[:, i]
+        )
+        model.set_meta(
+            "value", f"sun_body.r_e2s_B[:, {i}]", r_e2s_B_reference[:, i]
+        )
 
     # Angle initial guesses
     model.set_meta("value", "sun_spherical.azimuth[:]", azimuth_reference)
     model.set_meta("value", "sun_spherical.elevation[:]", elevation_reference)
 
     # LOS initial guesses
-    model.set_meta("value", "los_visible.LOS[:]", LOS_reference[visible_indices])
-    model.set_meta("value", "los_eclipse.LOS[:]", LOS_reference[eclipse_indices])
-    model.set_meta("value", "los_transition.LOS[:]", LOS_reference[transition_indices])
+    model.set_meta(
+        "value", "los_visible.LOS[:]", LOS_reference[visible_indices]
+    )
+    model.set_meta(
+        "value", "los_eclipse.LOS[:]", LOS_reference[eclipse_indices]
+    )
+    model.set_meta(
+        "value", "los_transition.LOS[:]", LOS_reference[transition_indices]
+    )
 
     # Fix transition orbit and Sun vectors
     transition_r_b = reference_states[transition_indices, 0:3]
     transition_r_s = r_e2s_I_reference[transition_indices]
 
     for i in range(3):
-        model.set_meta("value", f"los_transition.r_b[:, {i}]", transition_r_b[:, i])
-        model.set_meta("lower", f"los_transition.r_b[:, {i}]", transition_r_b[:, i])
-        model.set_meta("upper", f"los_transition.r_b[:, {i}]", transition_r_b[:, i])
-        model.set_meta("value", f"los_transition.r_s[:, {i}]", transition_r_s[:, i])
-        model.set_meta("lower", f"los_transition.r_s[:, {i}]", transition_r_s[:, i])
-        model.set_meta("upper", f"los_transition.r_s[:, {i}]", transition_r_s[:, i])
+        model.set_meta(
+            "value", f"los_transition.r_b[:, {i}]", transition_r_b[:, i]
+        )
+        model.set_meta(
+            "lower", f"los_transition.r_b[:, {i}]", transition_r_b[:, i]
+        )
+        model.set_meta(
+            "upper", f"los_transition.r_b[:, {i}]", transition_r_b[:, i]
+        )
+        model.set_meta(
+            "value", f"los_transition.r_s[:, {i}]", transition_r_s[:, i]
+        )
+        model.set_meta(
+            "lower", f"los_transition.r_s[:, {i}]", transition_r_s[:, i]
+        )
+        model.set_meta(
+            "upper", f"los_transition.r_s[:, {i}]", transition_r_s[:, i]
+        )
 
     # Build model
     print()
@@ -339,7 +390,9 @@ def main():
     eci_difference = np.max(np.abs(r_e2s_I_amigo - r_e2s_I_reference))
     body_difference = np.max(np.abs(r_e2s_B_amigo - r_e2s_B_reference))
     azimuth_difference = np.max(np.abs(azimuth_amigo - azimuth_reference))
-    elevation_difference = np.max(np.abs(elevation_amigo - elevation_reference))
+    elevation_difference = np.max(
+        np.abs(elevation_amigo - elevation_reference)
+    )
     LOS_difference = np.max(np.abs(LOS_amigo - LOS_reference))
 
     # Fixed input checks

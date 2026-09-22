@@ -1,6 +1,11 @@
 import numpy as np
 from math import sqrt
-from orbit.orbit_reference import (orbital_elements_to_state, orbit_dynamics, rk4_step, calculate_orbital_period,)
+from orbit.orbit_reference import (
+    orbital_elements_to_state,
+    orbit_dynamics,
+    rk4_step,
+    calculate_orbital_period,
+)
 
 # Original CADRE constants
 MU = 398600.44
@@ -14,9 +19,18 @@ C2 = -1.5 * MU * J2 * RE**2
 C3 = -2.5 * MU * J3 * RE**3
 C4 = 1.875 * MU * J4 * RE**4
 
+
 # Original CADRE Orbit_Initial equations
-def cadre_initial_source(alt_perigee, alt_apogee, raan, inclination, arg_perigee, true_anomaly,):
+def cadre_initial_source(
+    alt_perigee,
+    alt_apogee,
+    raan,
+    inclination,
+    arg_perigee,
+    true_anomaly,
+):
     """Standalone version of the original CADRE Orbit_Initial equations."""
+
     def S(v):
         matrix = np.zeros((3, 3))
         matrix[0, :] = [0.0, -v[2], v[1]]
@@ -25,33 +39,54 @@ def cadre_initial_source(alt_perigee, alt_apogee, raan, inclination, arg_perigee
         return matrix
 
     def get_rotation(axis, angle):
-        return (np.eye(3) + S(axis) * np.sin(angle) + (1.0 - np.cos(angle)) * (np.outer(axis, axis) - np.eye(3)))
+        return (
+            np.eye(3)
+            + S(axis) * np.sin(angle)
+            + (1.0 - np.cos(angle)) * (np.outer(axis, axis) - np.eye(3))
+        )
 
     d2r = np.pi / 180.0
 
     r_perigee = RE + alt_perigee
     r_apogee = RE + alt_apogee
 
-    e = ((r_apogee - r_perigee) / (r_apogee + r_perigee))
+    e = (r_apogee - r_perigee) / (r_apogee + r_perigee)
 
     a = (r_perigee + r_apogee) / 2.0
     p = a * (1.0 - e**2)
 
     rmag0 = p / (1.0 + e * np.cos(d2r * true_anomaly))
 
-    r0_P = np.array([rmag0 * np.cos(d2r * true_anomaly), rmag0 * np.sin(d2r * true_anomaly), 0.0])
-    v0_P = np.array([-np.sqrt(MU / p) * np.sin(d2r * true_anomaly), np.sqrt(MU / p) * (e + np.cos(d2r * true_anomaly)), 0.0])
+    r0_P = np.array(
+        [
+            rmag0 * np.cos(d2r * true_anomaly),
+            rmag0 * np.sin(d2r * true_anomaly),
+            0.0,
+        ]
+    )
+    v0_P = np.array(
+        [
+            -np.sqrt(MU / p) * np.sin(d2r * true_anomaly),
+            np.sqrt(MU / p) * (e + np.cos(d2r * true_anomaly)),
+            0.0,
+        ]
+    )
 
     O_IP = np.eye(3)
 
     O_IP = np.dot(O_IP, get_rotation(np.array([0.0, 0.0, 1.0]), raan * d2r))
-    O_IP = np.dot(O_IP, get_rotation(np.array([1.0, 0.0, 0.0]), inclination * d2r))
-    O_IP = np.dot(O_IP, get_rotation(np.array([0.0, 0.0, 1.0]), arg_perigee * d2r))
+    O_IP = np.dot(
+        O_IP, get_rotation(np.array([1.0, 0.0, 0.0]), inclination * d2r)
+    )
+    O_IP = np.dot(
+        O_IP, get_rotation(np.array([0.0, 0.0, 1.0]), arg_perigee * d2r)
+    )
 
     r0_ECI = np.dot(O_IP, r0_P)
     v0_ECI = np.dot(O_IP, v0_P)
 
     return r0_ECI, v0_ECI
+
 
 # Original CADRE Orbit_Dynamics.f_dot equations
 def cadre_dynamics_source(state):
@@ -60,7 +95,7 @@ def cadre_dynamics_source(state):
     y = state[1]
 
     # This tiny-z workaround is present in the original CADRE source.
-    z = (state[2] if abs(state[2]) > 1e-15 else 1e-5)
+    z = state[2] if abs(state[2]) > 1e-15 else 1e-5
 
     z2 = z * z
     z3 = z2 * z
@@ -75,21 +110,22 @@ def cadre_dynamics_source(state):
     r7 = r5 * r * r
 
     T2 = 1.0 - 5.0 * z2 / r2
-    T3 = (3.0 * z - 7.0 * z3 / r2)
-    T4 = (1.0 - 14.0 * z2 / r2 + 21.0 * z4 / r4)
+    T3 = 3.0 * z - 7.0 * z3 / r2
+    T4 = 1.0 - 14.0 * z2 / r2 + 21.0 * z4 / r4
 
-    T3z = (3.0 * z - 0.6 * r2 / z)
-    T4z = (4.0 - (28.0 / 3.0) * z2 / r2)
+    T3z = 3.0 * z - 0.6 * r2 / z
+    T4z = 4.0 - (28.0 / 3.0) * z2 / r2
 
     f_dot = np.zeros(6)
     f_dot[0:3] = state[3:]
 
-    common = (C1 / r3 + C2 / r5 * T2 + C3 / r7 * T3 + C4 / r7 * T4)
+    common = C1 / r3 + C2 / r5 * T2 + C3 / r7 * T3 + C4 / r7 * T4
 
     f_dot[3:] = state[0:3] * common
     f_dot[5] += z * (2.0 * C2 / r5 + C3 / r7 * T3z + C4 / r7 * T4z)
 
     return f_dot
+
 
 # Original CADRE RK4 equations
 def cadre_rk4_step_source(state, dt):
@@ -100,6 +136,7 @@ def cadre_rk4_step_source(state, dt):
     d = cadre_dynamics_source(state + dt * c)
 
     return state + dt / 6.0 * (a + 2.0 * (b + c) + d)
+
 
 # Validation
 def main():
@@ -140,7 +177,9 @@ def main():
     print(initial_difference)
 
     # Compare dynamics over one orbit
-    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
+    orbital_period = calculate_orbital_period(
+        alt_perigee=500.0, alt_apogee=500.0
+    )
 
     num_time_steps = 568
     dt = orbital_period / num_time_steps
@@ -156,7 +195,9 @@ def main():
         our_rate = orbit_dynamics(state)
 
         dynamics_difference = np.max(np.abs(cadre_rate - our_rate))
-        max_dynamics_difference = max(max_dynamics_difference, dynamics_difference)
+        max_dynamics_difference = max(
+            max_dynamics_difference, dynamics_difference
+        )
 
         # Compare one RK4 step
         cadre_next = cadre_rk4_step_source(state, dt)
@@ -167,7 +208,6 @@ def main():
 
         # Advance using our reference trajectory
         state = our_next
-
 
     print()
     print("2. DYNAMICS CHECK")
@@ -186,9 +226,9 @@ def main():
     # Final result
     tolerance = 1e-10
 
-    initial_pass = (initial_difference < tolerance)
-    dynamics_pass = (max_dynamics_difference < tolerance)
-    rk4_pass = (max_rk4_difference < tolerance)
+    initial_pass = initial_difference < tolerance
+    dynamics_pass = max_dynamics_difference < tolerance
+    rk4_pass = max_rk4_difference < tolerance
 
     print()
     print("=" * 70)
@@ -199,12 +239,19 @@ def main():
     print("Dynamics equations match:", dynamics_pass)
     print("RK4 equations match:", rk4_pass)
 
-    if (initial_pass and dynamics_pass and rk4_pass):
+    if initial_pass and dynamics_pass and rk4_pass:
         print()
-        print("PASS: orbit_reference.py numerically matches the original CADRE orbit equations.")
+        print(
+            "PASS: orbit_reference.py numerically matches the original "
+            + "CADRE orbit equations."
+        )
     else:
         print()
-        print("CHECK NEEDED: at least one comparison was larger than the tolerance.")
+        print(
+            "CHECK NEEDED: at least one comparison was larger than the "
+            + "tolerance."
+        )
+
 
 if __name__ == "__main__":
     main()

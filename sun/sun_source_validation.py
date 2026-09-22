@@ -48,7 +48,9 @@ def cadre_sun_position_eci(times, LD=0.0):
         L = D2R * 280.460 + D2R * 0.9856474 * T[i]
         g = D2R * 357.528 + D2R * 0.9856003 * T[i]
 
-        Lambda = L + D2R * 1.914666 * np.sin(g) + D2R * 0.01999464 * np.sin(2.0 * g)
+        Lambda = (
+            L + D2R * 1.914666 * np.sin(g) + D2R * 0.01999464 * np.sin(2.0 * g)
+        )
         eps = D2R * 23.439 - D2R * 3.56e-7 * T[i]
 
         r_e2s_I[i, 0] = np.cos(Lambda)
@@ -186,7 +188,9 @@ def main():
     cadre_r_e2s_I = cadre_sun_position_eci(times)
     cadre_LOS = cadre_sun_line_of_sight(states, cadre_r_e2s_I)
     cadre_r_e2s_B = cadre_sun_position_body(O_BI, cadre_r_e2s_I)
-    cadre_azimuth, cadre_elevation = cadre_sun_position_spherical(cadre_r_e2s_B)
+    cadre_azimuth, cadre_elevation = cadre_sun_position_spherical(
+        cadre_r_e2s_B
+    )
 
     # Reference calculations
     our_r_e2s_I = sun_position_eci(times)

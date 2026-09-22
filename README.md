@@ -136,6 +136,19 @@ The small remaining difference comes from the recreated MBI interpolation.
 
 ## Validation Approach
 
+To run the validation scripts, set `CADRE_ROOT` to the root of a local CADRE
+checkout (the folder containing `src/CADRE`). Use a Python environment with
+NumPy, SciPy, Matplotlib, and AMIGO installed. For AMIGO model runs, make sure
+that environment's `bin` directory, which contains CMake, is on `PATH`.
+
+For example, from this repository's root:
+
+```sh
+CADRE_ROOT=/absolute/path/to/CADRE python -m battery.battery_source_validation
+```
+
+Without `CADRE_ROOT`, the scripts retain their original relative CADRE paths.
+
 For each subsystem, I have generally been following this process:
 
 ```text
@@ -162,4 +175,3 @@ The next things I plan to work on are:
 - couple the individual subsystems into one full model
 
 The long-term goal is to reproduce the full CADRE multidisciplinary model in AMIGO and then use it for coupled analysis and optimization.
-

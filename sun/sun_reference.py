@@ -42,7 +42,9 @@ def sun_position_eci(times, LD=0.0):
         L = D2R * 280.460 + D2R * 0.9856474 * T[i]
         g = D2R * 357.528 + D2R * 0.9856003 * T[i]
 
-        Lambda = (L + D2R * 1.914666 * np.sin(g) + D2R * 0.01999464 * np.sin(2.0 * g))
+        Lambda = (
+            L + D2R * 1.914666 * np.sin(g) + D2R * 0.01999464 * np.sin(2.0 * g)
+        )
 
         eps = D2R * 23.439 - D2R * 3.56e-7 * T[i]
 

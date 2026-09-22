@@ -1,6 +1,10 @@
 import numpy as np
 
-from orbit.orbit_reference import (orbital_elements_to_state, rk4_step, calculate_orbital_period)
+from orbit.orbit_reference import (
+    orbital_elements_to_state,
+    rk4_step,
+    calculate_orbital_period,
+)
 
 from attitude.attitude_reference import (
     attitude_from_orbit,
@@ -14,11 +18,14 @@ from attitude.attitude_reference import (
 )
 
 # Spacecraft inertia matrix from original CADRE
-J = np.array([
-    [0.018, 0.0,   0.0],
-    [0.0,   0.018, 0.0],
-    [0.0,   0.0,   0.006],
-])
+J = np.array(
+    [
+        [0.018, 0.0, 0.0],
+        [0.0, 0.018, 0.0],
+        [0.0, 0.0, 0.006],
+    ]
+)
+
 
 # Build orbit trajectory
 def build_orbit_trajectory(q0, dt, num_time_steps):
@@ -29,6 +36,7 @@ def build_orbit_trajectory(q0, dt, num_time_steps):
         states[i + 1] = rk4_step(states[i], dt)
 
     return states
+
 
 # Original CADRE Attitude_Attitude equations
 def cadre_attitude_from_orbit(states):
@@ -66,6 +74,7 @@ def cadre_attitude_from_orbit(states):
 
     return O_RI
 
+
 # Orginial CADRE Attitude_Roll equations
 def cadre_attitude_roll(gamma):
     n = len(gamma)
@@ -79,6 +88,7 @@ def cadre_attitude_roll(gamma):
 
     return O_BR
 
+
 # Original CADRE Attitude_RotationMtx equations
 def cadre_rotation_matrix(O_BR, O_RI):
     n = O_RI.shape[0]
@@ -90,6 +100,7 @@ def cadre_rotation_matrix(O_BR, O_RI):
 
     return O_BI
 
+
 # Original CADRE Attitude_RotationMtxRates equations
 def cadre_rotation_matrix_rates(O_BI, dt):
     Odot_BI = np.zeros_like(O_BI)
@@ -98,6 +109,7 @@ def cadre_rotation_matrix_rates(O_BI, dt):
     Odot_BI[-1] = (O_BI[-1] - O_BI[-2]) / dt
 
     return Odot_BI
+
 
 # Original CADRE Attitude_Angular equations
 def cadre_angular_velocity(O_BI, Odot_BI):
@@ -112,6 +124,7 @@ def cadre_angular_velocity(O_BI, Odot_BI):
 
     return w_B
 
+
 # Original CADRE Attitude_AngularRates equations
 def cadre_angular_acceleration(w_B, dt):
     wdot_B = np.zeros_like(w_B)
@@ -121,6 +134,7 @@ def cadre_angular_acceleration(w_B, dt):
 
     return wdot_B
 
+
 # Original CADRE Attitude_Sideslip equations
 def cadre_body_velocity(states, O_BI):
     n = states.shape[0]
@@ -129,9 +143,13 @@ def cadre_body_velocity(states, O_BI):
 
     for i in range(n):
         v_I = states[i, 3:6]
-        v_B[i] = np.dot(O_BI[i], v_I,)
+        v_B[i] = np.dot(
+            O_BI[i],
+            v_I,
+        )
 
     return v_B
+
 
 # Original CADRE Attitude_Torque equations
 def cadre_attitude_torque(w_B, wdot_B):
@@ -146,9 +164,10 @@ def cadre_attitude_torque(w_B, wdot_B):
         wx[1, :] = (w[2], 0.0, -w[0])
         wx[2, :] = (-w[1], w[0], 0.0)
 
-        T_tot[i] = (np.dot(J, wdot_B[i]) + np.dot(wx, np.dot(J, w)))
+        T_tot[i] = np.dot(J, wdot_B[i]) + np.dot(wx, np.dot(J, w))
 
     return T_tot
+
 
 # Main validation
 def main():
@@ -171,11 +190,13 @@ def main():
     q0 = np.concatenate((r0, v0))
 
     # Time grid
-    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
+    orbital_period = calculate_orbital_period(
+        alt_perigee=500.0, alt_apogee=500.0
+    )
 
     num_time_steps = 568
 
-    dt = (orbital_period / num_time_steps)
+    dt = orbital_period / num_time_steps
 
     # Orbit trajectory
     states = build_orbit_trajectory(q0, dt, num_time_steps)
@@ -201,7 +222,10 @@ def main():
     our_w_B = angular_velocity(our_O_BI, our_Odot_BI)
     our_wdot_B = angular_acceleration(our_w_B, dt)
     our_v_B = body_frame_velocity(states, our_O_BI)
-    our_T_tot = attitude_torque(our_w_B, our_wdot_B,)
+    our_T_tot = attitude_torque(
+        our_w_B,
+        our_wdot_B,
+    )
 
     # Differences
     O_RI_difference = np.max(np.abs(cadre_O_RI - our_O_RI))
@@ -262,7 +286,6 @@ def main():
     print("Maximum difference:")
     print(torque_difference)
 
-
     # Pass/fail
     tolerance = 1.0e-12
 
@@ -277,10 +300,7 @@ def main():
         torque_difference,
     ]
 
-    passed = all(
-        difference < tolerance
-        for difference in differences
-    )
+    passed = all(difference < tolerance for difference in differences)
 
     print()
     print("=" * 75)
@@ -291,11 +311,17 @@ def main():
 
     if passed:
         print()
-        print("PASS: attitude_reference.py numerically matches the original CADRE attitude equations.")
+        print(
+            "PASS: attitude_reference.py numerically matches the original "
+            + "CADRE attitude equations."
+        )
 
     else:
         print()
-        print("CHECK NEEDED: at least one comparison is larger than the tolerance.")
+        print(
+            "CHECK NEEDED: at least one comparison is larger than the "
+            + "tolerance."
+        )
 
 
 if __name__ == "__main__":

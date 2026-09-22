@@ -1,11 +1,12 @@
 import pickle
 import numpy as np
 
+from cadre_paths import cadre_path
 from power.mbi_modern import ModernMBI
 
 
 def load_power_data():
-    dat = np.loadtxt("../../../CADRE/src/CADRE/data/Power/curve.dat")
+    dat = np.loadtxt(cadre_path("data/Power/curve.dat", "../../../CADRE"))
 
     nT = int(dat[0])
     nA = int(dat[1])
@@ -13,18 +14,18 @@ def load_power_data():
 
     index = 3
 
-    T = dat[index:index + nT]
+    T = dat[index : index + nT]
     index += nT
 
-    A = dat[index:index + nA]
+    A = dat[index : index + nA]
     index += nA
 
-    I = dat[index:index + nI]
+    current_grid = dat[index : index + nI]
     index += nI
 
     V = dat[index:].reshape((nT, nA, nI), order="F")
 
-    return T, A, I, V
+    return T, A, current_grid, V
 
 
 def power_cell_voltage(LOS, temperature, exposedArea, Isetpt, mbi):
@@ -38,7 +39,9 @@ def power_cell_voltage(LOS, temperature, exposedArea, Isetpt, mbi):
 
         for c in range(7):
             effective_area = LOS * exposedArea[c, p, :]
-            points = np.column_stack((temperature[temp_index, :], effective_area, Isetpt[p, :]))
+            points = np.column_stack(
+                (temperature[temp_index, :], effective_area, Isetpt[p, :])
+            )
             V_sol[p, :] += mbi.evaluate(points)
 
     return V_sol
@@ -54,7 +57,7 @@ def main():
     print("CADRE MODERN MBI POWER VALIDATION")
     print("=" * 70)
 
-    with open("../../../CADRE/src/CADRE/test/data1346.pkl", "rb") as f:
+    with open(cadre_path("test/data1346.pkl", "../../../CADRE"), "rb") as f:
         data = pickle.load(f, encoding="latin1")
 
     LOS = data["0:LOS"]
@@ -64,12 +67,12 @@ def main():
     V_sol_source = data["0:V_sol"]
     P_sol_source = data["0:P_sol"]
 
-    T, A, I, V = load_power_data()
+    T, A, current_grid, V = load_power_data()
 
     print()
     print("Building modern MBI...")
 
-    mbi = ModernMBI(V, [T, A, I], [6, 6, 15], [3, 3, 3])
+    mbi = ModernMBI(V, [T, A, current_grid], [6, 6, 15], [3, 3, 3])
 
     print()
     print("Evaluating CADRE power inputs...")

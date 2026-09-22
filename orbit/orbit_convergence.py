@@ -1,7 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from orbit.orbit_reference import (orbital_elements_to_state, calculate_orbital_period)
-from orbit.orbit_amigo import (build_reference_trajectory, build_model, solve_model)
+from orbit.orbit_reference import (
+    orbital_elements_to_state,
+    calculate_orbital_period,
+)
+from orbit.orbit_amigo import (
+    build_reference_trajectory,
+    build_model,
+    solve_model,
+)
+
 
 def run_case(num_time_steps):
     """Run one AMIGO/RK4 comparison for a specified time grid."""
@@ -18,7 +26,9 @@ def run_case(num_time_steps):
     q0 = np.concatenate((r0, v0))
 
     # Time discretization
-    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
+    orbital_period = calculate_orbital_period(
+        alt_perigee=500.0, alt_apogee=500.0
+    )
 
     dt = orbital_period / num_time_steps
 
@@ -29,10 +39,19 @@ def run_case(num_time_steps):
     print("=" * 60)
 
     # RK4 reference trajectory
-    reference_states, reference_rates = build_reference_trajectory(q0, dt, num_time_steps)
+    reference_states, reference_rates = build_reference_trajectory(
+        q0, dt, num_time_steps
+    )
 
     # Build AMIGO model
-    model = build_model(q0, dt, num_time_steps, reference_states, reference_rates, model_name=f"cadre_orbit_{num_time_steps}")
+    model = build_model(
+        q0,
+        dt,
+        num_time_steps,
+        reference_states,
+        reference_rates,
+        model_name=f"cadre_orbit_{num_time_steps}",
+    )
 
     # Solve AMIGO model
     x = model.create_vector()
@@ -45,8 +64,14 @@ def run_case(num_time_steps):
         amigo_states[:, i] = x[f"orbit.q[:, {i}]"]
 
     # Calculate AMIGO vs RK4 differences
-    position_difference = np.linalg.norm(amigo_states[:, 0:3] - reference_states[:, 0:3], axis=1,)
-    velocity_difference = np.linalg.norm(amigo_states[:, 3:6] - reference_states[:, 3:6], axis=1,)
+    position_difference = np.linalg.norm(
+        amigo_states[:, 0:3] - reference_states[:, 0:3],
+        axis=1,
+    )
+    velocity_difference = np.linalg.norm(
+        amigo_states[:, 3:6] - reference_states[:, 3:6],
+        axis=1,
+    )
 
     # Store results
     results = {
@@ -76,6 +101,7 @@ def run_case(num_time_steps):
 
     return results
 
+
 def calculate_observed_order(coarse, fine, error_key):
     """Calculate observed numerical convergence order."""
     error_coarse = coarse[error_key]
@@ -84,9 +110,10 @@ def calculate_observed_order(coarse, fine, error_key):
     dt_coarse = coarse["dt"]
     dt_fine = fine["dt"]
 
-    order = (np.log(error_coarse / error_fine) / np.log(dt_coarse / dt_fine))
+    order = np.log(error_coarse / error_fine) / np.log(dt_coarse / dt_fine)
 
     return order
+
 
 def main():
     # Grid sizes
@@ -130,11 +157,17 @@ def main():
     for i in range(len(results) - 1):
         coarse = results[i]
         fine = results[i + 1]
-        position_order = calculate_observed_order(coarse, fine, "max_position_error")
-        velocity_order = calculate_observed_order(coarse, fine, "max_velocity_error")
+        position_order = calculate_observed_order(
+            coarse, fine, "max_position_error"
+        )
+        velocity_order = calculate_observed_order(
+            coarse, fine, "max_velocity_error"
+        )
 
         print()
-        print(f"{coarse['num_time_steps']} -> "f"{fine['num_time_steps']} intervals")
+        print(
+            f"{coarse['num_time_steps']} -> {fine['num_time_steps']} intervals"
+        )
 
         print("Position order:", position_order)
         print("Velocity order:", velocity_order)
@@ -142,24 +175,37 @@ def main():
     # Convergence plot
     dt_values = np.array([result["dt"] for result in results])
 
-    position_errors = np.array([result["max_position_error"] for result in results])
-    velocity_errors = np.array([result["max_velocity_error"] for result in results])
+    position_errors = np.array(
+        [result["max_position_error"] for result in results]
+    )
+    velocity_errors = np.array(
+        [result["max_velocity_error"] for result in results]
+    )
 
     plt.figure(figsize=(8, 6))
 
-    plt.loglog(dt_values, position_errors, marker="o", label="Position Difference",)
+    plt.loglog(
+        dt_values,
+        position_errors,
+        marker="o",
+        label="Position Difference",
+    )
 
     plt.xlabel("Time Step [s]")
     plt.ylabel("Maximum Position Difference [km]")
 
     plt.title("AMIGO Grid Convergence")
 
-    plt.grid(True, which="both",)
+    plt.grid(
+        True,
+        which="both",
+    )
 
     plt.legend()
 
     plt.tight_layout()
     plt.show()
+
 
 if __name__ == "__main__":
     main()

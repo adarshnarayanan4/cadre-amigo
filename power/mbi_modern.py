@@ -34,32 +34,36 @@ def basis(k, t, d):
         i0 = m - k
 
     for ii in range(2, k + 1):
-        l = ii - 1
-        j1 = k - l
+        offset = ii - 1
+        j1 = k - offset
         j2 = k
 
         n = i0 + j1
 
-        if d[n + l] != d[n]:
-            B[j1 - 1] = (d[n + l] - t) / (d[n + l] - d[n]) * B[j1]
+        if d[n + offset] != d[n]:
+            B[j1 - 1] = (d[n + offset] - t) / (d[n + offset] - d[n]) * B[j1]
         else:
             B[j1 - 1] = 0.0
 
         for j in range(j1 + 1, j2):
             n = i0 + j
 
-            if d[n + l - 1] != d[n - 1]:
-                B[j - 1] = (t - d[n - 1]) / (d[n + l - 1] - d[n - 1]) * B[j - 1]
+            if d[n + offset - 1] != d[n - 1]:
+                B[j - 1] = (
+                    (t - d[n - 1]) / (d[n + offset - 1] - d[n - 1]) * B[j - 1]
+                )
             else:
                 B[j - 1] = 0.0
 
-            if d[n + l] != d[n]:
-                B[j - 1] += (d[n + l] - t) / (d[n + l] - d[n]) * B[j]
+            if d[n + offset] != d[n]:
+                B[j - 1] += (d[n + offset] - t) / (d[n + offset] - d[n]) * B[j]
 
         n = i0 + j2
 
-        if d[n + l - 1] != d[n - 1]:
-            B[j2 - 1] = (t - d[n - 1]) / (d[n + l - 1] - d[n - 1]) * B[j2 - 1]
+        if d[n + offset - 1] != d[n - 1]:
+            B[j2 - 1] = (
+                (t - d[n - 1]) / (d[n + offset - 1] - d[n - 1]) * B[j2 - 1]
+            )
         else:
             B[j2 - 1] = 0.0
 
@@ -72,15 +76,15 @@ def paramuni(k, m, n):
     P = np.linspace(0.0, 1.0, n)
     t = np.zeros(n)
 
-    for l in range(n):
+    for offset in range(n):
         x0 = 0.0
         x = 1.0
 
         B, i0 = basis(k, x0, d)
-        f0 = -P[l] + np.dot(B, C[i0:i0 + k])
+        f0 = -P[offset] + np.dot(B, C[i0 : i0 + k])
 
         B, i0 = basis(k, x, d)
-        f = -P[l] + np.dot(B, C[i0:i0 + k])
+        f = -P[offset] + np.dot(B, C[i0 : i0 + k])
 
         for _ in range(100):
             if abs(f) < 1e-15:
@@ -98,9 +102,9 @@ def paramuni(k, m, n):
             f0 = f
 
             B, i0 = basis(k, x, d)
-            f = -P[l] + np.dot(B, C[i0:i0 + k])
+            f = -P[offset] + np.dot(B, C[i0 : i0 + k])
 
-        t[l] = x
+        t[offset] = x
 
     return t
 
@@ -142,7 +146,7 @@ def inverse_map_value(x, Cx, k):
 
     for _ in range(100):
         B, i0 = basis(k, t, d)
-        f = np.dot(B, Cx[i0:i0 + k]) - x
+        f = np.dot(B, Cx[i0 : i0 + k]) - x
 
         if abs(f) < 1e-13:
             break
@@ -154,8 +158,8 @@ def inverse_map_value(x, Cx, k):
         Bp, i0p = basis(k, tp, d)
         Bm, i0m = basis(k, tm, d)
 
-        fp = np.dot(Bp, Cx[i0p:i0p + k])
-        fm = np.dot(Bm, Cx[i0m:i0m + k])
+        fp = np.dot(Bp, Cx[i0p : i0p + k])
+        fm = np.dot(Bm, Cx[i0m : i0m + k])
 
         dfdx = (fp - fm) / (tp - tm)
 
@@ -172,14 +176,16 @@ class ModernMBI:
         self.xs = xs
         self.ms = np.array(ms, dtype=int)
         self.ks = np.array(ks, dtype=int)
-        self.ns = np.array(P.shape[:len(xs)], dtype=int)
+        self.ns = np.array(P.shape[: len(xs)], dtype=int)
         self.nx = len(xs)
 
         self.ts = []
         self.Cx = []
 
         for i in range(self.nx):
-            t, Cx = fit_coordinate_spline(np.asarray(xs[i], dtype=float), self.ks[i], self.ms[i])
+            t, Cx = fit_coordinate_spline(
+                np.asarray(xs[i], dtype=float), self.ks[i], self.ms[i]
+            )
             self.ts.append(t)
             self.Cx.append(Cx)
 

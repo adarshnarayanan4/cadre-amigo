@@ -1,13 +1,15 @@
 import pickle
 import numpy as np
 
+from cadre_paths import cadre_path
+
 
 def power_total(P_sol, P_comm, P_RW):
     return P_sol - 5.0 * P_comm - np.sum(P_RW, axis=0) - 2.0
 
 
 def main():
-    with open("../../../CADRE/src/CADRE/test/data1346.pkl", "rb") as f:
+    with open(cadre_path("test/data1346.pkl", "../../../CADRE"), "rb") as f:
         data = pickle.load(f, encoding="latin1")
 
     P_sol = data["0:P_sol"]
