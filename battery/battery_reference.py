@@ -1,7 +1,8 @@
 import pickle
-from pathlib import Path
 
 import numpy as np
+
+from cadre_paths import cadre_path
 
 
 sigma = 1e-10
@@ -22,8 +23,8 @@ def battery_current(P_bat, SOC, temperature):
 
 
 def soc_rate(SOC, P_bat, temperature):
-    I = battery_current(P_bat, SOC, temperature)
-    return -sigma / 24.0 * SOC + eta / Cp * I
+    current = battery_current(P_bat, SOC, temperature)
+    return -sigma / 24.0 * SOC + eta / Cp * current
 
 
 def rk4_step(SOC, P_bat, temperature, h):
@@ -43,6 +44,7 @@ def propagate_soc(iSOC, P_bat, temperature, h):
         SOC[k + 1] = rk4_step(SOC[k], P_bat[k], temperature[4, k], h)
 
     return SOC
+
 
 def propagate_soc_trapezoid(iSOC, P_bat, temperature, h):
     n = len(P_bat)
@@ -67,10 +69,9 @@ def propagate_soc_trapezoid(iSOC, P_bat, temperature, h):
 
     return SOC
 
+
 def main():
-    root = Path(__file__).resolve().parents[1]
-    cadre = root.parent / "CADRE"
-    data_path = cadre / "src/CADRE/test/data1346.pkl"
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(data_path, "rb") as f:
         data = pickle.load(f, encoding="latin1")
@@ -130,7 +131,7 @@ def main():
     print()
     print("Trapezoid final SOC:")
     print(SOC_trap[-1])
-  
+
     print()
     print("Trapezoid minimum SOC:")
     print(np.min(SOC_trap))
@@ -138,6 +139,7 @@ def main():
     print()
     print("Trapezoid maximum SOC:")
     print(np.max(SOC_trap))
+
 
 if __name__ == "__main__":
     main()

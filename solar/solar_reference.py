@@ -1,10 +1,24 @@
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
-from orbit.orbit_reference import orbital_elements_to_state, calculate_orbital_period
+from cadre_paths import cadre_path
+from orbit.orbit_reference import (
+    orbital_elements_to_state,
+    calculate_orbital_period,
+)
 from orbit.orbit_amigo import build_reference_trajectory
-from attitude.attitude_reference import attitude_from_orbit, attitude_roll, combine_rotation_matrices
-from sun.sun_reference import sun_position_eci, sun_position_body, sun_position_spherical, sun_line_of_sight
+from attitude.attitude_reference import (
+    attitude_from_orbit,
+    attitude_roll,
+    combine_rotation_matrices,
+)
+from sun.sun_reference import (
+    sun_position_eci,
+    sun_position_body,
+    sun_position_spherical,
+    sun_line_of_sight,
+)
+
 
 def fixangles(azimuth, elevation):
     azimuth = np.mod(azimuth, 2.0 * np.pi)
@@ -19,8 +33,8 @@ def fixangles(azimuth, elevation):
 
 
 def load_solar_data():
-    raw1 = np.genfromtxt("../../../CADRE/src/CADRE/data/Solar/Area10.txt")
-    raw2 = np.loadtxt("../../../CADRE/src/CADRE/data/Solar/Area_all.txt")
+    raw1 = np.genfromtxt(cadre_path("data/Solar/Area10.txt", "../../../CADRE"))
+    raw2 = np.loadtxt(cadre_path("data/Solar/Area_all.txt", "../../../CADRE"))
 
     na = 10
     nz = 73
@@ -29,10 +43,10 @@ def load_solar_data():
     ncells = 7
 
     angle = raw1[0:na].copy()
-    azimuth = raw1[na:na + nz].copy()
+    azimuth = raw1[na : na + nz].copy()
 
     elevation_start = na + nz - 1
-    elevation = raw1[elevation_start:elevation_start + ne].copy()
+    elevation = raw1[elevation_start : elevation_start + ne].copy()
 
     angle[0] = 0.0
     angle[-1] = np.pi / 2.0
@@ -50,7 +64,7 @@ def load_solar_data():
 
     for p in range(npanels):
         for c in range(ncells):
-            values = raw2[7 * p + c, 119:119 + flat_size]
+            values = raw2[7 * p + c, 119 : 119 + flat_size]
             data[:, :, :, c, p] = values.reshape((na, nz, ne))
             counter += 1
 
@@ -173,7 +187,9 @@ def main():
         interpolators,
     )
 
-    exposed_area_with_LOS = exposed_area * LOS_reference[np.newaxis, np.newaxis, :]
+    exposed_area_with_LOS = (
+        exposed_area * LOS_reference[np.newaxis, np.newaxis, :]
+    )
 
     print()
     print("Number of nodes:")

@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Earth constants
-MU = 398600.44      # Earth's gravitational parameter in km^3/s^2
-RE = 6378.137       # Earth's radius in km
+MU = 398600.44  # Earth's gravitational parameter in km^3/s^2
+RE = 6378.137  # Earth's radius in km
 
 J2 = 1.08264e-3
 J3 = -2.51e-6
@@ -14,22 +14,39 @@ C2 = -1.5 * MU * J2 * RE**2
 C3 = -2.5 * MU * J3 * RE**3
 C4 = 1.875 * MU * J4 * RE**4
 
+
 # Helper functions
 def skew(v):
     """Returns the skew-symmetric matrix of a vector v."""
 
     return np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
 
-def rotation_matrix(axis, angle):
-    """Returns the rotation matrix for a specific axis and angle (in radians)."""
 
-    I = np.eye(3)
-    return (I + skew(axis) * np.sin(angle) + (1.0 - np.cos(angle)) * (np.outer(axis, axis) - I))
+def rotation_matrix(axis, angle):
+    # fmt: off
+    ("Returns the rotation matrix for a specific axis and angle "
+     "(in radians).")
+    # fmt: on
+
+    identity = np.eye(3)
+    return (
+        identity
+        + skew(axis) * np.sin(angle)
+        + (1.0 - np.cos(angle)) * (np.outer(axis, axis) - identity)
+    )
+
 
 # Orbital elements to Cartesian state
-def orbital_elements_to_state(alt_perigee, alt_apogee, raan, inclination, arg_perigee, true_anomaly):
-    """Convert CADRE's orbital parameters into the initial Earth-centered inertial position and velocity. 
-    Altitudes are in km. Angles are in degrees."""
+def orbital_elements_to_state(
+    alt_perigee, alt_apogee, raan, inclination, arg_perigee, true_anomaly
+):
+    # fmt: off
+    (
+        "Convert CADRE's orbital parameters into the initial "
+        "Earth-centered inertial position and velocity. "
+        "\n    Altitudes are in km. Angles are in degrees."
+    )
+    # fmt: on
 
     deg_to_rad = np.pi / 180.0
 
@@ -37,8 +54,8 @@ def orbital_elements_to_state(alt_perigee, alt_apogee, raan, inclination, arg_pe
     r_perigee = RE + alt_perigee
     r_apogee = RE + alt_apogee
 
-    # Orbital eccentricity 
-    e = ((r_apogee - r_perigee) / (r_apogee + r_perigee))
+    # Orbital eccentricity
+    e = (r_apogee - r_perigee) / (r_apogee + r_perigee)
 
     # Semi-major axis
     a = (r_perigee + r_apogee) / 2.0
@@ -54,14 +71,18 @@ def orbital_elements_to_state(alt_perigee, alt_apogee, raan, inclination, arg_pe
 
     # Position in perifocal coordinate system
     r_mag = p / (1 + e * np.cos(true_anomaly))
-    r_perifocal = np.array([r_mag * np.cos(true_anomaly),
-                            r_mag * np.sin(true_anomaly),
-                            0.0])
+    r_perifocal = np.array(
+        [r_mag * np.cos(true_anomaly), r_mag * np.sin(true_anomaly), 0.0]
+    )
 
     # Velocity in perifocal coordinate system
-    v_perifocal = np.array([-np.sqrt(MU / p) * np.sin(true_anomaly),
-                            np.sqrt(MU / p) * (e + np.cos(true_anomaly)),
-                            0.0])
+    v_perifocal = np.array(
+        [
+            -np.sqrt(MU / p) * np.sin(true_anomaly),
+            np.sqrt(MU / p) * (e + np.cos(true_anomaly)),
+            0.0,
+        ]
+    )
 
     # Rotate from perifocal to Earth-centered inertial (ECI)
     z_axis = np.array([0.0, 0.0, 1.0])
@@ -70,11 +91,12 @@ def orbital_elements_to_state(alt_perigee, alt_apogee, raan, inclination, arg_pe
     R_raan = rotation_matrix(z_axis, raan)
     R_inc = rotation_matrix(x_axis, inclination)
     R_arg = rotation_matrix(z_axis, arg_perigee)
-    rotation = (R_raan @ R_inc @ R_arg)
+    rotation = R_raan @ R_inc @ R_arg
     r_eci = rotation @ r_perifocal
     v_eci = rotation @ v_perifocal
 
     return r_eci, v_eci
+
 
 def orbit_dynamics(state):
     """Compute the time derivative of the spacecraft state
@@ -90,10 +112,10 @@ def orbit_dynamics(state):
     vz = state[5]
 
     # Distance from Earth's center
-    r2 = x*x + y*y + z*z
+    r2 = x * x + y * y + z * z
     r = np.sqrt(r2)
 
-    z2 = z*z
+    z2 = z * z
     z3 = z2 * z
     z4 = z3 * z
 
@@ -103,35 +125,40 @@ def orbit_dynamics(state):
     r7 = r5 * r2
 
     # J2, J3, J4 correction terms
-    T2 = (1.0 - 5.0 * z2 / r2)
-    T3 = (3.0 * z - 7.0 * z3 / r2)
-    T4 = (1.0 - 14.0 * z2 / r2 + 21.0 * z4 / r4)
+    T2 = 1.0 - 5.0 * z2 / r2
+    T3 = 3.0 * z - 7.0 * z3 / r2
+    T4 = 1.0 - 14.0 * z2 / r2 + 21.0 * z4 / r4
 
-    common = C1/r3 + C2/r5*T2 + C3/r7*T3 + C4/r7*T4
+    common = C1 / r3 + C2 / r5 * T2 + C3 / r7 * T3 + C4 / r7 * T4
 
     ax = common * x
     ay = common * y
     az = common * z
 
     # Additional z-direction effects
-    az += 2.0*C2*z/r5
-    az += C3/r7*(3.0*z2 - 0.6*r2)
-    az += C4/r7*(4.0*z - (28.0/3.0)*z3/r2)
+    az += 2.0 * C2 * z / r5
+    az += C3 / r7 * (3.0 * z2 - 0.6 * r2)
+    az += C4 / r7 * (4.0 * z - (28.0 / 3.0) * z3 / r2)
 
     return np.array([vx, vy, vz, ax, ay, az])
 
+
 def rk4_step(state, dt):
-    """Advance the spacecraft state forward by one time step using fourth-order Runge-Kutta integration.
-    state = [x, y, z, vx, vy, vz]
-    dt = time step in seconds"""
+    # fmt: off
+    ("Advance the spacecraft state forward by one time step using "
+     "fourth-order Runge-Kutta integration.\n"
+     "    state = [x, y, z, vx, vy, vz]\n"
+     "    dt = time step in seconds")
+    # fmt: on
     k1 = orbit_dynamics(state)
     k2 = orbit_dynamics(state + 0.5 * dt * k1)
     k3 = orbit_dynamics(state + 0.5 * dt * k2)
     k4 = orbit_dynamics(state + dt * k3)
 
-    next_state = state + (dt / 6.0) * (k1 + 2.0*k2 + 2.0*k3 + k4)
+    next_state = state + (dt / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
 
     return next_state
+
 
 def propagate_orbit(initial_state, dt, duration):
     """Propagate the spacecraft orbit over time.
@@ -151,7 +178,8 @@ def propagate_orbit(initial_state, dt, duration):
         states.append(next_state)
         times.append(times[-1] + dt)
 
-    # Take a smaller final step if necessary so that the trajectory ends exactly at "duration"
+    # Take a smaller final step if necessary so that the trajectory ends
+    # exactly at "duration".
     remaining_time = duration - times[-1]
 
     if remaining_time > 1e-12:
@@ -161,6 +189,7 @@ def propagate_orbit(initial_state, dt, duration):
         times.append(duration)
 
     return np.array(times), np.array(states)
+
 
 def calculate_orbital_period(alt_perigee, alt_apogee):
     """Calculate orbital period from perigee and apogee altitudes."""
@@ -173,6 +202,7 @@ def calculate_orbital_period(alt_perigee, alt_apogee):
     period = 2.0 * np.pi * np.sqrt(a**3 / MU)
 
     return period
+
 
 # Test using CADRE's default orbit
 if __name__ == "__main__":
@@ -191,7 +221,7 @@ if __name__ == "__main__":
         raan=raan,
         inclination=inclination,
         arg_perigee=arg_perigee,
-        true_anomaly=true_anomaly
+        true_anomaly=true_anomaly,
     )
 
     print()
@@ -225,9 +255,13 @@ if __name__ == "__main__":
     # Orbit propagation
     dt = 10.0
 
-    orbital_period = calculate_orbital_period(alt_perigee=alt_perigee, alt_apogee=alt_apogee)
+    orbital_period = calculate_orbital_period(
+        alt_perigee=alt_perigee, alt_apogee=alt_apogee
+    )
 
-    times, states = propagate_orbit(initial_state=state0, dt=dt, duration=orbital_period)
+    times, states = propagate_orbit(
+        initial_state=state0, dt=dt, duration=orbital_period
+    )
 
     print()
     print("Orbital period [s]:")
@@ -305,7 +339,7 @@ if __name__ == "__main__":
     ax.set_ylabel("Y [km]", labelpad=10)
     ax.set_zlabel("Z [km]", labelpad=10)
 
-    ax.set_title("CADRE Orbit Reference Trajectory",pad=20)
+    ax.set_title("CADRE Orbit Reference Trajectory", pad=20)
 
     ax.legend()
 
@@ -313,7 +347,7 @@ if __name__ == "__main__":
     plt.show()
 
     # Plot Earth
-    u = np.linspace(0, 2*np.pi, 60)
+    u = np.linspace(0, 2 * np.pi, 60)
     v = np.linspace(0, np.pi, 30)
 
     earth_x = RE * np.outer(np.cos(u), np.sin(v))

@@ -2,9 +2,11 @@ import pickle
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
+from cadre_paths import cadre_path
+
 
 def load_power_data():
-    path = "../../../CADRE/src/CADRE/data/Power/curve.dat"
+    path = cadre_path("data/Power/curve.dat", "../../../CADRE")
     dat = np.loadtxt(path)
 
     nT = int(dat[0])
@@ -12,19 +14,25 @@ def load_power_data():
     nI = int(dat[2])
 
     index = 3
-    T = dat[index:index + nT]
+    T = dat[index : index + nT]
     index += nT
-    A = dat[index:index + nA]
+    A = dat[index : index + nA]
     index += nA
-    I = dat[index:index + nI]
+    current_grid = dat[index : index + nI]
     index += nI
     V = dat[index:].reshape((nT, nA, nI), order="F")
 
-    return T, A, I, V
+    return T, A, current_grid, V
 
 
-def build_power_interpolator(T, A, I, V):
-    return RegularGridInterpolator((T, A, I), V, method="linear", bounds_error=False, fill_value=None)
+def build_power_interpolator(T, A, I, V):  # noqa: E741
+    return RegularGridInterpolator(
+        (T, A, I),
+        V,
+        method="linear",
+        bounds_error=False,
+        fill_value=None,
+    )
 
 
 def power_cell_voltage(LOS, temperature, exposedArea, Isetpt, interpolator):
@@ -36,7 +44,9 @@ def power_cell_voltage(LOS, temperature, exposedArea, Isetpt, interpolator):
 
         for c in range(7):
             effective_area = LOS * exposedArea[c, p, :]
-            points = np.column_stack((temperature[temp_index, :], effective_area, Isetpt[p, :]))
+            points = np.column_stack(
+                (temperature[temp_index, :], effective_area, Isetpt[p, :])
+            )
             V_sol[p, :] += interpolator(points)
 
     return V_sol
@@ -47,7 +57,7 @@ def solar_power(V_sol, Isetpt):
 
 
 def main():
-    with open("../../../CADRE/src/CADRE/test/data1346.pkl", "rb") as f:
+    with open(cadre_path("test/data1346.pkl", "../../../CADRE"), "rb") as f:
         data = pickle.load(f, encoding="latin1")
 
     LOS = data["0:LOS"]
@@ -89,7 +99,9 @@ def main():
     T_grid, A_grid, I_grid, V_data = load_power_data()
     interpolator = build_power_interpolator(T_grid, A_grid, I_grid, V_data)
 
-    V_sol_test = power_cell_voltage(LOS, temperature, exposedArea, Isetpt, interpolator)
+    V_sol_test = power_cell_voltage(
+        LOS, temperature, exposedArea, Isetpt, interpolator
+    )
     P_sol_test = solar_power(V_sol_test, Isetpt)
 
     voltage_difference = np.max(np.abs(V_sol_test - V_sol_source))

@@ -1,8 +1,8 @@
 import pickle
-from pathlib import Path
 
 import numpy as np
 
+from cadre_paths import cadre_path
 from battery.battery_reference import (
     battery_current,
     propagate_soc,
@@ -58,10 +58,7 @@ def print_constraints(name, values):
 
 
 def main():
-    root = Path(__file__).resolve().parents[1]
-    cadre = root.parent / "CADRE"
-
-    data_path = cadre / "src/CADRE/test/data1346.pkl"
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(data_path, "rb") as f:
         data = pickle.load(f, encoding="latin1")

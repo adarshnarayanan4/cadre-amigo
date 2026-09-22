@@ -1,9 +1,9 @@
 import pickle
-from pathlib import Path
 
 import amigo as am
 import numpy as np
 
+from cadre_paths import cadre_path
 from battery.battery_reference import (
     battery_current,
     propagate_soc,
@@ -60,9 +60,9 @@ class BatteryDynamics(am.Component):
 
         voc = 3.0 + (am.exp(SOC) - 1.0) / e_minus_1
         V = IR * voc * (2.0 - am.exp(alpha * (T - T0) / T0))
-        I = P / V
+        current = P / V
 
-        rate = -sigma / 24.0 * SOC + eta / Cp * I
+        rate = -sigma / 24.0 * SOC + eta / Cp * current
 
         self.constraints["res"] = rate - SOCdot
 
@@ -90,11 +90,7 @@ class TrapezoidRule(am.Component):
         SOCdot1 = self.inputs["SOCdot1"]
         SOCdot2 = self.inputs["SOCdot2"]
 
-        self.constraints["res"] = (
-            SOC2
-            - SOC1
-            - 0.5 * dt * (SOCdot1 + SOCdot2)
-        )
+        self.constraints["res"] = SOC2 - SOC1 - 0.5 * dt * (SOCdot1 + SOCdot2)
 
 
 class InitialSOC(am.Component):
@@ -243,10 +239,7 @@ def solve_model(model):
 
 
 def main():
-    root = Path(__file__).resolve().parents[1]
-    cadre = root.parent / "CADRE"
-
-    data_path = cadre / "src/CADRE/test/data1346.pkl"
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(data_path, "rb") as f:
         data = pickle.load(f, encoding="latin1")
@@ -341,12 +334,7 @@ def main():
     trapezoid_residual = (
         SOC_amigo[1:]
         - SOC_amigo[:-1]
-        - 0.5
-        * dt
-        * (
-            SOCdot_amigo[:-1]
-            + SOCdot_amigo[1:]
-        )
+        - 0.5 * dt * (SOCdot_amigo[:-1] + SOCdot_amigo[1:])
     )
 
     print()

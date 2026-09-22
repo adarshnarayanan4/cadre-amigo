@@ -1,13 +1,15 @@
 import pickle
 import numpy as np
 
+from cadre_paths import cadre_path
+
 
 def solar_power(V_sol, Isetpt):
     return np.sum(V_sol * Isetpt, axis=0)
 
 
 def main():
-    with open("../../../CADRE/src/CADRE/test/data1346.pkl", "rb") as f:
+    with open(cadre_path("test/data1346.pkl", "../../../CADRE"), "rb") as f:
         data = pickle.load(f, encoding="latin1")
 
     V_sol = data["0:V_sol"]

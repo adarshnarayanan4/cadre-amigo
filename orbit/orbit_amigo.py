@@ -72,9 +72,9 @@ class OrbitDynamics(am.Component):
         r7 = r5 * r2
 
         # J2, J3, J4 correction terms
-        T2 = (1.0 - 5.0 * z2 / r2)
-        T3 = (3.0 * z - 7.0 * z3 / r2)
-        T4 = (1.0 - 14.0 * z2 / r2 + 21.0 * z4 / r4)
+        T2 = 1.0 - 5.0 * z2 / r2
+        T3 = 3.0 * z - 7.0 * z3 / r2
+        T4 = 1.0 - 14.0 * z2 / r2 + 21.0 * z4 / r4
 
         common = C1 / r3 + C2 / r5 * T2 + C3 / r7 * T3 + C4 / r7 * T4
 
@@ -210,7 +210,14 @@ def check_trapezoid_guess_quality(reference_states, reference_rates, dt):
     print(max_residual)
 
 
-def build_model(q0, dt, num_time_steps, reference_states, reference_rates, model_name="cadre_orbit"):
+def build_model(
+    q0,
+    dt,
+    num_time_steps,
+    reference_states,
+    reference_rates,
+    model_name="cadre_orbit",
+):
     """Create, link, initialize, and build the AMIGO trajectory model."""
     orbit = OrbitDynamics()
     trap = TrapezoidRule(dt)
@@ -227,7 +234,9 @@ def build_model(q0, dt, num_time_steps, reference_states, reference_rates, model
         start = i * num_time_steps
         end = (i + 1) * num_time_steps
 
-        model.link(f"orbit.q[:{num_time_steps}, {i}]", f"trap.q1[{start}:{end}]")
+        model.link(
+            f"orbit.q[:{num_time_steps}, {i}]", f"trap.q1[{start}:{end}]"
+        )
         model.link(f"orbit.q[1:, {i}]", f"trap.q2[{start}:{end}]")
         model.link(f"orbit.qdot[:-1, {i}]", f"trap.q1dot[{start}:{end}]")
         model.link(f"orbit.qdot[1:, {i}]", f"trap.q2dot[{start}:{end}]")
@@ -266,12 +275,15 @@ def build_model(q0, dt, num_time_steps, reference_states, reference_rates, model
     max_initial_difference = 0.0
 
     for i in range(6):
-        difference = np.max(np.abs(initial_point[f"orbit.q[:, {i}]"] - reference_states[:, i]))
+        difference = np.max(
+            np.abs(initial_point[f"orbit.q[:, {i}]"] - reference_states[:, i])
+        )
         max_initial_difference = max(max_initial_difference, difference)
 
     print(max_initial_difference)
 
     return model
+
 
 def report_setup_diagnostics(model):
     """Check AMIGO's stored initial point and constraint bounds."""
@@ -304,6 +316,7 @@ def report_setup_diagnostics(model):
     print("Initial-condition constraint bounds:")
     print(lower["ic.res"][0], upper["ic.res"][0])
 
+
 def solve_model(model, x):
     opt = am.Optimizer(model, x)
 
@@ -326,7 +339,9 @@ def solve_model(model, x):
     return opt_data
 
 
-def report_solution_comparison(x, reference_states, orbital_period, num_time_steps):
+def report_solution_comparison(
+    x, reference_states, orbital_period, num_time_steps
+):
     amigo_states = np.zeros((num_time_steps + 1, 6))
     for i in range(6):
         amigo_states[:, i] = x[f"orbit.q[:, {i}]"]
@@ -358,6 +373,7 @@ def report_solution_comparison(x, reference_states, orbital_period, num_time_ste
 
     return amigo_states, times
 
+
 def plot_solution_comparison(amigo_states, reference_states, times):
     """Plot AMIGO and RK4 trajectories and their differences."""
     # Extract positions
@@ -388,7 +404,9 @@ def plot_solution_comparison(amigo_states, reference_states, times):
     plt.tight_layout()
 
     # Position difference versus time
-    position_difference = np.linalg.norm(amigo_states[:, 0:3] - reference_states[:, 0:3], axis=1)
+    position_difference = np.linalg.norm(
+        amigo_states[:, 0:3] - reference_states[:, 0:3], axis=1
+    )
 
     plt.figure(figsize=(9, 5))
 
@@ -404,7 +422,9 @@ def plot_solution_comparison(amigo_states, reference_states, times):
     plt.tight_layout()
 
     # Velocity difference versus time
-    velocity_difference = np.linalg.norm(amigo_states[:, 3:6] - reference_states[:, 3:6], axis=1)
+    velocity_difference = np.linalg.norm(
+        amigo_states[:, 3:6] - reference_states[:, 3:6], axis=1
+    )
 
     plt.figure(figsize=(9, 5))
 
@@ -420,6 +440,7 @@ def plot_solution_comparison(amigo_states, reference_states, times):
     plt.tight_layout()
     plt.show()
 
+
 def main():
     # Initial spacecraft state
     r0, v0 = orbital_elements_to_state(
@@ -433,7 +454,9 @@ def main():
     q0 = np.concatenate((r0, v0))
 
     # Time discretization
-    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
+    orbital_period = calculate_orbital_period(
+        alt_perigee=500.0, alt_apogee=500.0
+    )
     num_time_steps = 568
     dt = orbital_period / num_time_steps
 
@@ -450,11 +473,15 @@ def main():
     print(dt)
 
     # Reference trajectory and initial-guess quality check
-    reference_states, reference_rates = build_reference_trajectory(q0, dt, num_time_steps)
+    reference_states, reference_rates = build_reference_trajectory(
+        q0, dt, num_time_steps
+    )
     check_trapezoid_guess_quality(reference_states, reference_rates, dt)
 
     # Build and initialize AMIGO model
-    model = build_model(q0, dt, num_time_steps, reference_states, reference_rates)
+    model = build_model(
+        q0, dt, num_time_steps, reference_states, reference_rates
+    )
 
     report_setup_diagnostics(model)
 
@@ -464,9 +491,12 @@ def main():
     solve_model(model, x)
 
     # Compare against RK4 reference
-    amigo_states, times = report_solution_comparison(x, reference_states, orbital_period, num_time_steps)
+    amigo_states, times = report_solution_comparison(
+        x, reference_states, orbital_period, num_time_steps
+    )
 
     plot_solution_comparison(amigo_states, reference_states, times)
+
 
 if __name__ == "__main__":
     main()

@@ -1,13 +1,29 @@
 import numpy as np
 
-from orbit.orbit_reference import orbital_elements_to_state, calculate_orbital_period
+from orbit.orbit_reference import (
+    orbital_elements_to_state,
+    calculate_orbital_period,
+)
 from orbit.orbit_amigo import build_reference_trajectory
 
-from attitude.attitude_reference import attitude_from_orbit, attitude_roll, combine_rotation_matrices
+from attitude.attitude_reference import (
+    attitude_from_orbit,
+    attitude_roll,
+    combine_rotation_matrices,
+)
 
-from sun.sun_reference import sun_position_eci, sun_position_body, sun_position_spherical, sun_line_of_sight
+from sun.sun_reference import (
+    sun_position_eci,
+    sun_position_body,
+    sun_position_spherical,
+    sun_line_of_sight,
+)
 
-from solar.solar_reference import load_solar_data, build_interpolators, solar_exposed_area
+from solar.solar_reference import (
+    load_solar_data,
+    build_interpolators,
+    solar_exposed_area,
+)
 
 
 m_f = 0.4
@@ -45,7 +61,7 @@ def thermal_dynamics(state, exposed_area, LOS, P_comm, cellInstd):
             cp = cp_f
 
         fact1 = q_sol * LOS / (mass * cp)
-        fact2 = K * A_T * state[f_i]**4 / (mass * cp)
+        fact2 = K * A_T * state[f_i] ** 4 / (mass * cp)
 
         f[f_i] += np.sum(alpha[:, p] * exposed_area[:, p]) * fact1
         f[f_i] -= np.sum(eps[:, p]) * fact2
@@ -69,9 +85,15 @@ def propagate_temperature(T0, exposed_area, LOS, P_comm, cellInstd, dt):
         P_comm_k = P_comm[k]
 
         a = thermal_dynamics(state, area_k, LOS_k, P_comm_k, cellInstd)
-        b = thermal_dynamics(state + dt / 2.0 * a, area_k, LOS_k, P_comm_k, cellInstd)
-        c = thermal_dynamics(state + dt / 2.0 * b, area_k, LOS_k, P_comm_k, cellInstd)
-        d = thermal_dynamics(state + dt * c, area_k, LOS_k, P_comm_k, cellInstd)
+        b = thermal_dynamics(
+            state + dt / 2.0 * a, area_k, LOS_k, P_comm_k, cellInstd
+        )
+        c = thermal_dynamics(
+            state + dt / 2.0 * b, area_k, LOS_k, P_comm_k, cellInstd
+        )
+        d = thermal_dynamics(
+            state + dt * c, area_k, LOS_k, P_comm_k, cellInstd
+        )
 
         temperature[:, k + 1] = state + dt / 6.0 * (a + 2.0 * b + 2.0 * c + d)
 

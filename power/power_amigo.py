@@ -2,23 +2,24 @@ import amigo as am
 import pickle
 import numpy as np
 
+from cadre_paths import cadre_path
 from power.mbi_modern import ModernMBI
 
 
 def load_power_data():
-    dat = np.loadtxt("../../../CADRE/src/CADRE/data/Power/curve.dat")
+    dat = np.loadtxt(cadre_path("data/Power/curve.dat", "../../../CADRE"))
     nT = int(dat[0])
     nA = int(dat[1])
     nI = int(dat[2])
     index = 3
-    T = dat[index:index + nT]
+    T = dat[index : index + nT]
     index += nT
-    A = dat[index:index + nA]
+    A = dat[index : index + nA]
     index += nA
-    I = dat[index:index + nI]
+    current_grid = dat[index : index + nI]
     index += nI
     V = dat[index:].reshape((nT, nA, nI), order="F")
-    return T, A, I, V
+    return T, A, current_grid, V
 
 
 def power_cell_voltage(LOS, temperature, exposedArea, Isetpt, mbi):
@@ -32,7 +33,9 @@ def power_cell_voltage(LOS, temperature, exposedArea, Isetpt, mbi):
 
         for c in range(7):
             effective_area = LOS * exposedArea[c, p, :]
-            points = np.column_stack((temperature[temp_index, :], effective_area, Isetpt[p, :]))
+            points = np.column_stack(
+                (temperature[temp_index, :], effective_area, Isetpt[p, :])
+            )
             V_sol[p, :] += mbi.evaluate(points)
 
     return V_sol
@@ -84,7 +87,9 @@ class PowerTotal(am.Component):
         P_RW = self.inputs["P_RW"]
         P_bat = self.inputs["P_bat"]
 
-        self.constraints["res"] = P_bat - (P_sol - 5.0 * P_comm - P_RW[0] - P_RW[1] - P_RW[2] - 2.0)
+        self.constraints["res"] = P_bat - (
+            P_sol - 5.0 * P_comm - P_RW[0] - P_RW[1] - P_RW[2] - 2.0
+        )
 
 
 def extract_scalar(x, variable_name):
@@ -98,7 +103,7 @@ def main():
     print("=" * 70)
 
     # Load original CADRE benchmark
-    with open("../../../CADRE/src/CADRE/test/data1346.pkl", "rb") as f:
+    with open(cadre_path("test/data1346.pkl", "../../../CADRE"), "rb") as f:
         data = pickle.load(f, encoding="latin1")
 
     LOS = data["0:LOS"]
@@ -118,12 +123,12 @@ def main():
     print(num_nodes)
 
     # Build modern MBI
-    T, A, I, V = load_power_data()
+    T, A, current_grid, V = load_power_data()
 
     print()
     print("Building modern MBI...")
 
-    mbi = ModernMBI(V, [T, A, I], [6, 6, 15], [3, 3, 3])
+    mbi = ModernMBI(V, [T, A, current_grid], [6, 6, 15], [3, 3, 3])
 
     print()
     print("Calculating panel voltage with modern MBI...")
@@ -211,7 +216,13 @@ def main():
     x = model.create_vector()
     opt = am.Optimizer(model, x)
 
-    opt_options = {"max_iterations": 100, "convergence_tolerance": 1e-10, "initial_barrier_param": 0.1, "barrier_strategy": "heuristic", "max_line_search_iterations": 4}
+    opt_options = {
+        "max_iterations": 100,
+        "convergence_tolerance": 1e-10,
+        "initial_barrier_param": 0.1,
+        "barrier_strategy": "heuristic",
+        "max_line_search_iterations": 4,
+    }
 
     print()
     print("Solving AMIGO power model...")
@@ -232,8 +243,15 @@ def main():
     amigo_cadre_battery_difference = np.max(np.abs(P_bat_amigo - P_bat_source))
 
     # Residual checks
-    solar_residual = np.max(np.abs(P_sol_amigo - np.sum(V_sol_mbi * Isetpt, axis=0)))
-    battery_residual = np.max(np.abs(P_bat_amigo - (P_sol_amigo - 5.0 * P_comm - np.sum(P_RW, axis=0) - 2.0)))
+    solar_residual = np.max(
+        np.abs(P_sol_amigo - np.sum(V_sol_mbi * Isetpt, axis=0))
+    )
+    battery_residual = np.max(
+        np.abs(
+            P_bat_amigo
+            - (P_sol_amigo - 5.0 * P_comm - np.sum(P_RW, axis=0) - 2.0)
+        )
+    )
 
     print()
     print("=" * 70)

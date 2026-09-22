@@ -1,14 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from orbit.orbit_reference import (orbital_elements_to_state, rk4_step, calculate_orbital_period)
+from orbit.orbit_reference import (
+    orbital_elements_to_state,
+    rk4_step,
+    calculate_orbital_period,
+)
 
 # Spacecraft inertia matrix from original CADRE Attitude_Torque
-J = np.array([
-    [0.018, 0.0,   0.0],
-    [0.0,   0.018, 0.0],
-    [0.0,   0.0,   0.006],
-])
+J = np.array(
+    [
+        [0.018, 0.0, 0.0],
+        [0.0, 0.018, 0.0],
+        [0.0, 0.0, 0.006],
+    ]
+)
+
 
 # Build orbit trajectory
 def build_orbit_trajectory(q0, dt, num_time_steps):
@@ -28,6 +35,7 @@ def build_orbit_trajectory(q0, dt, num_time_steps):
 
     return states
 
+
 # Cadre Attitute_Attitude
 def attitude_from_orbit(states):
     """
@@ -42,7 +50,6 @@ def attitude_from_orbit(states):
     O_RI = np.zeros((n, 3, 3))
 
     for i in range(n):
-
         r = states[i, 0:3].copy()
         v = states[i, 3:6].copy()
 
@@ -60,11 +67,13 @@ def attitude_from_orbit(states):
         v = v / norm_v
 
         # Cross-product matrix for velocity
-        vx = np.array([
-            [0.0,   -v[2],  v[1]],
-            [v[2],   0.0,  -v[0]],
-            [-v[1],  v[0],  0.0],
-        ])
+        vx = np.array(
+            [
+                [0.0, -v[2], v[1]],
+                [v[2], 0.0, -v[0]],
+                [-v[1], v[0], 0.0],
+            ]
+        )
 
         iB = vx @ r
         jB = -(vx @ iB)
@@ -74,6 +83,7 @@ def attitude_from_orbit(states):
         O_RI[i, 2, :] = -v
 
     return O_RI
+
 
 # CADRE Attitude_Roll
 def attitude_roll(gamma):
@@ -88,7 +98,6 @@ def attitude_roll(gamma):
     O_BR = np.zeros((n, 3, 3))
 
     for i in range(n):
-
         O_BR[i, 0, 0] = np.cos(gamma[i])
         O_BR[i, 0, 1] = np.sin(gamma[i])
 
@@ -98,6 +107,7 @@ def attitude_roll(gamma):
         O_BR[i, 2, 2] = 1.0
 
     return O_BR
+
 
 # CADRE Attitude_RotationMtx
 def combine_rotation_matrices(O_BR, O_RI):
@@ -115,6 +125,7 @@ def combine_rotation_matrices(O_BR, O_RI):
         O_BI[i] = O_BR[i] @ O_RI[i]
 
     return O_BI
+
 
 # CADRE Attitude_RotationMtxRates
 def rotation_matrix_rates(O_BI, dt):
@@ -138,6 +149,7 @@ def rotation_matrix_rates(O_BI, dt):
 
     return Odot_BI
 
+
 # CADRE Attitude_Angular
 def angular_velocity(O_BI, Odot_BI):
     """
@@ -156,6 +168,7 @@ def angular_velocity(O_BI, Odot_BI):
         w_B[i, 2] = np.dot(Odot_BI[i, 1, :], O_BI[i, 0, :])
 
     return w_B
+
 
 # CADRE Attitude_AngularRates
 def angular_acceleration(w_B, dt):
@@ -177,6 +190,7 @@ def angular_acceleration(w_B, dt):
 
     return wdot_B
 
+
 # CADRE Attitude_Sideslip
 def body_frame_velocity(states, O_BI):
     """
@@ -195,6 +209,7 @@ def body_frame_velocity(states, O_BI):
 
     return v_B
 
+
 # CADRE Attitude_Torque
 def attitude_torque(w_B, wdot_B):
     """
@@ -209,14 +224,17 @@ def attitude_torque(w_B, wdot_B):
 
     for i in range(n):
         w = w_B[i]
-        wx = np.array([
-            [0.0,   -w[2],  w[1]],
-            [w[2],   0.0,  -w[0]],
-            [-w[1],  w[0],  0.0],
-        ])
-        T_tot[i] = (J @ wdot_B[i] + wx @ (J @ w))
+        wx = np.array(
+            [
+                [0.0, -w[2], w[1]],
+                [w[2], 0.0, -w[0]],
+                [-w[1], w[0], 0.0],
+            ]
+        )
+        T_tot[i] = J @ wdot_B[i] + wx @ (J @ w)
 
     return T_tot
+
 
 # Main
 def main():
@@ -233,7 +251,9 @@ def main():
     q0 = np.concatenate((r0, v0))
 
     # Time grid
-    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
+    orbital_period = calculate_orbital_period(
+        alt_perigee=500.0, alt_apogee=500.0
+    )
 
     num_time_steps = 568
 
