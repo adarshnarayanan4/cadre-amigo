@@ -9,7 +9,7 @@ def solar_power(V_sol, Isetpt):
 
 
 def main():
-    with open(cadre_path("test/data1346.pkl", "../../../CADRE"), "rb") as f:
+    with open(cadre_path("test/data1346.pkl"), "rb") as f:
         data = pickle.load(f, encoding="latin1")
 
     V_sol = data["0:V_sol"]

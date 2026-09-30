@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator
+from power.mbi_modern import ModernMBI
 
 from cadre_paths import cadre_path
 from orbit.orbit_reference import (
@@ -33,8 +33,8 @@ def fixangles(azimuth, elevation):
 
 
 def load_solar_data():
-    raw1 = np.genfromtxt(cadre_path("data/Solar/Area10.txt", "../../../CADRE"))
-    raw2 = np.loadtxt(cadre_path("data/Solar/Area_all.txt", "../../../CADRE"))
+    raw1 = np.genfromtxt(cadre_path("data/Solar/Area10.txt"))
+    raw2 = np.loadtxt(cadre_path("data/Solar/Area_all.txt"))
 
     na = 10
     nz = 73
@@ -72,42 +72,45 @@ def load_solar_data():
 
 
 def build_interpolators(angle, azimuth, elevation, data):
-    interpolators = []
+    na = len(angle)
+    nz = len(azimuth)
+    ne = len(elevation)
 
-    for c in range(7):
-        row = []
+    data_mbi = data.reshape(
+        (na, nz, ne, 84),
+        order="F",
+    )
 
-        for p in range(12):
-            interpolator = RegularGridInterpolator(
-                (angle, azimuth, elevation),
-                data[:, :, :, c, p],
-                method="linear",
-                bounds_error=False,
-                fill_value=None,
-            )
+    mbi = ModernMBI(
+        data_mbi,
+        [angle, azimuth, elevation],
+        [4, 10, 8],
+        [4, 4, 4],
+    )
 
-            row.append(interpolator)
-
-        interpolators.append(row)
-
-    return interpolators
+    return mbi
 
 
-def solar_exposed_area(fin_angle, azimuth, elevation, interpolators):
-    azimuth, elevation = fixangles(azimuth.copy(), elevation.copy())
+def solar_exposed_area(fin_angle, azimuth, elevation, interpolator):
+    azimuth, elevation = fixangles(
+        azimuth.copy(),
+        elevation.copy(),
+    )
 
     n = len(azimuth)
 
     points = np.zeros((n, 3))
+
     points[:, 0] = fin_angle
     points[:, 1] = azimuth
     points[:, 2] = elevation
 
-    exposed_area = np.zeros((7, 12, n))
+    values = interpolator.evaluate(points)
 
-    for c in range(7):
-        for p in range(12):
-            exposed_area[c, p, :] = interpolators[c][p](points)
+    exposed_area = values.T.reshape(
+        (7, 12, n),
+        order="F",
+    )
 
     return exposed_area
 

@@ -9,7 +9,7 @@ def power_total(P_sol, P_comm, P_RW):
 
 
 def main():
-    with open(cadre_path("test/data1346.pkl", "../../../CADRE"), "rb") as f:
+    with open(cadre_path("test/data1346.pkl"), "rb") as f:
         data = pickle.load(f, encoding="latin1")
 
     P_sol = data["0:P_sol"]

@@ -27,7 +27,7 @@ from thermal.thermal_reference import propagate_temperature
 
 
 def load_power_data():
-    path = cadre_path("data/Power/curve.dat", "../../../CADRE")
+    path = cadre_path("data/Power/curve.dat")
     dat = np.loadtxt(path)
 
     nT = int(dat[0])

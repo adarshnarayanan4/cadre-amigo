@@ -6,7 +6,7 @@ from power.mbi_modern import ModernMBI
 
 
 def load_power_data():
-    dat = np.loadtxt(cadre_path("data/Power/curve.dat", "../../../CADRE"))
+    dat = np.loadtxt(cadre_path("data/Power/curve.dat"))
 
     nT = int(dat[0])
     nA = int(dat[1])
@@ -57,7 +57,7 @@ def main():
     print("CADRE MODERN MBI POWER VALIDATION")
     print("=" * 70)
 
-    with open(cadre_path("test/data1346.pkl", "../../../CADRE"), "rb") as f:
+    with open(cadre_path("test/data1346.pkl"), "rb") as f:
         data = pickle.load(f, encoding="latin1")
 
     LOS = data["0:LOS"]

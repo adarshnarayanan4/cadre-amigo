@@ -194,13 +194,36 @@ class ModernMBI:
         B2 = build_1d_matrix(self.ts[2], self.ks[2], self.ms[2])
 
         B = sp.kron(B2, sp.kron(B1, B0), format="csc")
-        P_flat = np.asarray(P, dtype=float).reshape(-1, order="F")
+
+        self.scalar_output = P.ndim == self.nx
 
         BTB = B.T @ B
-        BTP = B.T @ P_flat
 
         print("Solving MBI spline coefficients...")
-        self.C = spla.spsolve(BTB, BTP)
+
+        if self.scalar_output:
+            P_flat = np.asarray(P, dtype=float).reshape(-1, order="F")
+            BTP = B.T @ P_flat
+            self.C = spla.spsolve(BTB, BTP)
+
+        else:
+            self.output_shape = P.shape[self.nx :]
+            self.n_outputs = int(np.prod(self.output_shape))
+
+            P_flat = np.asarray(P, dtype=float).reshape(
+                (-1, self.n_outputs),
+                order="F",
+            )
+
+            BTP = B.T @ P_flat
+
+            self.C = np.zeros((BTB.shape[0], self.n_outputs))
+
+            for i in range(self.n_outputs):
+                self.C[:, i] = spla.spsolve(
+                    BTB,
+                    BTP[:, i],
+                )
 
         print("MBI spline ready.")
 
@@ -209,11 +232,28 @@ class ModernMBI:
         t1 = inverse_map_value(x[1], self.Cx[1], self.ks[1])
         t2 = inverse_map_value(x[2], self.Cx[2], self.ks[2])
 
-        B0, i00 = basis(self.ks[0], t0, knotopen(self.ks[0], self.ms[0]))
-        B1, i01 = basis(self.ks[1], t1, knotopen(self.ks[1], self.ms[1]))
-        B2, i02 = basis(self.ks[2], t2, knotopen(self.ks[2], self.ms[2]))
+        B0, i00 = basis(
+            self.ks[0],
+            t0,
+            knotopen(self.ks[0], self.ms[0]),
+        )
 
-        value = 0.0
+        B1, i01 = basis(
+            self.ks[1],
+            t1,
+            knotopen(self.ks[1], self.ms[1]),
+        )
+
+        B2, i02 = basis(
+            self.ks[2],
+            t2,
+            knotopen(self.ks[2], self.ms[2]),
+        )
+
+        if self.scalar_output:
+            value = 0.0
+        else:
+            value = np.zeros(self.n_outputs)
 
         for a in range(self.ks[0]):
             for b in range(self.ks[1]):
@@ -221,14 +261,29 @@ class ModernMBI:
                     i = i00 + a
                     j = i01 + b
                     k = i02 + c
-                    index = i + self.ms[0] * j + self.ms[0] * self.ms[1] * k
-                    value += B0[a] * B1[b] * B2[c] * self.C[index]
+
+                    index = (
+                        i
+                        + self.ms[0] * j
+                        + self.ms[0] * self.ms[1] * k
+                    )
+
+                    weight = B0[a] * B1[b] * B2[c]
+
+                    if self.scalar_output:
+                        value += weight * self.C[index]
+                    else:
+                        value += weight * self.C[index, :]
 
         return value
 
     def evaluate(self, x):
         x = np.asarray(x, dtype=float)
-        result = np.zeros(x.shape[0])
+
+        if self.scalar_output:
+            result = np.zeros(x.shape[0])
+        else:
+            result = np.zeros((x.shape[0], self.n_outputs))
 
         for i in range(x.shape[0]):
             result[i] = self.evaluate_point(x[i, :])

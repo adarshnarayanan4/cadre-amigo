@@ -6,7 +6,7 @@ from cadre_paths import cadre_path
 
 
 def load_power_data():
-    path = cadre_path("data/Power/curve.dat", "../../../CADRE")
+    path = cadre_path("data/Power/curve.dat")
     dat = np.loadtxt(path)
 
     nT = int(dat[0])
@@ -57,7 +57,7 @@ def solar_power(V_sol, Isetpt):
 
 
 def main():
-    with open(cadre_path("test/data1346.pkl", "../../../CADRE"), "rb") as f:
+    with open(cadre_path("test/data1346.pkl"), "rb") as f:
         data = pickle.load(f, encoding="latin1")
 
     LOS = data["0:LOS"]

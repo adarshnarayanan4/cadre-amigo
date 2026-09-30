@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+_amigo_build/
+*.so
+cadre_*.cpp
+cadre_*.h
+.DS_Store
