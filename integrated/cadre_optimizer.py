@@ -6,6 +6,7 @@ import amigo as am
 import numpy as np
 
 from integrated.cadre_checkpoint import CheckpointManager, load_checkpoint
+from integrated.cadre_reporting import print_convergence, print_heading, print_status
 from integrated.solvers.block_solver import SparseLUSolver
 from integrated.solvers.native_ldl import (
     NativeLDLSolver,
@@ -81,14 +82,13 @@ def optimize_case(model, case, args):
 
     options["continuation_control"] = checkpoint
 
-    print("=" * 70)
-    print("RUNNING P_COMM OPTIMIZATION", "=" * 70)
+    print_heading("RUNNING P_COMM OPTIMIZATION")
 
     opt_data = optimizer.optimize(options)
 
     checkpoint(optimizer.state)
 
-    _print_convergence(opt_data)
+    print_convergence(opt_data)
 
     return CadreOptimizationResult(point, opt_data, initial_barrier)
 
@@ -160,8 +160,13 @@ def _reduced_control_indices(model, case, args):
 
     shared_indices = shared_indices[shared_indices != energy_index]
 
-    print("Local energy-balance communication control:", pivot_control, flush=True)
-    print("Reduced control system size:", len(shared_indices), flush=True)
+    print_status(
+        "CONTROL REDUCTION",
+        [
+            ("Local energy-balance control", f"{pivot_control:,}"),
+            ("Reduced control system size", f"{len(shared_indices):,}"),
+        ],
+    )
 
     return shared_indices
 
@@ -201,16 +206,3 @@ def _create_linear_solver(
         primal_indices=primal_indices,
         constraint_indices=constraint_indices,
     )
-
-
-def _print_convergence(history):
-    print("Optimization finished.")
-    print("Optimizer converged:", history.get("converged", False))
-
-    iterations = history.get("iterations", [])
-
-    if len(iterations) > 0:
-        last_iteration = iterations[-1]
-
-        print("Final NLP residual:", last_iteration.get("nlp_error", np.nan))
-        print("Final iteration number:", last_iteration.get("iteration", -1))

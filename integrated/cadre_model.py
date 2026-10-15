@@ -18,6 +18,7 @@ from integrated.cadre_amigo import (
     DownloadObjective,
     ReactionWheelInitialCondition,
 )
+from integrated.cadre_reporting import print_heading
 from integrated.design_amigo import (
     LookupResiduals,
     SurfaceAllocation,
@@ -201,7 +202,8 @@ def _link_components(model, case):
     weights, indices = build_sparse_basis(case.n, case.m)
 
     # B-spline parameter links
-    print("Creating parameter links...")
+    print_heading("MODEL SETUP")
+    print("  Creating parameter links...", flush=True)
 
     for i in range(case.n):
         for j in range(4):
@@ -519,11 +521,11 @@ def _initialize_model(model, case, args):
     """Compile and initialize, keeping prescribed rows out of the bound barrier."""
 
     # Build model
-    print("Building CADRE optimization model...")
+    print("\n  Building CADRE optimization model...\n", flush=True)
 
     model.build_module()
 
-    print("Build successful.")
+    print("\n  Build successful. Initializing the model...\n", flush=True)
 
     # The solver orders the complete KKT matrix rather than only variables.
     # Equal bounds alone do not mark a variable FIXED in this AMIGO version.
@@ -587,4 +589,4 @@ def _initialize_model(model, case, args):
 
     model.initialize(order_type=am.OrderingType.NATURAL)
 
-    print("Initialization successful.")
+    print("\n  Model initialization successful.\n", flush=True)

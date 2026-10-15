@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from amigo.algorithm.evaluator import Evaluator
 import numpy as np
 
+from integrated.cadre_reporting import print_validation
 from integrated.solvers.evaluator import ConsistentEvaluator
 from integrated.validation_helpers import Vector
 
@@ -101,7 +102,7 @@ def main():
         "external_hessian_cache_error": error,
     }
 
-    print(result)
+    print_validation("EVALUATOR VALIDATION", result)
 
     Path("integrated/results/evaluator_validation.json").write_text(
         json.dumps(result, indent=2) + "\n"

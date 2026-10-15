@@ -15,6 +15,7 @@ from communication.communication_amigo import (
     propagate_data_trapezoid,
 )
 from communication.communication_data_validation import communication_bit_rate
+from integrated.cadre_reporting import print_heading, print_values
 from integrated.cadre_amigo import DataInitialCondition
 from integrated.cadre_amigo import ReactionWheelInitialCondition
 from integrated.cadre_reference import calculate_battery_rates
@@ -132,14 +133,15 @@ def main():
 
     dt = 43200.0 / num_intervals
 
-    print("=" * 70)
-    print("CADRE SINGLE-CASE INTEGRATED AMIGO", "=" * 70)
+    print_heading("CADRE SINGLE-CASE INTEGRATED AMIGO")
 
-    print("Number of nodes:", n)
-
-    print("Number of intervals:", num_intervals)
-
-    print("Time step [s]:", dt)
+    print_values(
+        [
+            ("Time nodes", f"{n:,}"),
+            ("Time intervals", f"{num_intervals:,}"),
+            ("Time step", f"{dt:.4f} s"),
+        ]
+    )
 
     # CADRE saved inputs
 
@@ -181,8 +183,7 @@ def main():
 
     # Sequential Python integrated reference
 
-    print("=" * 70)
-    print("BUILDING PYTHON INTEGRATED REFERENCE", "=" * 70)
+    print_heading("BUILDING PYTHON INTEGRATED REFERENCE")
 
     # Parameters
 
@@ -236,11 +237,13 @@ def main():
 
     Data_reference, Data_dot_reference = propagate_data_trapezoid(0.0, Dr_reference, dt)
 
-    print("Python integrated reference ready.")
-
-    print("Reference final SOC:", SOC_reference[-1])
-
-    print("Reference final downloaded data [Gibyte]:", Data_reference[-1])
+    print_values(
+        [
+            ("Python reference", "Ready"),
+            ("Final SOC", f"{SOC_reference[-1]:.6f}"),
+            ("Downloaded data [CADRE units]", f"{Data_reference[-1]:,.6f}"),
+        ]
+    )
 
     # Build sparse parameter interpolation
 
@@ -329,7 +332,7 @@ def main():
 
     # Parameter links
 
-    print("Creating parameter links...")
+    print("\n  Creating parameter links...\n", flush=True)
 
     for i in range(n):
         for j in range(4):
@@ -547,15 +550,15 @@ def main():
 
     # Build and solve
 
-    print("Building integrated " "AMIGO model...")
+    print("\n  Building integrated AMIGO model...\n", flush=True)
 
     model.build_module()
 
-    print("Build successful.")
+    print("\n  Build successful.\n", flush=True)
 
     model.initialize(order_type=am.OrderingType.NATURAL)
 
-    print("Initialization successful.")
+    print("\n  Initialization successful.\n", flush=True)
 
     x = model.create_vector()
 
@@ -569,11 +572,11 @@ def main():
         "max_line_search_iterations": 4,
     }
 
-    print("Solving integrated " "AMIGO model...")
+    print("\n  Solving integrated AMIGO model...\n", flush=True)
 
     optimizer.optimize(options)
 
-    print("Integrated AMIGO " "solve complete.")
+    print("\n  Integrated AMIGO solve complete.\n", flush=True)
 
     # Extract results
 
@@ -602,64 +605,74 @@ def main():
 
     # Integrated validation
 
-    print("=" * 70)
-    print("INTEGRATED AMIGO VS SEQUENTIAL PYTHON", "=" * 70)
+    print_heading("INTEGRATED AMIGO VS SEQUENTIAL PYTHON")
 
-    print("P_comm difference [W]:", max_difference(P_comm_amigo, P_comm_reference))
-
-    print("Isetpt difference [A]:", max_difference(Isetpt_amigo, Isetpt_reference))
-
-    print(
-        "Temperature difference [K]:",
-        max_difference(temperature_amigo, temperature_reference),
+    print_values(
+        [
+            (
+                "Communication power [W]",
+                f"{max_difference(P_comm_amigo, P_comm_reference):.3e}",
+            ),
+            (
+                "Solar current [A]",
+                f"{max_difference(Isetpt_amigo, Isetpt_reference):.3e}",
+            ),
+            (
+                "Temperature [K]",
+                f"{max_difference(temperature_amigo, temperature_reference):.3e}",
+            ),
+            (
+                "Reaction-wheel speed [1/s]",
+                f"{max_difference(w_RW_amigo, w_RW_reference):.3e}",
+            ),
+            (
+                "Reaction-wheel power [W]",
+                f"{max_difference(P_RW_amigo, P_RW_reference):.3e}",
+            ),
+            ("Solar power [W]", f"{max_difference(P_sol_amigo, P_sol_reference):.3e}"),
+            (
+                "Battery power [W]",
+                f"{max_difference(P_bat_amigo, P_bat_reference):.3e}",
+            ),
+            ("Battery SOC", f"{max_difference(SOC_amigo, SOC_reference):.3e}"),
+            (
+                "Download rate [CADRE units/s]",
+                f"{max_difference(Dr_amigo, Dr_reference):.3e}",
+            ),
+            (
+                "Downloaded data [CADRE units]",
+                f"{max_difference(Data_amigo, Data_reference):.3e}",
+            ),
+        ]
     )
 
-    print(
-        "Reaction-wheel speed difference [1/s]:",
-        max_difference(w_RW_amigo, w_RW_reference),
-    )
-
-    print(
-        "Reaction-wheel power difference [W]:",
-        max_difference(P_RW_amigo, P_RW_reference),
-    )
-
-    print("Solar-power difference [W]:", max_difference(P_sol_amigo, P_sol_reference))
-
-    print("Battery-power difference [W]:", max_difference(P_bat_amigo, P_bat_reference))
-
-    print("SOC difference:", max_difference(SOC_amigo, SOC_reference))
-
-    print("Bitrate difference [Gibyte/s]:", max_difference(Dr_amigo, Dr_reference))
-
-    print(
-        "Downloaded-data difference [Gibyte]:",
-        max_difference(Data_amigo, Data_reference),
-    )
-
-    print("=" * 70)
-    print("INTEGRATED CASE SUMMARY", "=" * 70)
-
-    print("Final Python SOC:", SOC_reference[-1])
-
-    print("Final AMIGO SOC:", SOC_amigo[-1])
-
-    print(
-        "Python current min / max [A]:",
-        np.min(I_bat_reference),
-        np.max(I_bat_reference),
-    )
+    print_heading("INTEGRATED CASE SUMMARY")
 
     I_bat_amigo = battery_current(P_bat_amigo, SOC_amigo, temperature_amigo[4])
 
-    print("AMIGO current min / max [A]:", np.min(I_bat_amigo), np.max(I_bat_amigo))
+    print_values(
+        [
+            ("Final Python SOC", f"{SOC_reference[-1]:.6f}"),
+            ("Final AMIGO SOC", f"{SOC_amigo[-1]:.6f}"),
+            (
+                "Python battery current [A]",
+                f"{np.min(I_bat_reference):.6f} to {np.max(I_bat_reference):.6f}",
+            ),
+            (
+                "AMIGO battery current [A]",
+                f"{np.min(I_bat_amigo):.6f} to {np.max(I_bat_amigo):.6f}",
+            ),
+        ]
+    )
 
-    print("Final Python downloaded data [Gibyte]:", Data_reference[-1])
+    print("  Downloaded data [CADRE data units]\n")
 
-    print("Final AMIGO downloaded data [Gibyte]:", Data_amigo[-1])
-
-    print(
-        "Original CADRE final downloaded data [Gibyte]:", data["0:Data"].reshape(-1)[-1]
+    print_values(
+        [
+            ("Python reference", f"{Data_reference[-1]:,.6f}"),
+            ("AMIGO", f"{Data_amigo[-1]:,.6f}"),
+            ("Original CADRE", f"{data['0:Data'].reshape(-1)[-1]:,.6f}"),
+        ]
     )
 
 

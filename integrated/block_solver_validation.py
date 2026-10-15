@@ -9,6 +9,7 @@ import numpy as np
 from scipy.linalg import cho_factor as real_cholesky
 from scipy.sparse import csr_matrix
 
+from integrated.cadre_reporting import print_validation
 from integrated.solvers.block_solver import SparseLUSolver, TrajectoryKKTSolver
 from integrated.validation_helpers import Matrix, Vector
 
@@ -299,7 +300,7 @@ def main():
 
     errors.update(validate_trajectory_inverse(rng))
 
-    print(errors)
+    print_validation("BLOCK SOLVER VALIDATION", errors)
 
     assert max(errors.values()) < 1e-9
 

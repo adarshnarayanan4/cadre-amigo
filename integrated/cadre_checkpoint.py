@@ -7,6 +7,7 @@ import time
 from amigo.algorithm.multiplier_initialization import MultiplierInitializer
 import numpy as np
 
+from integrated.cadre_reporting import print_heading, print_status
 from integrated.solvers.evaluator import ConsistentEvaluator
 
 
@@ -53,7 +54,8 @@ def load_checkpoint(optimizer, args, checkpoint_signature):
             if args.initial_barrier is None and "barrier_param" in saved:
                 args.initial_barrier = float(saved["barrier_param"])
 
-        print("Warm-starting from:", args.warm_start)
+        print_heading("WARM-START CHECKPOINT")
+        print(f"  {args.warm_start}\n", flush=True)
 
     return warm_same_problem, warm_bound_duals
 
@@ -225,18 +227,17 @@ class CheckpointManager:
             optimizer.evaluator.evaluate_objective_and_infeasibility(state)
             optimizer.evaluator.evaluate_residual(state)
 
-            print(
+            print_status(
                 (
-                    "Retained warm-start multipliers; complementarity:"
+                    "WARM-START MULTIPLIERS"
                     if preserve_multipliers
-                    else "Centered bound multipliers; complementarity:"
+                    else "CENTERED BOUND MULTIPLIERS"
                 ),
-                state.complementarity,
-                "primal residual:",
-                state.primal_infeas,
-                "dual residual:",
-                state.dual_infeas,
-                flush=True,
+                [
+                    ("Complementarity", f"{state.complementarity:.3e}"),
+                    ("Primal residual", f"{state.primal_infeas:.3e}"),
+                    ("Dual residual", f"{state.dual_infeas:.3e}"),
+                ],
             )
 
         # Repeated least-squares projection is useful early on. Near a
@@ -250,7 +251,10 @@ class CheckpointManager:
         ):
             optimizer.run_options["recompute_multipliers"] = False
 
-            print("Near feasibility: retaining Newton multiplier updates.", flush=True)
+            print_status(
+                "NEAR FEASIBILITY",
+                [("Multiplier updates", "Retaining Newton updates")],
+            )
 
         solution = state.current.get_solution()
         solution.copy_device_to_host()

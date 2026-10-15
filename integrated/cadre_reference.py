@@ -10,6 +10,7 @@ from cadre_paths import cadre_path
 from communication.communication_amigo import propagate_data_trapezoid
 from communication.communication_data_validation import communication_bit_rate
 from integrated.cadre_feasibility import feasibility_metrics, repair_baseline
+from integrated.cadre_reporting import print_feasibility, print_heading, print_values
 from integrated.design_amigo import DesignPhysics
 from integrated.design_reference import DesignLookups
 from parameters.parameters_reference import bspline_parameters, build_bspline_matrix
@@ -126,18 +127,17 @@ def prepare_case(args):
 
     window_duration = dt * num_intervals
 
-    print("=" * 70)
-    print("CADRE P_COMM OPTIMIZATION", "=" * 70)
+    print_heading("CADRE P_COMM OPTIMIZATION")
 
-    print("Original CADRE nodes:", full_n)
-
-    print("Optimization nodes:", n)
-
-    print("Number of intervals:", num_intervals)
-
-    print("Time step [s]:", dt)
-
-    print("Optimization window [hours]:", window_duration / 3600.0)
+    print_values(
+        [
+            ("Original CADRE nodes", f"{full_n:,}"),
+            ("Optimization nodes", f"{n:,}"),
+            ("Time intervals", f"{num_intervals:,}"),
+            ("Time step", f"{dt:.4f} s"),
+            ("Optimization window", f"{window_duration / 3600.0:.2f} hours"),
+        ]
+    )
 
     # Fixed CADRE trajectory inputs for the selected window
 
@@ -183,11 +183,14 @@ def prepare_case(args):
 
         CP_Isetpt = np.linalg.lstsq(B, Isetpt_target.T, rcond=None)[0].T
 
-    print("Communication-power control points:", m)
-
-    print(
-        "Fitted P_comm maximum error [W]:",
-        np.max(np.abs(B @ CP_P_comm - P_comm_target)),
+    print_values(
+        [
+            ("Communication-power controls", f"{m:,}"),
+            (
+                "Fitted power maximum error",
+                f"{np.max(np.abs(B @ CP_P_comm - P_comm_target)):.3e} W",
+            ),
+        ]
     )
 
     # Benchmark design represented on the selected spline grid
@@ -321,7 +324,7 @@ def prepare_case(args):
     original_SOC = SOC_baseline.copy()
     original_Data = Data_baseline.copy()
 
-    print("Original benchmark feasibility:", original_metrics)
+    print_feasibility("ORIGINAL BENCHMARK FEASIBILITY", original_metrics)
 
     CP_P_comm_baseline, baseline_state, baseline_metrics = repair_baseline(
         B,
@@ -357,14 +360,15 @@ def prepare_case(args):
     Data_baseline = baseline_state["Data"]
     Data_dot_baseline = baseline_state["Data_dot"]
 
-    print("=" * 70)
-    print("BASELINE", "=" * 70)
+    print_heading("FEASIBLE BASELINE")
 
-    print("Baseline final SOC:", SOC_baseline[-1])
-
-    print("Baseline SOC min / max:", np.min(SOC_baseline), np.max(SOC_baseline))
-
-    print("Baseline downloaded data [CADRE data units]:", Data_baseline[-1])
+    print_values(
+        [
+            ("Final SOC", f"{SOC_baseline[-1]:.6f}"),
+            ("SOC range", f"{np.min(SOC_baseline):.6f} to {np.max(SOC_baseline):.6f}"),
+            ("Downloaded data [CADRE units]", f"{Data_baseline[-1]:,.6f}"),
+        ]
+    )
 
     # Interior optimization starting point
 
@@ -433,14 +437,15 @@ def prepare_case(args):
 
     Data_guess, Data_dot_guess = propagate_data_trapezoid(0.0, Dr_guess, dt)
 
-    print("=" * 70)
-    print("OPTIMIZATION INITIAL GUESS", "=" * 70)
+    print_heading("OPTIMIZATION INITIAL GUESS")
 
-    print("Initial-guess final SOC:", SOC_guess[-1])
-
-    print("Initial-guess SOC min / max:", np.min(SOC_guess), np.max(SOC_guess))
-
-    print("Initial-guess downloaded data [CADRE data units]:", Data_guess[-1])
+    print_values(
+        [
+            ("Final SOC", f"{SOC_guess[-1]:.6f}"),
+            ("SOC range", f"{np.min(SOC_guess):.6f} to {np.max(SOC_guess):.6f}"),
+            ("Downloaded data [CADRE units]", f"{Data_guess[-1]:,.6f}"),
+        ]
+    )
 
     initial_guess = {
         "CP_P_comm": CP_P_comm_guess,

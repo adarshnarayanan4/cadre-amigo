@@ -25,6 +25,7 @@ requires the AMIGO environment's CMake and compiler on `PATH`.
 | `cadre_optimizer.py` | Solver selection and optimization execution |
 | `cadre_checkpoint.py` | Compatible warm starts and atomic checkpoint saves |
 | `cadre_results.py` | Independent replay, validation, and result files |
+| `cadre_reporting.py` | Spaced terminal sections, aligned metrics, and repair progress tables |
 | `design_reference.py` | Roll-dependent exposure, antenna gain, and voltage references |
 | `design_amigo.py` | Roll components and external lookup derivatives |
 | `solvers/` | Sparse LU, native LDL, and the CADRE evaluator adapter |

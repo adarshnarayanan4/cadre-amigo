@@ -9,6 +9,7 @@ from communication.communication_amigo import propagate_data_trapezoid
 from communication.communication_data_validation import communication_bit_rate
 from integrated.cadre_feasibility import feasibility_metrics
 from integrated.cadre_reference import extract_vector
+from integrated.cadre_reporting import print_results
 from power.power_amigo import solar_power, total_power
 from reaction_wheel.reaction_wheel_reference import (
     propagate_reaction_wheel_trapezoid,
@@ -344,62 +345,24 @@ def validate_and_save_results(case, args, result):
         replay_I_bat=I_bat_replay,
     )
 
-    print("Independent reference maximum errors:", replay_errors)
-    print("Optimized battery feasibility:", optimized_metrics)
-    print("Validated optimization:", validated)
-    print("Saved results to:", args.output.resolve())
-
-    # Results
-
-    print("=" * 70)
-    print("P_COMM OPTIMIZATION RESULTS", "=" * 70)
-
-    print("Baseline downloaded data [CADRE data units]:", Data_baseline[-1])
-
-    print("Initial-guess downloaded data [CADRE data units]:", Data_guess[-1])
-
-    print("Optimized downloaded data [CADRE data units]:", Data_amigo[-1])
-
-    print(
-        "Improvement over baseline [CADRE data units]:",
-        Data_amigo[-1] - Data_baseline[-1],
-    )
-
-    print(
-        "Percent improvement over baseline:",
-        (
+    diagnostics = {
+        "initial_guess_data": Data_guess[-1],
+        "optimized_data": Data_amigo[-1],
+        "data_gain": Data_amigo[-1] - Data_baseline[-1],
+        "improvement_percent": (
             100.0 * (Data_amigo[-1] / Data_baseline[-1] - 1.0)
             if Data_baseline[-1] > 0
             else float("nan")
         ),
-    )
+        "control_change": np.max(np.abs(CP_P_comm_amigo - CP_P_comm)),
+        "control_range": (np.min(CP_P_comm_amigo), np.max(CP_P_comm_amigo)),
+        "power_range": (np.min(P_comm_amigo), np.max(P_comm_amigo)),
+        "endpoint_soc": (SOC_amigo[0], SOC_amigo[-1]),
+        "original_data": data["0:Data"].reshape(-1)[n - 1],
+        "battery_metrics": optimized_metrics,
+    }
 
-    print(
-        "Maximum CP_P_comm change from CADRE design [W]:",
-        np.max(np.abs(CP_P_comm_amigo - CP_P_comm)),
-    )
-
-    print(
-        "Optimized CP_P_comm min / max [W]:",
-        np.min(CP_P_comm_amigo),
-        np.max(CP_P_comm_amigo),
-    )
-
-    print("Optimized P_comm min / max [W]:", np.min(P_comm_amigo), np.max(P_comm_amigo))
-
-    print("Optimized SOC min / max:", np.min(SOC_amigo), np.max(SOC_amigo))
-
-    print("Initial / final SOC:", SOC_amigo[0], SOC_amigo[-1])
-
-    print("Battery current min / max [A]", "(constrained to -10 <= I_bat <= 5 A)")
-    print(np.min(I_bat_amigo), np.max(I_bat_amigo))
-
-    print(
-        "Original CADRE final downloaded data [CADRE data units]:",
-        data["0:Data"].reshape(-1)[n - 1],
-    )
-
-    print("=" * 70)
+    print_results(summary, diagnostics, args.output.resolve())
 
     if not validated:
         raise RuntimeError(

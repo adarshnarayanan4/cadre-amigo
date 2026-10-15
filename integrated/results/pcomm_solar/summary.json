@@ -32,10 +32,22 @@
   "initial_soc_optimized": true,
   "solar_currents_optimized": true,
   "solar_voltage_coupled": true,
+  "roll_optimized": false,
+  "allocation_optimized": false,
+  "design_physics_restored": false,
+  "allocation_min": 1.0,
+  "allocation_max": 1.0,
+  "roll_min_rad": 0.17863786334217727,
+  "roll_max_rad": 1.543415112467393,
   "design_variable_count": 3901,
   "baseline_SOC_initial": 0.8157066533883356,
   "SOC_initial": 0.999999999870763,
-  "solver_time_s": 1002.6112461250159,
+  "solver_time_s": 950.5386315419455,
+  "linear_solver": "superlu",
+  "objective_evaluator": "ConsistentEvaluator",
+  "warm_start": null,
+  "solver_time_scope": "cold solver phase",
+  "initial_barrier_param": 0.01,
   "optimized_data": 5264.456876690892,
   "improvement_percent": 4.082066248566885,
   "data_units": "CADRE benchmark convention (legacy label: Gibyte)",
@@ -58,7 +70,8 @@
     "P_bat_W": 1.8079981956020674e-13,
     "SOC": 2.220446049250313e-15,
     "Dr": 3.552713678800501e-15,
-    "Data": 9.094947017729282e-13
+    "Data": 9.094947017729282e-13,
+    "roll_angle_rad": 2.220446049250313e-16
   },
-  "scope": "P_comm, optional initial SOC and 12 solar-current profiles; voltage responds to temperature and currents unless --legacy-fixed-voltage; attitude and geometry fixed; battery limits and SOC periodicity enforced"
+  "scope": "P_comm, optional initial SOC and 12 solar-current profiles; voltage responds to temperature and currents unless --legacy-fixed-voltage; optional roll and cell/radiator allocation; orbit, fin and antenna angles fixed; battery limits and SOC periodicity enforced"
 }

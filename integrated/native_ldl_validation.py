@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 from scipy.sparse import csr_matrix
 
+from integrated.cadre_reporting import print_validation
 from integrated.solvers.native_ldl import NativeLDLSolver
 from integrated.validation_helpers import Matrix, Vector
 
@@ -83,7 +84,7 @@ def main():
 
     assert max(errors.values()) < 1e-9
 
-    print(errors)
+    print_validation("NATIVE LDL VALIDATION", errors)
 
     Path("integrated/results/native_ldl_validation.json").write_text(
         json.dumps(errors, indent=2) + "\n"

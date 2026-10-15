@@ -9,6 +9,7 @@ from scipy.sparse import csr_matrix
 
 from cadre_paths import cadre_path
 from communication.communication_amigo import CommunicationBitRate
+from integrated.cadre_reporting import print_validation
 from integrated.design_amigo import (
     DesignPhysics,
     LookupResiduals,
@@ -197,7 +198,7 @@ def main():
         if assembly_error > 1e-6:
             raise AssertionError("Assembled AMIGO lookup Hessian failed")
 
-    print(result, flush=True)
+    print_validation("DESIGN PHYSICS VALIDATION", result)
 
     if (
         jac_error > 1e-6

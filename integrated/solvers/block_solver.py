@@ -6,6 +6,8 @@ from scipy.linalg import cho_factor, cho_solve, eigh, lu_factor, lu_solve
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import LinearOperator, gmres, splu
 
+from integrated.cadre_reporting import print_kkt_matrix, print_status
+
 
 class TrajectoryKKTSolver:
     """Invert [H, J.T; J, 0] through a square trajectory Jacobian.
@@ -142,14 +144,12 @@ class SparseLUSolver(LinearSolver):
         self.factor_count += 1
 
         if self.factor_count <= 2:
-            print(
-                "KKT matrix:",
+            print_kkt_matrix(
                 matrix.shape,
-                "nnz:",
                 matrix.nnz,
-                "max magnitude:",
                 np.max(np.abs(matrix.data)),
-                flush=True,
+                self.factor_count,
+                self.schur_key,
             )
 
         if not np.all(np.isfinite(matrix.data)):
@@ -299,10 +299,9 @@ class SparseLUSolver(LinearSolver):
                 shape=self.kkt_matrix.shape,
             )
 
-            print(
-                "Shared curvature safeguard; scaled diagonal shift:",
-                shift,
-                flush=True,
+            print_status(
+                "SHARED CURVATURE SAFEGUARD",
+                [("Scaled diagonal shift", f"{shift:.3e}")],
             )
 
     def _schur_product(self, values):
@@ -348,10 +347,9 @@ class SparseLUSolver(LinearSolver):
             if np.isfinite(error) and error < 1e-10:
                 return result
 
-            print(
-                "Refreshing shared-block factorization; linear residual:",
-                error,
-                flush=True,
+            print_status(
+                "REFRESHING SHARED-BLOCK FACTORIZATION",
+                [("Linear residual", f"{error:.3e}")],
             )
 
             self._refresh_schur()
@@ -420,10 +418,9 @@ class SparseLUSolver(LinearSolver):
             result, target = candidate, self.unregularized_kkt
             self.solve_unregularized = True
 
-            print(
-                "Recovered original Newton system; linear residual:",
-                original_error,
-                flush=True,
+            print_status(
+                "RECOVERED ORIGINAL NEWTON SYSTEM",
+                [("Linear residual", f"{original_error:.3e}")],
             )
 
         return result, target
@@ -450,10 +447,9 @@ class SparseLUSolver(LinearSolver):
         tolerance = 1e-5 if self.schur_key == "normal_equations" else 1e-7
 
         if self.schur_key == "normal_equations" and error > 1e-7:
-            print(
-                "Approximate multiplier initialization; linear residual:",
-                error,
-                flush=True,
+            print_status(
+                "APPROXIMATE MULTIPLIER INITIALIZATION",
+                [("Linear residual", f"{error:.3e}")],
             )
 
         if not np.isfinite(error) or error > tolerance:

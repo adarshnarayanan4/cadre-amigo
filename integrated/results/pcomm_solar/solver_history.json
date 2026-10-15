@@ -2,7 +2,7 @@
   {
     "status": 0,
     "iteration": 0,
-    "time": 6.097221167001408,
+    "time": 5.943365374987479,
     "residual": 84.8553431728419,
     "barrier_param": 0.01,
     "inertia_delta": 0.0,
@@ -16,7 +16,7 @@
   {
     "status": 0,
     "iteration": 1,
-    "time": 18.938640250009485,
+    "time": 19.131399041973054,
     "residual": 99.97784603154776,
     "barrier_param": 0.01,
     "filter_size": 0,
@@ -34,7 +34,7 @@
   {
     "status": 0,
     "iteration": 2,
-    "time": 33.15735345802386,
+    "time": 32.11272279196419,
     "residual": 613.4033233160465,
     "barrier_param": 0.01,
     "filter_size": 1,
@@ -52,7 +52,7 @@
   {
     "status": 0,
     "iteration": 3,
-    "time": 45.92983175002155,
+    "time": 45.32293683296302,
     "residual": 232.68541957398813,
     "barrier_param": 0.01,
     "filter_size": 2,
@@ -70,7 +70,7 @@
   {
     "status": 0,
     "iteration": 4,
-    "time": 58.65720645801048,
+    "time": 58.25533033296233,
     "residual": 373.572921866181,
     "barrier_param": 0.01,
     "filter_size": 3,
@@ -88,7 +88,7 @@
   {
     "status": 0,
     "iteration": 5,
-    "time": 65.45288866700139,
+    "time": 65.49284433299908,
     "residual": 431.57159744032583,
     "barrier_param": 0.01,
     "filter_size": 4,
@@ -106,7 +106,7 @@
   {
     "status": 0,
     "iteration": 6,
-    "time": 72.42201287500211,
+    "time": 72.71358358295402,
     "residual": 26421.315950092674,
     "barrier_param": 0.01,
     "filter_size": 5,
@@ -124,7 +124,7 @@
   {
     "status": 0,
     "iteration": 7,
-    "time": 79.38207395799691,
+    "time": 80.0606987499632,
     "residual": 403.63092875996034,
     "barrier_param": 0.01,
     "filter_size": 6,
@@ -142,7 +142,7 @@
   {
     "status": 0,
     "iteration": 8,
-    "time": 86.2472850830236,
+    "time": 87.6485540419817,
     "residual": 462.71468142814,
     "barrier_param": 0.01,
     "filter_size": 7,
@@ -160,7 +160,7 @@
   {
     "status": 0,
     "iteration": 9,
-    "time": 93.39308458301821,
+    "time": 95.36272708297474,
     "residual": 2448.939130446484,
     "barrier_param": 0.01,
     "filter_size": 8,
@@ -178,7 +178,7 @@
   {
     "status": 0,
     "iteration": 10,
-    "time": 100.30496675000177,
+    "time": 102.92179412499536,
     "residual": 485.44710572885555,
     "barrier_param": 0.01,
     "filter_size": 9,
@@ -196,7 +196,7 @@
   {
     "status": 0,
     "iteration": 11,
-    "time": 107.13935120802489,
+    "time": 110.56119491695426,
     "residual": 117.09689644277127,
     "barrier_param": 0.01,
     "filter_size": 10,
@@ -214,7 +214,7 @@
   {
     "status": 0,
     "iteration": 12,
-    "time": 114.07538424999802,
+    "time": 118.04018308297964,
     "residual": 397.0409004330081,
     "barrier_param": 0.01,
     "filter_size": 11,
@@ -232,7 +232,7 @@
   {
     "status": 0,
     "iteration": 13,
-    "time": 120.79474366700742,
+    "time": 125.332003916963,
     "residual": 283.72370521786337,
     "barrier_param": 0.01,
     "filter_size": 12,
@@ -250,7 +250,7 @@
   {
     "status": 0,
     "iteration": 14,
-    "time": 127.87501800002065,
+    "time": 134.02709254197543,
     "residual": 7.440985731344483,
     "barrier_param": 0.01,
     "filter_size": 11,
@@ -268,7 +268,7 @@
   {
     "status": 0,
     "iteration": 15,
-    "time": 140.77696416701656,
+    "time": 148.8107928329846,
     "residual": 3699.4750687233995,
     "barrier_param": 0.001,
     "filter_size": 1,
@@ -286,7 +286,7 @@
   {
     "status": 0,
     "iteration": 16,
-    "time": 153.72155745801865,
+    "time": 163.40357083297567,
     "residual": 316.6382005141875,
     "barrier_param": 0.001,
     "filter_size": 2,
@@ -304,7 +304,7 @@
   {
     "status": 0,
     "iteration": 17,
-    "time": 168.34760729200207,
+    "time": 178.16855370794656,
     "residual": 74.3412139618595,
     "barrier_param": 0.001,
     "filter_size": 2,
@@ -322,7 +322,7 @@
   {
     "status": 0,
     "iteration": 18,
-    "time": 181.77804395800922,
+    "time": 194.03010024997639,
     "residual": 7.571104900816878,
     "barrier_param": 0.001,
     "filter_size": 2,
@@ -340,7 +340,7 @@
   {
     "status": 0,
     "iteration": 19,
-    "time": 195.56882100002258,
+    "time": 208.5123097919859,
     "residual": 1853.0789372829947,
     "barrier_param": 0.0001,
     "filter_size": 1,
@@ -358,7 +358,7 @@
   {
     "status": 0,
     "iteration": 20,
-    "time": 209.1041002080019,
+    "time": 222.85675145796267,
     "residual": 1500.2188442881704,
     "barrier_param": 0.0001,
     "filter_size": 1,
@@ -376,7 +376,7 @@
   {
     "status": 0,
     "iteration": 21,
-    "time": 222.56474012500257,
+    "time": 237.33221270795912,
     "residual": 847.809748755057,
     "barrier_param": 0.0001,
     "filter_size": 1,
@@ -394,7 +394,7 @@
   {
     "status": 0,
     "iteration": 22,
-    "time": 235.9422538750223,
+    "time": 251.843017416948,
     "residual": 1.3491798466609077,
     "barrier_param": 0.0001,
     "filter_size": 1,
@@ -412,7 +412,7 @@
   {
     "status": 0,
     "iteration": 23,
-    "time": 249.8569614580192,
+    "time": 268.267967999971,
     "residual": 0.2672625542405293,
     "barrier_param": 0.0001,
     "filter_size": 1,
@@ -430,7 +430,7 @@
   {
     "status": 0,
     "iteration": 24,
-    "time": 263.57006087500486,
+    "time": 284.6064289579517,
     "residual": 0.013145805466196293,
     "barrier_param": 0.0001,
     "filter_size": 2,
@@ -448,7 +448,7 @@
   {
     "status": 0,
     "iteration": 25,
-    "time": 277.34914462501183,
+    "time": 302.56219124997733,
     "residual": 1683.9386997618044,
     "barrier_param": 1e-05,
     "filter_size": 0,
@@ -466,7 +466,7 @@
   {
     "status": 0,
     "iteration": 26,
-    "time": 290.2409978330252,
+    "time": 318.24625637498684,
     "residual": 1361.260756956067,
     "barrier_param": 1e-05,
     "filter_size": 1,
@@ -484,7 +484,7 @@
   {
     "status": 0,
     "iteration": 27,
-    "time": 303.4044335000217,
+    "time": 333.2552286669961,
     "residual": 483.86422278656096,
     "barrier_param": 1e-05,
     "filter_size": 2,
@@ -502,7 +502,7 @@
   {
     "status": 0,
     "iteration": 28,
-    "time": 311.344096750021,
+    "time": 341.65967141697183,
     "residual": 213.3642325027953,
     "barrier_param": 1e-05,
     "filter_size": 3,
@@ -520,7 +520,7 @@
   {
     "status": 0,
     "iteration": 29,
-    "time": 319.3116515830043,
+    "time": 350.2517481249524,
     "residual": 0.048339224302749007,
     "barrier_param": 1e-05,
     "filter_size": 3,
@@ -538,7 +538,7 @@
   {
     "status": 0,
     "iteration": 30,
-    "time": 333.44221462501446,
+    "time": 364.5493664579699,
     "residual": 0.009889864755474008,
     "barrier_param": 1e-05,
     "filter_size": 2,
@@ -556,7 +556,7 @@
   {
     "status": 0,
     "iteration": 31,
-    "time": 348.5298710420029,
+    "time": 379.14589445799356,
     "residual": 0.00016117312275332543,
     "barrier_param": 1e-05,
     "filter_size": 2,
@@ -574,7 +574,7 @@
   {
     "status": 0,
     "iteration": 32,
-    "time": 364.2783682080044,
+    "time": 393.57915683294414,
     "residual": 1848.5305713651658,
     "barrier_param": 1.0000000000000002e-06,
     "filter_size": 1,
@@ -592,7 +592,7 @@
   {
     "status": 0,
     "iteration": 33,
-    "time": 380.9435642080207,
+    "time": 407.5970320419874,
     "residual": 1379.7985478787562,
     "barrier_param": 1.0000000000000002e-06,
     "filter_size": 2,
@@ -610,7 +610,7 @@
   {
     "status": 0,
     "iteration": 34,
-    "time": 391.7772939580027,
+    "time": 417.01842516695615,
     "residual": 923.5597665176218,
     "barrier_param": 1.0000000000000002e-06,
     "filter_size": 3,
@@ -628,7 +628,7 @@
   {
     "status": 0,
     "iteration": 35,
-    "time": 402.2533770420123,
+    "time": 425.70401799998945,
     "residual": 658.9952549046911,
     "barrier_param": 1.0000000000000002e-06,
     "filter_size": 4,
@@ -646,7 +646,7 @@
   {
     "status": 0,
     "iteration": 36,
-    "time": 412.7332780830038,
+    "time": 434.15049524995266,
     "residual": 0.13082786565927618,
     "barrier_param": 1.0000000000000002e-06,
     "filter_size": 4,
@@ -664,7 +664,7 @@
   {
     "status": 0,
     "iteration": 37,
-    "time": 431.0341434170259,
+    "time": 448.3813398749917,
     "residual": 0.0069022282469813736,
     "barrier_param": 1.0000000000000002e-06,
     "filter_size": 3,
@@ -682,7 +682,7 @@
   {
     "status": 0,
     "iteration": 38,
-    "time": 450.9772741670022,
+    "time": 462.48177483299514,
     "residual": 0.00031942148564981536,
     "barrier_param": 1.0000000000000002e-06,
     "filter_size": 3,
@@ -700,7 +700,7 @@
   {
     "status": 0,
     "iteration": 39,
-    "time": 469.7224231250002,
+    "time": 476.46158170799026,
     "residual": 0.0001182911762398531,
     "barrier_param": 1.0000000000000002e-06,
     "filter_size": 3,
@@ -718,7 +718,7 @@
   {
     "status": 0,
     "iteration": 40,
-    "time": 488.4923376670049,
+    "time": 490.56370237498777,
     "residual": 1851.7339138541656,
     "barrier_param": 1.0000000000000002e-07,
     "filter_size": 1,
@@ -736,7 +736,7 @@
   {
     "status": 0,
     "iteration": 41,
-    "time": 507.6694892079977,
+    "time": 504.6422072079731,
     "residual": 1640.7070722839503,
     "barrier_param": 1.0000000000000002e-07,
     "filter_size": 2,
@@ -754,7 +754,7 @@
   {
     "status": 0,
     "iteration": 42,
-    "time": 527.0724509580177,
+    "time": 518.7712246250012,
     "residual": 897.3092202378776,
     "barrier_param": 1.0000000000000002e-07,
     "filter_size": 3,
@@ -772,7 +772,7 @@
   {
     "status": 0,
     "iteration": 43,
-    "time": 543.755852125003,
+    "time": 533.0212496249587,
     "residual": 0.6206419455067388,
     "barrier_param": 1.0000000000000002e-07,
     "filter_size": 2,
@@ -790,7 +790,7 @@
   {
     "status": 0,
     "iteration": 44,
-    "time": 559.2264471670205,
+    "time": 547.2981268749572,
     "residual": 0.03508819681553032,
     "barrier_param": 1.0000000000000002e-07,
     "filter_size": 2,
@@ -808,7 +808,7 @@
   {
     "status": 0,
     "iteration": 45,
-    "time": 573.5703162499995,
+    "time": 561.4410070419544,
     "residual": 1652.4679043608612,
     "barrier_param": 1.0000000000000004e-08,
     "filter_size": 1,
@@ -826,7 +826,7 @@
   {
     "status": 0,
     "iteration": 46,
-    "time": 587.8857409580087,
+    "time": 575.8633020829875,
     "residual": 1153.4606827363948,
     "barrier_param": 1.0000000000000004e-08,
     "filter_size": 2,
@@ -844,7 +844,7 @@
   {
     "status": 0,
     "iteration": 47,
-    "time": 616.4846694169973,
+    "time": 589.949526041979,
     "residual": 3.706219969999282,
     "barrier_param": 1.0000000000000004e-08,
     "filter_size": 3,
@@ -862,7 +862,7 @@
   {
     "status": 0,
     "iteration": 48,
-    "time": 633.7246720830153,
+    "time": 604.5596009169822,
     "residual": 0.1141172017007412,
     "barrier_param": 1.0000000000000004e-08,
     "filter_size": 3,
@@ -880,7 +880,7 @@
   {
     "status": 0,
     "iteration": 49,
-    "time": 649.7641811250069,
+    "time": 618.8368383329944,
     "residual": 0.007832486738870449,
     "barrier_param": 1.0000000000000004e-08,
     "filter_size": 2,
@@ -898,7 +898,7 @@
   {
     "status": 0,
     "iteration": 50,
-    "time": 664.5011769170233,
+    "time": 633.0234532499453,
     "residual": 0.0011849015459774812,
     "barrier_param": 1.0000000000000004e-08,
     "filter_size": 2,
@@ -916,7 +916,7 @@
   {
     "status": 0,
     "iteration": 51,
-    "time": 679.5285724170099,
+    "time": 647.8507209579693,
     "residual": 0.0011842496889507535,
     "barrier_param": 1.0000000000000004e-08,
     "filter_size": 1,
@@ -934,7 +934,7 @@
   {
     "status": 0,
     "iteration": 52,
-    "time": 694.2339509580052,
+    "time": 662.1999299169984,
     "residual": 1653.4888630142739,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 1,
@@ -952,7 +952,7 @@
   {
     "status": 0,
     "iteration": 53,
-    "time": 709.4524500830157,
+    "time": 676.4057992499438,
     "residual": 536.1954969425681,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 2,
@@ -970,7 +970,7 @@
   {
     "status": 0,
     "iteration": 54,
-    "time": 717.9996040420083,
+    "time": 684.6683961669914,
     "residual": 2.1487098064694155,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 3,
@@ -988,7 +988,7 @@
   {
     "status": 0,
     "iteration": 55,
-    "time": 726.616903667018,
+    "time": 693.0762689999538,
     "residual": 0.20692307500215965,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 4,
@@ -1006,7 +1006,7 @@
   {
     "status": 0,
     "iteration": 56,
-    "time": 735.1526065830258,
+    "time": 702.4138663749909,
     "residual": 0.06976177000206275,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 4,
@@ -1024,7 +1024,7 @@
   {
     "status": 0,
     "iteration": 57,
-    "time": 750.2110340830113,
+    "time": 717.0439032079885,
     "residual": 0.051552714337956475,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 5,
@@ -1042,7 +1042,7 @@
   {
     "status": 0,
     "iteration": 58,
-    "time": 766.2314149170124,
+    "time": 731.6291007919936,
     "residual": 0.0515332027548544,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 5,
@@ -1060,7 +1060,7 @@
   {
     "status": 0,
     "iteration": 59,
-    "time": 780.8542723749997,
+    "time": 746.1165783749893,
     "residual": 0.05153320248919543,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 6,
@@ -1078,7 +1078,7 @@
   {
     "status": 0,
     "iteration": 60,
-    "time": 795.6046871670114,
+    "time": 760.3578552919789,
     "residual": 0.0515332022981678,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 6,
@@ -1096,7 +1096,7 @@
   {
     "status": 0,
     "iteration": 61,
-    "time": 810.3269948750094,
+    "time": 775.0875714169815,
     "residual": 0.05153320231240601,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 5,
@@ -1114,7 +1114,7 @@
   {
     "status": 0,
     "iteration": 62,
-    "time": 825.4993451250193,
+    "time": 789.7791272919858,
     "residual": 0.05153320238634492,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 6,
@@ -1132,7 +1132,7 @@
   {
     "status": 0,
     "iteration": 63,
-    "time": 840.3355840830191,
+    "time": 804.9124542079517,
     "residual": 0.05153320228107762,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 5,
@@ -1150,7 +1150,7 @@
   {
     "status": 0,
     "iteration": 64,
-    "time": 856.4772126250027,
+    "time": 820.095581374946,
     "residual": 0.05153320230066531,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 5,
@@ -1168,7 +1168,7 @@
   {
     "status": 0,
     "iteration": 65,
-    "time": 871.3958597920137,
+    "time": 835.0301215419895,
     "residual": 0.05153320231557289,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 6,
@@ -1186,7 +1186,7 @@
   {
     "status": 0,
     "iteration": 66,
-    "time": 885.9371490000049,
+    "time": 849.4736714169849,
     "residual": 0.0515332023491894,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 7,
@@ -1204,7 +1204,7 @@
   {
     "status": 0,
     "iteration": 67,
-    "time": 901.3064403750177,
+    "time": 863.9807082079933,
     "residual": 0.05153320227792999,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 6,
@@ -1222,7 +1222,7 @@
   {
     "status": 0,
     "iteration": 68,
-    "time": 916.6839751250227,
+    "time": 878.6809089999879,
     "residual": 0.05153320230807297,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 7,
@@ -1240,7 +1240,7 @@
   {
     "status": 0,
     "iteration": 69,
-    "time": 932.4515161669988,
+    "time": 893.2882859999663,
     "residual": 0.05153320240413809,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 8,
@@ -1258,7 +1258,7 @@
   {
     "status": 0,
     "iteration": 70,
-    "time": 948.9254133750219,
+    "time": 907.7119300419581,
     "residual": 0.05153320233856722,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 8,
@@ -1276,7 +1276,7 @@
   {
     "status": 0,
     "iteration": 71,
-    "time": 968.7505880420213,
+    "time": 921.8455961669679,
     "residual": 0.05153320233011071,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 8,
@@ -1294,7 +1294,7 @@
   {
     "status": 0,
     "iteration": 72,
-    "time": 987.9207929580007,
+    "time": 936.2805349580012,
     "residual": 0.05153320242583663,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 7,
@@ -1312,7 +1312,7 @@
   {
     "status": 2,
     "iteration": 73,
-    "time": 1002.6112461250159,
+    "time": 950.5386315419455,
     "residual": 0.05153320244884073,
     "barrier_param": 1.0000000000000005e-09,
     "filter_size": 8,

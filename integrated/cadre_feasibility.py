@@ -5,6 +5,7 @@ from scipy.optimize import linprog
 from scipy.sparse import csr_matrix, eye, hstack, vstack
 
 from battery.battery_reference import Cp, battery_voltage, eta, sigma
+from integrated.cadre_reporting import print_repair_header, print_repair_iteration
 
 
 def feasibility_metrics(state, initial_soc):
@@ -49,6 +50,8 @@ def repair_baseline(
         [hstack([identity, -identity]), hstack([-identity, -identity])], format="csr"
     )
     distance_rhs = np.concatenate([target_cp, -target_cp])
+
+    print_repair_header(interior)
 
     for iteration in range(30):
         state = replay(cp)
@@ -100,9 +103,7 @@ def repair_baseline(
 
         metrics = feasibility_metrics(state, initial_soc)
 
-        label = "Interior-start repair" if interior else "Baseline repair"
-
-        print(f"{label} {iteration + 1}: {metrics}", flush=True)
+        print_repair_iteration(iteration + 1, metrics)
 
         if (
             abs(metrics["periodicity_error"]) < 1e-9

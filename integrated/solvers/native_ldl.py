@@ -5,6 +5,8 @@ from amigo.algorithm.solvers.linear_solver import LinearSolver
 import numpy as np
 from scipy.sparse import csr_matrix
 
+from integrated.cadre_reporting import print_status
+
 
 def temporal_kkt_ordering(model, nodes):
     """Place each variable after its last local use; retain global designs last."""
@@ -156,7 +158,7 @@ class NativeLDLSolver(LinearSolver):
         self.last_flag = self.ldl.factor(self.native_diagonal)
 
         if self.last_flag:
-            print("Native LDL factor flag:", self.last_flag, flush=True)
+            print_status("NATIVE LDL FACTORIZATION", [("Factor flag", self.last_flag)])
 
         return self.last_flag
 
@@ -211,13 +213,12 @@ class NativeLDLSolver(LinearSolver):
             order=am.OrderingType.NATURAL,
         )
 
-        print(
-            "Native LDL symbolic initialized:",
-            n,
-            "rows,",
-            pattern.nnz,
-            "entries",
-            flush=True,
+        print_status(
+            "NATIVE LDL SYMBOLIC INITIALIZATION",
+            [
+                ("Dimensions", f"{n:,} x {m:,}"),
+                ("Pattern entries", f"{pattern.nnz:,}"),
+            ],
         )
 
     def _map_entries(self, matrix, slot):
