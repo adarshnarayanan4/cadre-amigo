@@ -14,6 +14,8 @@ So far I have worked through:
 - Solar exposed area
 - Thermal
 - Power
+- Battery, reaction wheels, and communication
+- Integrated single-case analysis and constrained optimization
 
 ## Folder Layout
 
@@ -25,6 +27,7 @@ cadre-amigo/
 ├── solar/
 ├── thermal/
 ├── power/
+├── integrated/
 ├── CMakeLists.txt
 └── README.md
 ```
@@ -167,11 +170,20 @@ Doing the subsystems separately makes it easier to find where differences are co
 
 ## Next Steps
 
-The next things I plan to work on are:
+The integrated model now couples the subsystems, including temperature-dependent
+solar voltage, battery-current limits, and periodic state of charge. The validated
+full 12-hour case optimizes communication power, solar currents, and initial SOC
+with prescribed roll and surface allocation.
 
-- battery/state-of-charge model
-- improve the MBI recreation where needed
-- move more of the lookup/interpolation behavior directly into AMIGO
-- couple the individual subsystems into one full model
+The next steps are to converge and independently validate the full-size
+roll/allocation extension, and extend the current single-case study toward the
+original multidisciplinary problem. The shorter roll/allocation demonstration
+is validated; the full-size extension is still unfinished.
 
 The long-term goal is to reproduce the full CADRE multidisciplinary model in AMIGO and then use it for coupled analysis and optimization.
+
+## Integrated optimization
+
+The coupled, single-case optimization and its validation scripts are documented
+in [integrated/README.md](integrated/README.md). The [meeting result](integrated/docs/meeting_result.md)
+links to the validated full 12-hour case.

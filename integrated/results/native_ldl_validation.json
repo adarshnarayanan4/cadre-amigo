@@ -1,0 +1,5 @@
+{
+  "expanded_hessian_0.0_dense_max_error": 6.661338147750939e-16,
+  "expanded_hessian_0.4_dense_max_error": 1.7763568394002505e-15,
+  "metric_regularization_preserves_barrier_max_error": 8.881784197001252e-16
+}

@@ -119,24 +119,27 @@ def propagate_temperature_trapezoid(
 
 
 class ThermalDynamics(am.Component):
-    def __init__(self):
+    def __init__(self, fixed_geometry=False):
         super().__init__()
+        self.fixed_geometry = fixed_geometry
 
         self.add_input("temperature", shape=(5,))
         self.add_input("temperature_dot", shape=(5,))
-        self.add_input("exposedArea", shape=(84,))
-        self.add_input("LOS")
+        add_geometry = self.add_data if fixed_geometry else self.add_input
+        add_geometry("exposedArea", shape=(84,))
+        add_geometry("LOS")
         self.add_input("P_comm")
-        self.add_input("cellInstd", shape=(84,))
+        add_geometry("cellInstd", shape=(84,))
         self.add_constraint("res", shape=(5,))
 
     def compute(self):
         temperature = self.inputs["temperature"]
         temperature_dot = self.inputs["temperature_dot"]
-        exposedArea = self.inputs["exposedArea"]
-        LOS = self.inputs["LOS"]
+        geometry = self.data if self.fixed_geometry else self.inputs
+        exposedArea = geometry["exposedArea"]
+        LOS = geometry["LOS"]
         P_comm = self.inputs["P_comm"]
-        cellInstd = self.inputs["cellInstd"]
+        cellInstd = geometry["cellInstd"]
 
         f = 5 * [0.0]
 

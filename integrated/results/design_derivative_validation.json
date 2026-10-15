@@ -1,0 +1,10 @@
+{
+  "jacobian_direction_relative_error": 9.788388016795935e-10,
+  "lagrangian_hessian_direction_relative_error": 3.355311881989589e-09,
+  "thermal_rhs_reference_max_error": 2.0816681711721685e-17,
+  "voltage_reference_max_error": 0.0,
+  "exposure_original_tensor_max_error": 2.342960894741175e-16,
+  "gain_original_tensor_max_error": 6.5503158452884236e-15,
+  "amigo_assembled_kkt_direction_relative_error": 2.967908703408261e-10,
+  "amigo_fixed_allocation_kkt_direction_relative_error": 2.7297988244902837e-10
+}

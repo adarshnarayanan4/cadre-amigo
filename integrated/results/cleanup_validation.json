@@ -1,0 +1,36 @@
+{
+  "validated": true,
+  "scope": "Source organization and naming cleanup; original optimization artifacts preserved",
+  "python_modules_checked": 27,
+  "generated_cpp_unchanged": {
+    "default_solar": true,
+    "fixed_design_reference": true
+  },
+  "benchmark_numerical_statements_unchanged": true,
+  "full_size_warm_start_check": {
+    "nodes": 1500,
+    "design_variables": 3901,
+    "iterations": 3,
+    "validated": true,
+    "nlp_error": 1.0000387749820037e-09,
+    "primal_infeasibility": 1.2357226353287842e-11,
+    "downloaded_data_difference": 9.094947017729282e-13,
+    "output_directory": "/tmp/cadre-cleanup-reference",
+    "runtime_scope": "checkpoint continuation used for refactor verification; not a cold runtime benchmark"
+  },
+  "validation_artifacts": [
+    "block_solver_validation.json",
+    "native_ldl_validation.json",
+    "evaluator_validation.json",
+    "checkpoint_validation.json",
+    "design_derivative_validation.json",
+    "voltage_derivative_validation.json"
+  ],
+  "plot_checks": [
+    "fixed-design reference",
+    "solar currents",
+    "short roll/allocation case"
+  ],
+  "solar_comparison_metrics_unchanged": true,
+  "preserved_reference_summary_sha256": "ea605cd4b872cf3021873cb73576a4ad92a582129edfb2ce705b8b22b76b41ef"
+}

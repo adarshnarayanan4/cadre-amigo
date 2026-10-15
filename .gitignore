@@ -5,3 +5,10 @@ _amigo_build/
 cadre_*.cpp
 cadre_*.h
 .DS_Store
+
+# Transient optimization state; retain saved summaries and trajectories.
+integrated/results/**/*.log
+integrated/results/**/checkpoint*.npz
+integrated/results/**/best_checkpoint*.npz
+integrated/results/**/restart*.npz
+integrated/results/**/diagnostic_snapshot.npz

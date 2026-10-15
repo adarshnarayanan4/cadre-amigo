@@ -1,0 +1,9 @@
+{
+  "fixed_initial_SOC": 0.8157066533883356,
+  "optimized_initial_SOC": 0.7635836407833795,
+  "fixed_initial_SOC_data": 5211.663029272494,
+  "free_initial_SOC_data": 5256.382558335166,
+  "improvement_over_fixed_initial_SOC_percent": 0.8580663947667988,
+  "feasible_benchmark_data": 5057.539581707208,
+  "improvement_over_benchmark_percent": 3.9316148379176408
+}

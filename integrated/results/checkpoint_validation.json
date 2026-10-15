@@ -1,0 +1,6 @@
+{
+  "compatible_restore": true,
+  "explicit_barrier_preserved": true,
+  "design_release_supported": true,
+  "incompatible_checkpoints_rejected": 4
+}

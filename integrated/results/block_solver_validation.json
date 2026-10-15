@@ -1,0 +1,16 @@
+{
+  "direct_vs_dense_max_error": 1.7763568394002505e-15,
+  "iterative_vs_dense_max_error": 2.453592884421596e-13,
+  "iteration_limit_with_accurate_solution_max_error": 3.1086244689504383e-15,
+  "fallback_vs_dense_max_error": 2.6645352591003757e-15,
+  "normal_equations_vs_dense_max_error": 7.549516567451064e-15,
+  "cached_newton_after_normal_equations_max_error": 3.1086244689504383e-15,
+  "safeguarded_vs_regularized_dense_max_error": 3.552713678800501e-15,
+  "chunked_safeguarded_vs_dense_max_error": 3.552713678800501e-15,
+  "positive_curvature_unchanged_max_error": 1.7763568394002505e-15,
+  "original_newton_recovery_max_error": 3.1086244689504383e-15,
+  "smaller_initialization_partition_max_error": 1.1546319456101628e-14,
+  "larger_newton_partition_max_error": 1.7763568394002505e-15,
+  "trajectory_inverse_None_rhs_max_error": 8.326672684688674e-17,
+  "trajectory_inverse_7_rhs_max_error": 1.1102230246251565e-16
+}
