@@ -10,7 +10,7 @@ from communication.communication_amigo import (
     DataDynamics,
     TrapezoidRule as DataTrapezoidRule,
 )
-from integrated.cadre_amigo import (
+from integrated.model.components import (
     BatteryDynamicsLinked,
     BatteryInitialCondition,
     BatteryPeriodicity,
@@ -18,8 +18,8 @@ from integrated.cadre_amigo import (
     DownloadObjective,
     ReactionWheelInitialCondition,
 )
-from integrated.cadre_reporting import print_heading
-from integrated.design_amigo import (
+from integrated.reporting.console import print_heading
+from integrated.model.design import (
     LookupResiduals,
     SurfaceAllocation,
     ThermalDesignState,

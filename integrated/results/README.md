@@ -1,7 +1,8 @@
 # Saved optimization results
 
-Existing directory names and checkpoints are preserved so restart paths and
-recorded provenance remain valid.
+Each optimization directory contains its summary, iteration history, trajectories,
+and figures. Numerical regression reports are grouped in `validation/`.
+Optimization directory names remain stable so checkpoint restart paths stay valid.
 
 | Directory | Meaning |
 | --- | --- |
@@ -13,8 +14,12 @@ recorded provenance remain valid.
 | `pcomm/` | Historical SOC-only result without current/periodicity constraints |
 | `design_smoke/` | Validated shorter roll/allocation demonstration |
 | `pcomm_roll_allocation*/` | Unfinished full-size solver trials and restart checkpoints |
-| `*_validation.json` | Numerical validation measurements |
+| `validation/` | Solver, checkpoint, evaluator, and derivative checks |
 
 Use each `summary.json` to determine validation status; trial objectives are not
-completed optimization results. The original meeting summaries and trajectories
-were retained during source cleanup.
+completed optimization results.
+
+Start with [`pcomm_design_reference/`](pcomm_design_reference/) for the full
+validated fixed-design case. Its `optimization.png` shows the trajectories and
+`convergence.png` shows the solver residuals. The `design_smoke/` directory is a
+shorter demonstration of free roll and allocation.

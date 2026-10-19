@@ -43,7 +43,7 @@ See [the meeting figure](../results/pcomm_solar/optimization.png),
 [the panel-current figure](../results/pcomm_solar/solar_currents.png),
 [validated results](../results/pcomm_solar/summary.json),
 [the matched comparison](../results/pcomm_solar/comparison.json), and
-[derivative validation](../results/voltage_derivative_validation.json).
+[derivative validation](../results/validation/voltage_derivative_validation.json).
 
 ## Previous validated run: optimized initial SOC
 

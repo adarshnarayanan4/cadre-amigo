@@ -6,10 +6,9 @@ The shorter 600-node roll/allocation case remains validated in `../results/desig
 
 The full 12-hour roll/allocation optimization is unfinished and currently stopped.
 Last executed log: `../results/pcomm_roll_allocation_native/run_consistent_evaluator.log`.
-The next sparse-pattern restart was not executed: automatic approval review hit
-a usage limit (review failure, not a safety determination). The user agreed an
-earlier validated case can be used for the meeting.
-Its summary must say `validated: true` before reporting a completed result.
+The sparse-pattern update has passed regression checks but has not completed a
+full-size solve. A completed result requires solver convergence and independent
+validation, recorded as `validated: true` in its summary.
 
 Next restart command from repository root:
 
@@ -29,7 +28,7 @@ for this full roll case; they did not produce a validated full-size result.
 objective directional derivatives must exclude constraint-gradient rows (otherwise
 they include the spurious multiplier-step term dlambda^T c(x)), and Hessian probes
 must first refresh external caches at the current point. Objective scaling is also
-preserved. `evaluator_validation.py` reproduces the derivative bug and verifies the
+preserved. `validation/evaluator.py` reproduces the derivative bug and verifies the
 fix with finite differences and an external-cache regression. The external AMIGO
 checkout is unchanged.
 
@@ -63,9 +62,6 @@ regressions passed, but this performance change has not yet run on the full case
 The existing ordering already uses four-control spline aliases to capture local
 support; no additional spline-ordering change was made.
 
-After cleanup, run the maintained CLI above; the temporary debug launcher
-uses old internal import paths and is no longer needed. Model construction is in
-`cadre_model.py`, checkpoint continuation in `cadre_checkpoint.py`, and solver
-adapters in `solvers/`. The 1,500-node fixed-design workflow was revalidated after
-refactoring: identical generated C++, three warm-start iterations, KKT 1.00e-9.
-Its check output is separate from the original reference result.
+Model construction is in `model/builder.py`, checkpoint handling in
+`optimization/checkpoint.py`, and linear-solver adapters in `solvers/`.
+The full fixed-design case remains the validated reference for this extension.

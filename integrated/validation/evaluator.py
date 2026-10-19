@@ -7,9 +7,9 @@ from types import SimpleNamespace
 from amigo.algorithm.evaluator import Evaluator
 import numpy as np
 
-from integrated.cadre_reporting import print_validation
+from integrated.reporting.console import print_validation
 from integrated.solvers.evaluator import ConsistentEvaluator
-from integrated.validation_helpers import Vector
+from integrated.validation.helpers import Vector
 
 
 class WorkVector(Vector):
@@ -104,7 +104,9 @@ def main():
 
     print_validation("EVALUATOR VALIDATION", result)
 
-    Path("integrated/results/evaluator_validation.json").write_text(
+    Path("integrated/results/validation").mkdir(parents=True, exist_ok=True)
+
+    Path("integrated/results/validation/evaluator_validation.json").write_text(
         json.dumps(result, indent=2) + "\n"
     )
 

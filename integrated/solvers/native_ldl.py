@@ -5,7 +5,7 @@ from amigo.algorithm.solvers.linear_solver import LinearSolver
 import numpy as np
 from scipy.sparse import csr_matrix
 
-from integrated.cadre_reporting import print_status
+from integrated.reporting.console import print_status
 
 
 def temporal_kkt_ordering(model, nodes):

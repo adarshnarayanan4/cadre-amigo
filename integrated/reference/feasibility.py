@@ -5,7 +5,7 @@ from scipy.optimize import linprog
 from scipy.sparse import csr_matrix, eye, hstack, vstack
 
 from battery.battery_reference import Cp, battery_voltage, eta, sigma
-from integrated.cadre_reporting import print_repair_header, print_repair_iteration
+from integrated.reporting.console import print_repair_header, print_repair_iteration
 
 
 def feasibility_metrics(state, initial_soc):

@@ -9,10 +9,10 @@ from battery.battery_reference import battery_current, propagate_soc_trapezoid, 
 from cadre_paths import cadre_path
 from communication.communication_amigo import propagate_data_trapezoid
 from communication.communication_data_validation import communication_bit_rate
-from integrated.cadre_feasibility import feasibility_metrics, repair_baseline
-from integrated.cadre_reporting import print_feasibility, print_heading, print_values
-from integrated.design_amigo import DesignPhysics
-from integrated.design_reference import DesignLookups
+from integrated.reference.feasibility import feasibility_metrics, repair_baseline
+from integrated.reporting.console import print_feasibility, print_heading, print_values
+from integrated.model.design import DesignPhysics
+from integrated.reference.design import DesignLookups
 from parameters.parameters_reference import bspline_parameters, build_bspline_matrix
 from power.power_amigo import solar_power, total_power
 from power.voltage_spline import VoltageSpline

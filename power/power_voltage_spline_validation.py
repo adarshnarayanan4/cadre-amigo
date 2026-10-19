@@ -112,8 +112,8 @@ def main():
     }
     print(result)
     assert value_error < 1e-8 and gradient_error < 1e-6 and hessian_error < 1e-6
-    Path("integrated/results").mkdir(exist_ok=True)
-    Path("integrated/results/voltage_derivative_validation.json").write_text(
+    Path("integrated/results/validation").mkdir(parents=True, exist_ok=True)
+    Path("integrated/results/validation/voltage_derivative_validation.json").write_text(
         json.dumps(result, indent=2) + "\n"
     )
 

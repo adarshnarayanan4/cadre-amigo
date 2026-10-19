@@ -7,7 +7,7 @@ import time
 from amigo.algorithm.multiplier_initialization import MultiplierInitializer
 import numpy as np
 
-from integrated.cadre_reporting import print_heading, print_status
+from integrated.reporting.console import print_heading, print_status
 from integrated.solvers.evaluator import ConsistentEvaluator
 
 

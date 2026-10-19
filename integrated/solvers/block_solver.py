@@ -6,7 +6,7 @@ from scipy.linalg import cho_factor, cho_solve, eigh, lu_factor, lu_solve
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import LinearOperator, gmres, splu
 
-from integrated.cadre_reporting import print_kkt_matrix, print_status
+from integrated.reporting.console import print_kkt_matrix, print_status
 
 
 class TrajectoryKKTSolver:

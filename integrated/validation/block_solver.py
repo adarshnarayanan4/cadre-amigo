@@ -9,9 +9,9 @@ import numpy as np
 from scipy.linalg import cho_factor as real_cholesky
 from scipy.sparse import csr_matrix
 
-from integrated.cadre_reporting import print_validation
+from integrated.reporting.console import print_validation
 from integrated.solvers.block_solver import SparseLUSolver, TrajectoryKKTSolver
-from integrated.validation_helpers import Matrix, Vector
+from integrated.validation.helpers import Matrix, Vector
 
 
 @dataclass
@@ -304,7 +304,9 @@ def main():
 
     assert max(errors.values()) < 1e-9
 
-    Path("integrated/results/block_solver_validation.json").write_text(
+    Path("integrated/results/validation").mkdir(parents=True, exist_ok=True)
+
+    Path("integrated/results/validation/block_solver_validation.json").write_text(
         json.dumps(errors, indent=2) + "\n"
     )
 

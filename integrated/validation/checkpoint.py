@@ -7,10 +7,10 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from integrated.cadre_reporting import print_validation
-from integrated.cadre_checkpoint import load_checkpoint
-from integrated.cadre_options import parse_args
-from integrated.validation_helpers import Vector
+from integrated.reporting.console import print_validation
+from integrated.optimization.checkpoint import load_checkpoint
+from integrated.optimization.options import parse_args
+from integrated.validation.helpers import Vector
 
 
 def main():
@@ -98,7 +98,7 @@ def main():
 
     print_validation("CHECKPOINT VALIDATION", result)
 
-    output = Path("integrated/results/checkpoint_validation.json")
+    output = Path("integrated/results/validation/checkpoint_validation.json")
     output.parent.mkdir(parents=True, exist_ok=True)
 
     output.write_text(json.dumps(result, indent=2) + "\n")

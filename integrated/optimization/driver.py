@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import amigo as am
 import numpy as np
 
-from integrated.cadre_checkpoint import CheckpointManager, load_checkpoint
-from integrated.cadre_reporting import print_convergence, print_heading, print_status
+from integrated.optimization.checkpoint import CheckpointManager, load_checkpoint
+from integrated.reporting.console import print_convergence, print_heading, print_status
 from integrated.solvers.block_solver import SparseLUSolver
 from integrated.solvers.native_ldl import (
     NativeLDLSolver,

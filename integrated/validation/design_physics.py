@@ -9,14 +9,14 @@ from scipy.sparse import csr_matrix
 
 from cadre_paths import cadre_path
 from communication.communication_amigo import CommunicationBitRate
-from integrated.cadre_reporting import print_validation
-from integrated.design_amigo import (
+from integrated.reporting.console import print_validation
+from integrated.model.design import (
     DesignPhysics,
     LookupResiduals,
     SurfaceAllocation,
     ThermalDesignState,
 )
-from integrated.design_reference import DesignLookups
+from integrated.reference.design import DesignLookups
 from parameters.parameters_amigo import ParameterValues
 from power.power_amigo import PowerSolar
 from thermal.thermal_amigo import thermal_rhs
@@ -210,7 +210,9 @@ def main():
     ):
         raise AssertionError("Design physics derivatives/reference failed")
 
-    Path("integrated/results/design_derivative_validation.json").write_text(
+    Path("integrated/results/validation").mkdir(parents=True, exist_ok=True)
+
+    Path("integrated/results/validation/design_derivative_validation.json").write_text(
         json.dumps(result, indent=2) + "\n"
     )
 

@@ -1,8 +1,8 @@
 # Integrated CADRE optimization
 
-This package couples thermal, reaction-wheel, solar-power, battery, and
-communication dynamics for one CADRE benchmark case. Run commands from the
-repository root with the AMIGO environment:
+This is the coupled model for one CADRE case. It connects thermal dynamics,
+reaction wheels, solar power, the battery, and communication. Run it from the
+repository root using the AMIGO environment:
 
 ```sh
 pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.cadre_optimize_pcomm
@@ -12,35 +12,55 @@ pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.plot_pcomm_r
 Set `CADRE_ROOT` if the external CADRE checkout is not at `../CADRE`. Compilation
 requires the AMIGO environment's CMake and compiler on `PATH`.
 
-## Code layout
+## Directory layout
 
-| File | Responsibility |
-| --- | --- |
-| `cadre_optimize_pcomm.py` | CLI entry point and workflow |
-| `cadre_options.py` | Arguments, defaults, and option validation |
-| `cadre_reference.py` | Benchmark inputs, baseline repair, and initial trajectories |
-| `cadre_feasibility.py` | Battery feasibility metrics and baseline-repair LPs |
-| `cadre_amigo.py` | Integrated AMIGO components |
-| `cadre_model.py` | Component registration, links, bounds, and initialization |
-| `cadre_optimizer.py` | Solver selection and optimization execution |
-| `cadre_checkpoint.py` | Compatible warm starts and atomic checkpoint saves |
-| `cadre_results.py` | Independent replay, validation, and result files |
-| `cadre_reporting.py` | Spaced terminal sections, aligned metrics, and repair progress tables |
-| `design_reference.py` | Roll-dependent exposure, antenna gain, and voltage references |
-| `design_amigo.py` | Roll components and external lookup derivatives |
-| `solvers/` | Sparse LU, native LDL, and the CADRE evaluator adapter |
-| `plot_pcomm_results.py` | Saved-result figures and matched comparisons |
-| `cadre_benchmark_amigo.py` | Integrated fixed-input benchmark replay |
-| `*_validation.py` | Numerical checks, matching the subsystem naming convention |
-| `docs/` | Meeting result, extension status, and historical results |
-| `archive/` | Original SOC-only formulation, retained for reproducibility |
+```text
+integrated/
+├── cadre_optimize_pcomm.py     Optimization command
+├── cadre_benchmark_amigo.py    Fixed-input benchmark command
+├── cadre_single_case.py        Earlier benchmark command name
+├── plot_pcomm_results.py       Plotting command
+├── model/                     AMIGO components, links, bounds, and initialization
+├── reference/                 Input data, trajectory replay, and feasibility repair
+├── optimization/              Options, solver selection, and checkpoints
+├── solvers/                   Sparse LU, native LDL, and evaluator adapters
+├── reporting/                 Terminal reports, result files, and plotting
+├── benchmarks/                Coupled fixed-input benchmark implementation
+├── validation/                Numerical checks and lightweight AMIGO adapters
+├── results/                   Saved optimization cases and validation reports
+│   └── validation/            Numerical validation measurements
+├── docs/                      Results, formulation details, and extension status
+└── archive/                   Original SOC-only formulation
+```
 
-`power/voltage_spline.py` contains the temperature/current voltage model;
-`power/power_voltage_spline_validation.py` checks it. Equation variables such as
-`SOC`, `P_comm`, `CP_Isetpt`, and `cellInstd` retain the CADRE names used in the
-existing subsystem files. Python functions use snake_case and classes use
-PascalCase. The former `cadre_single_case` command remains a compatibility entry
-point for `cadre_benchmark_amigo`.
+The top-level scripts are the command entry points. Start with `model/builder.py` for the coupled model,
+`reference/case.py` for its inputs, or `optimization/driver.py` for the solver.
+`power/voltage_spline.py` contains the shared temperature/current voltage model.
+Equation variables such as `SOC`, `P_comm`, `CP_Isetpt`, and `cellInstd` retain
+the CADRE names used in the subsystem implementations.
+
+## Coupled model
+
+```mermaid
+flowchart LR
+    CP["Spline controls"] --> COM["Communication power"]
+    CP --> I["Solar currents"]
+    COM --> T["Thermal dynamics"]
+    COM --> P["Net battery power"]
+    I --> V["Solar voltage and power"]
+    T --> V
+    V --> P
+    RW["Reaction-wheel power"] --> P
+    P --> B["Battery current and SOC"]
+    T --> B
+    COM --> D["Communication rate and data"]
+    G["Ground contact and antenna gain"] --> D
+```
+
+AMIGO solves these equations together at the time nodes. Battery limits and
+periodic SOC constrain the communication and solar-current schedules.
+With design physics enabled, roll also changes solar exposure, antenna gain,
+and reaction-wheel power; surface allocation changes the thermal dynamics.
 
 ## Formulation
 
@@ -84,10 +104,12 @@ adapters leave the external AMIGO checkout unchanged.
 
 ## Results and restarts
 
-Results stay under `integrated/results/`; use `--output` for a separate run.
+Runs save to `integrated/results/` by default. Use `--output` to keep a new run
+in a separate directory.
 Each completed attempt writes `summary.json`, `solver_history.json`, and
 `trajectories.npz`. Plotting adds `optimization.png`, `solar_currents.png`, and,
-for restored design physics, `design_controls.png`. `--output` on the plotting
+for restored design physics, `design_controls.png`. When iteration history is
+available, plotting also adds `convergence.png`. `--output` on the plotting
 command saves figures separately from the source result.
 
 Validation requires solver convergence, KKT and primal residuals below `1e-6`,
@@ -108,11 +130,11 @@ report these runtimes as warm-start segments.
 ## Validation
 
 ```sh
-pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.block_solver_validation
-pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.native_ldl_validation
-pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.evaluator_validation
-pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.checkpoint_validation
-pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.design_physics_validation
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.validation.block_solver
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.validation.native_ldl
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.validation.evaluator
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.validation.checkpoint
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.validation.design_physics
 pixi run --manifest-path ~/git/amigo/pixi.toml python -m power.power_voltage_spline_validation
 ```
 
@@ -121,9 +143,16 @@ The last two checks reuse compiled `cadre_optimize_design` and
 first if those modules are absent.
 
 The full-size fixed-design reference is validated: **58 iterations, 776.73 solver
-seconds, 4.0783% more data**, KKT `1.00e-9`. The cleanup was also checked with an
-identical generated C++ model and a successful full-size checkpoint continuation.
-Saved meeting results were preserved.
+seconds, 4.0783% more data**, KKT `1.00e-9`.
+
+![Full 12-hour optimized trajectories](results/pcomm_design_reference/optimization.png)
+
+![Convergence of the fixed-design reference](results/pcomm_design_reference/convergence.png)
+
+The convergence plot shows optimality and primal-feasibility residuals over the
+saved iterations. Residuals can increase between iterations; convergence is
+assessed at the final iterate. Both plots use the validated fixed-design
+reference, with prescribed roll and surface allocation.
 
 - [Meeting result and figures](docs/meeting_result.md)
 - [Roll/allocation extension status and restart command](docs/roll_allocation_status.md)

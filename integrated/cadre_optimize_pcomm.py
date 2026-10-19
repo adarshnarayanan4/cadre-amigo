@@ -1,10 +1,10 @@
 """Run the integrated CADRE communication and design optimization."""
 
-from integrated.cadre_model import build_model
-from integrated.cadre_optimizer import optimize_case
-from integrated.cadre_options import parse_args
-from integrated.cadre_reference import prepare_case
-from integrated.cadre_results import validate_and_save_results
+from integrated.model.builder import build_model
+from integrated.optimization.driver import optimize_case
+from integrated.optimization.options import parse_args
+from integrated.reference.case import prepare_case
+from integrated.reporting.results import validate_and_save_results
 
 
 def main(argv=None):

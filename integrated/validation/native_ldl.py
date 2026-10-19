@@ -6,9 +6,9 @@ from pathlib import Path
 import numpy as np
 from scipy.sparse import csr_matrix
 
-from integrated.cadre_reporting import print_validation
+from integrated.reporting.console import print_validation
 from integrated.solvers.native_ldl import NativeLDLSolver
-from integrated.validation_helpers import Matrix, Vector
+from integrated.validation.helpers import Matrix, Vector
 
 
 def main():
@@ -86,7 +86,9 @@ def main():
 
     print_validation("NATIVE LDL VALIDATION", errors)
 
-    Path("integrated/results/native_ldl_validation.json").write_text(
+    Path("integrated/results/validation").mkdir(parents=True, exist_ok=True)
+
+    Path("integrated/results/validation/native_ldl_validation.json").write_text(
         json.dumps(errors, indent=2) + "\n"
     )
 

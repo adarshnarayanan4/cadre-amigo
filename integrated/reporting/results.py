@@ -7,9 +7,9 @@ import numpy as np
 from battery.battery_reference import battery_current, propagate_soc_trapezoid
 from communication.communication_amigo import propagate_data_trapezoid
 from communication.communication_data_validation import communication_bit_rate
-from integrated.cadre_feasibility import feasibility_metrics
-from integrated.cadre_reference import extract_vector
-from integrated.cadre_reporting import print_results
+from integrated.reference.feasibility import feasibility_metrics
+from integrated.reference.case import extract_vector
+from integrated.reporting.console import print_results
 from power.power_amigo import solar_power, total_power
 from reaction_wheel.reaction_wheel_reference import (
     propagate_reaction_wheel_trapezoid,

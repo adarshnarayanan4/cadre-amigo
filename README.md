@@ -1,189 +1,124 @@
 # CADRE-AMIGO
 
-This repo contains my work reproducing parts of the OpenMDAO CADRE CubeSat model in AMIGO.
+I'm reproducing the OpenMDAO CADRE CubeSat model in Python and AMIGO. I started
+with the individual subsystems, checked them against the original CADRE code,
+and then connected them into a single-case optimization.
 
-The main goal is to take the original CADRE subsystems, understand what each one is doing, recreate them in Python/AMIGO, and check that the results match the original implementation before combining everything together.
+The coupled model now optimizes communication power, solar currents, and initial
+battery state of charge over a 12-hour window. The full-size version with free
+roll and surface allocation is still unfinished.
 
-## Current Progress
+## Running the code
 
-So far I have worked through:
+The scripts need a local CADRE checkout and a Python environment with AMIGO,
+NumPy, SciPy, and Matplotlib. Set `CADRE_ROOT` to the checkout containing
+`src/CADRE`. If it is at `../CADRE`, the default path already works.
 
-- Orbit
-- Attitude
-- Sun position and eclipse
-- Solar exposed area
-- Thermal
-- Power
-- Battery, reaction wheels, and communication
-- Integrated single-case analysis and constrained optimization
-
-## Folder Layout
-
-```text
-cadre-amigo/
-├── orbit/
-├── attitude/
-├── sun/
-├── solar/
-├── thermal/
-├── power/
-├── integrated/
-├── CMakeLists.txt
-└── README.md
-```
-
-Each folder contains the reference version of the subsystem and, where completed, the AMIGO version and validation scripts.
-
-## Orbit
-
-The orbit model calculates spacecraft position and velocity over time.
-
-I kept the same CADRE orbital dynamics, including the J2, J3, and J4 perturbation terms.
-
-The main difference is in how the trajectory is solved:
-
-- CADRE reference: RK4 time propagation
-- AMIGO version: trapezoidal collocation
-
-I also ran a convergence study. When the timestep was cut in half, the position error decreased by about a factor of four, which is consistent with second-order convergence.
-
-## Attitude
-
-The attitude model uses the orbit position and velocity to determine spacecraft orientation.
-
-It calculates things like:
-
-- rotation matrices
-- angular velocity
-- angular acceleration
-- torque
-- body-frame velocity
-
-When I give the AMIGO/reference attitude calculations the same orbit data, the results match to essentially machine precision.
-
-## Sun
-
-The Sun model determines where the Sun is relative to the spacecraft and whether the spacecraft is in sunlight or eclipse.
-
-It calculates:
-
-- Sun direction in inertial coordinates
-- Sun direction in the spacecraft body frame
-- azimuth and elevation
-- line-of-sight/eclipse value
-
-The line-of-sight value is:
-
-```text
-1 = sunlight
-0 = eclipse
-between 0 and 1 = eclipse transition
-```
-
-The reproduced Sun calculations match the original CADRE results.
-
-## Solar
-
-The solar model uses the Sun angles and panel fin angle to determine how much of each solar cell is exposed.
-
-CADRE uses precomputed geometry data for 12 panels with 7 cells per panel.
-
-One issue here is that the original CADRE code uses an old package called MBI for multidimensional spline interpolation. My first version used SciPy linear interpolation, so this part is not yet an exact replacement for the original CADRE solar interpolation.
-
-## Thermal
-
-The thermal model tracks five temperatures:
-
-- four fin temperatures
-- one spacecraft body temperature
-
-The temperatures change based on solar heating, radiative cooling, and communication power.
-
-The original CADRE version uses RK4 integration. The AMIGO version uses trapezoidal constraints.
-
-The AMIGO result matches the trapezoidal reference exactly, and stays within about 0.3 K of the original CADRE RK4 result.
-
-## Power
-
-The power model uses:
-
-- temperature
-- illuminated solar-cell area
-- current setpoint
-
-to calculate solar-cell voltage.
-
-The original CADRE code uses the old MBI interpolation package for this lookup. I recreated the needed MBI behavior in modern Python.
-
-The first linear interpolation version had a maximum panel-voltage error of about 3.33 V.
-
-After recreating the MBI spline behavior, the maximum voltage difference dropped to about:
-
-```text
-0.00054 V
-```
-
-The solar-power and total-power equations were then reproduced in AMIGO.
-
-Current power results:
-
-```text
-AMIGO vs Python solar power difference = 0.0 W
-AMIGO vs Python battery power difference = 0.0 W
-
-AMIGO vs original CADRE solar power difference ≈ 0.00012 W
-AMIGO vs original CADRE battery power difference ≈ 0.00012 W
-```
-
-The small remaining difference comes from the recreated MBI interpolation.
-
-## Validation Approach
-
-To run the validation scripts, set `CADRE_ROOT` to the root of a local CADRE
-checkout (the folder containing `src/CADRE`). Use a Python environment with
-NumPy, SciPy, Matplotlib, and AMIGO installed. For AMIGO model runs, make sure
-that environment's `bin` directory, which contains CMake, is on `PATH`.
-
-For example, from this repository's root:
+Run commands from this repository's root. I use the Pixi environment from my
+AMIGO checkout:
 
 ```sh
-CADRE_ROOT=/absolute/path/to/CADRE python -m battery.battery_source_validation
+# Optimize communication power, solar currents, and initial SOC.
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.cadre_optimize_pcomm
+
+# Use the restored design-physics formulation with fixed roll and allocation.
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.cadre_optimize_pcomm --design-physics
+
+# Plot a saved result without solving it again.
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.plot_pcomm_results
+
+# Generate the subsystem figures.
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m visualizations
 ```
 
-Without `CADRE_ROOT`, the scripts retain their original relative CADRE paths.
+Change the manifest path if AMIGO is installed somewhere else. Compiling a model
+also requires CMake and a C++ compiler on `PATH`.
 
-For each subsystem, I have generally been following this process:
+## Validated integrated result
 
-```text
-Original CADRE code
-        ↓
-Python reference
-        ↓
-Check against CADRE
-        ↓
-AMIGO version
-        ↓
-Check AMIGO against reference
+The full 12-hour fixed-design case uses 1,500 time nodes and 3,901 design variables.
+It optimizes communication power, 12 solar-current profiles, and initial SOC.
+Roll and surface allocation are fixed.
+
+| Measurement | Result |
+| --- | --- |
+| Downloaded data | 5,264.536 CADRE units |
+| Feasible comparison baseline | 5,058.245 CADRE units |
+| Improvement | 4.0783% |
+| Solver iterations | 58 |
+| Solver time | 776.73 seconds |
+| Final KKT error | 1.00e-9 |
+
+The run satisfies battery-current and SOC bounds, returns to its starting SOC,
+and passes an independent trajectory replay. Solver time excludes preparation,
+compilation, and replay. This is one case with fixed geometry, so it should not
+be treated as a runtime comparison with the original six-case CADRE study.
+
+See the [result and figures](integrated/docs/meeting_result.md),
+[saved summary](integrated/results/pcomm_design_reference/summary.json), and
+[integrated model README](integrated/README.md).
+
+## Plots
+
+The [subsystem figure gallery](visualizations/README.md) covers orbit, attitude,
+sunlight, panel exposure, temperature, power, battery SOC, reaction wheels,
+communication, and spline controls. It uses the original CADRE benchmark and
+the Python reference functions. Existing interactive plots are still in the
+subsystem scripts.
+
+![Orbit geometry, altitude, and Python reference difference](visualizations/figures/orbit.png)
+
+Figures are currently stored together in `visualizations/figures/`. The gallery
+explains the inputs and comparisons in each one. To generate a smaller selection:
+
+```sh
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m visualizations \
+  --problem orbit thermal battery --output /tmp/cadre-figures
 ```
 
-Doing the subsystems separately makes it easier to find where differences are coming from before everything is coupled together.
+## Code layout
 
-## Next Steps
+| Folder | Contents |
+| --- | --- |
+| `orbit/` | Orbital dynamics, RK4 reference, AMIGO collocation, and grid convergence |
+| `attitude/` | Orientation, angular rates, acceleration, and torque |
+| `sun/` | Sun direction and eclipse calculations |
+| `solar/` | Panel exposure and the recreated solar MBI lookup |
+| `thermal/` | Four fin temperatures and one body temperature |
+| `power/` | Solar voltage, solar power, and net battery power |
+| `battery/` | Voltage, current, SOC propagation, and constraint checks |
+| `reaction_wheel/` | Wheel dynamics and electrical consumption |
+| `communication/` | Antenna gain, bitrate, and accumulated downloaded data |
+| `parameters/` | B-spline controls and time-dependent inputs |
+| `integrated/` | Coupled model, optimization, solver adapters, checks, and saved results |
+| `visualizations/` | Figure-generation code, explanations, and saved plots |
 
-The integrated model now couples the subsystems, including temperature-dependent
-solar voltage, battery-current limits, and periodic state of charge. The validated
-full 12-hour case optimizes communication power, solar currents, and initial SOC
-with prescribed roll and surface allocation.
+Inside `integrated/`, the code is grouped into `model/`, `reference/`,
+`optimization/`, `solvers/`, `reporting/`, `benchmarks/`, and `validation/`.
+The main optimization and plotting commands remain at the top level.
 
-The next steps are to converge and independently validate the full-size
-roll/allocation extension, and extend the current single-case study toward the
-original multidisciplinary problem. The shorter roll/allocation demonstration
-is validated; the full-size extension is still unfinished.
+## How I check the models
 
-The long-term goal is to reproduce the full CADRE multidisciplinary model in AMIGO and then use it for coupled analysis and optimization.
+For each subsystem, I compare a Python reference with the original CADRE output,
+then compare the AMIGO model with that reference. I keep RK4 and trapezoidal
+comparisons separate because differences between integration schemes are not
+the same as errors in the equations.
 
-## Integrated optimization
+The solar and voltage lookups use recreated MBI splines. Their remaining
+reference differences are recorded in the validation scripts and
+[figure measurements](visualizations/figures/measurements.json).
 
-The coupled, single-case optimization and its validation scripts are documented
-in [integrated/README.md](integrated/README.md). The [meeting result](integrated/docs/meeting_result.md)
-links to the validated full 12-hour case.
+The integrated solver, evaluator, checkpoint, and derivative checks are in
+`integrated/validation/`. Their saved reports are in
+`integrated/results/validation/`. Commands and tolerances are listed in the
+[integrated README](integrated/README.md#validation).
+
+## Remaining work
+
+A shorter 600-node case with free roll and surface allocation has passed
+validation. The full 1,500-node, 4,285-variable version still needs to converge
+and pass independent replay. The next step is to finish that case before
+expanding toward the original multi-case problem.
+
+The [roll/allocation status note](integrated/docs/roll_allocation_status.md)
+records the current solver setup and restart command.

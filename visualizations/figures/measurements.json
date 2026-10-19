@@ -1,0 +1,47 @@
+{
+  "source": "Original CADRE test/data1346.pkl, case 0",
+  "nodes": 1500,
+  "duration_hours": 12.0,
+  "scope": "Benchmark signals and Python reference reconstructions; no new AMIGO solve",
+  "comparisons": {
+    "orbit": {
+      "RK4 position difference max [km]": 0.004191219374773158
+    },
+    "attitude": {
+      "angular velocity max difference [1/s]": 9.64939933512099e-18,
+      "torque max difference [N m]": 7.88115209503687e-15
+    },
+    "sun": {
+      "sunlight max difference": 2.3050324893247875e-06
+    },
+    "solar": {
+      "exposed-area max difference [m\u00b2]": 5.878525260121645e-07
+    },
+    "thermal": {
+      "RK4 temperature max difference [K]": 0.0013884305340639003,
+      "trapezoid vs RK4 temperature max difference [K]": 0.610490483729933
+    },
+    "power": {
+      "solar power max difference [W]": 8.881784197001252e-16,
+      "battery power max difference [W]": 3.552713678800501e-15
+    },
+    "battery": {
+      "RK4 SOC max difference": 1.820801431851038e-08,
+      "trapezoid vs RK4 SOC max difference": 0.013798692649524824
+    },
+    "reaction_wheel": {
+      "RK4 speed max difference [1/s]": 1.3600232051658168e-15,
+      "wheel power max difference [W]": 3.6955689064477326e-09,
+      "trapezoid vs RK4 speed max difference [1/s]": 0.28285333312724603
+    },
+    "communication": {
+      "data rate max difference [CADRE units/s]": 2.644826897935104e-06,
+      "downloaded data max difference [CADRE units]": 0.0008539657483197516
+    },
+    "parameters": {
+      "communication power max difference [W]": 1.8740564655672642e-13,
+      "roll max difference [rad]": 4.9960036108132044e-14,
+      "panel current max difference [A]": 1.634803403760543e-14
+    }
+  }
+}
