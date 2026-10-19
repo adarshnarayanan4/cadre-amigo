@@ -1,7 +1,6 @@
 """Shared data loading and figure styling for subsystem reports."""
 
 from dataclasses import dataclass
-from pathlib import Path
 import pickle
 
 import matplotlib
@@ -11,11 +10,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from cadre_paths import cadre_path
+from visualizations.style import BLUE, TEAL, GOLD, GRAY, configure_style, save_figure
 
-BLUE = "#0866b2"
-TEAL = "#237b7b"
-GOLD = "#bd7b00"
-GRAY = "#6b7280"
 AXIS_COLORS = [BLUE, TEAL, GOLD]
 
 
@@ -51,32 +47,11 @@ def load_case():
     return Case(data, np.linspace(0, 43200, n))
 
 
-def configure_style():
-    plt.rcParams.update(
-        {
-            "font.family": "DejaVu Sans",
-            "font.size": 10,
-            "axes.titlesize": 12,
-            "axes.labelsize": 10,
-            "axes.spines.top": False,
-            "axes.spines.right": False,
-            "axes.prop_cycle": matplotlib.cycler(
-                color=[*AXIS_COLORS, "#9266b2", "#071a2f"]
-            ),
-            "axes.formatter.useoffset": False,
-            "legend.fontsize": 8,
-            "legend.framealpha": 0.95,
-            "figure.facecolor": "white",
-            "savefig.facecolor": "white",
-        }
-    )
-
-
 def panels(rows, figsize=None):
     return plt.subplots(
         rows,
         1,
-        figsize=figsize or (11, 2.6 * rows),
+        figsize=figsize or (13, 2.8 * rows + 1),
         sharex=True,
         constrained_layout=True,
     )
@@ -99,7 +74,7 @@ def eclipse(axis, case):
         transform=axis.get_xaxis_transform(),
         color="#d9e2e8",
         alpha=0.5,
-        label="Eclipse / illumination transition",
+        label="Partial eclipse / transition",
         zorder=0,
     )
 
@@ -121,14 +96,16 @@ def components(axis, case, values, ylabel):
     axis.legend(ncol=3)
 
 
-def finish(figure, output, name, title):
-    figure.suptitle(title, fontsize=16)
-    path = Path(output) / f"{name}.png"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(path, dpi=160)
-    plt.close(figure)
-
-    return path
+def finish(figure, output, name, title, note=""):
+    return save_figure(
+        figure,
+        output,
+        name,
+        title,
+        "CADRE benchmark · Case 0 · 12 hours · 1,500 time nodes · Python reference replay",
+        note
+        or "Source: CADRE test/data1346.pkl. Difference panels compare reconstructions; no new AMIGO optimization.",
+    )
 
 
 def maximum_error(reference, source):

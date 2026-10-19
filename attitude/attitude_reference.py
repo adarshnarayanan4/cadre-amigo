@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from visualizations.style import configure_style, finish_figure
+
 from orbit.orbit_reference import (
     orbital_elements_to_state,
     rk4_step,
@@ -251,9 +253,7 @@ def main():
     q0 = np.concatenate((r0, v0))
 
     # Time grid
-    orbital_period = calculate_orbital_period(
-        alt_perigee=500.0, alt_apogee=500.0
-    )
+    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
 
     num_time_steps = 568
 
@@ -322,54 +322,32 @@ def main():
     print("Maximum body-frame lateral velocity:")
     print(np.max(np.linalg.norm(v_B[:, 0:2], axis=1)))
 
-    # Angular velocity plot
-    plt.figure(figsize=(9, 5))
+    configure_style()
+    figure, axes = plt.subplots(
+        3, 1, figsize=(13, 11), sharex=True, constrained_layout=True
+    )
 
-    plt.plot(times / 60.0, w_B[:, 0], label="wx")
-    plt.plot(times / 60.0, w_B[:, 1], label="wy")
-    plt.plot(times / 60.0, w_B[:, 2], label="wz")
+    for axis, values, title, unit in zip(
+        axes,
+        [w_B, wdot_B, T_tot],
+        [
+            "Body angular velocity",
+            "Body angular acceleration",
+            "Required attitude-control torque",
+        ],
+        ["Angular velocity [1/s]", "Angular acceleration [1/s²]", "Torque [N m]"],
+    ):
+        for index, label in enumerate("xyz"):
+            axis.plot(times / 3600, values[:, index], label=label)
+        axis.set(title=title, ylabel=unit)
 
-    plt.xlabel("Time [min]")
-    plt.ylabel("Angular Velocity [1/s]")
-
-    plt.title("CADRE Attitude Angular Velocity")
-
-    plt.grid()
-    plt.legend()
-    plt.tight_layout()
-
-    # Angular acceleration plot
-    plt.figure(figsize=(9, 5))
-
-    plt.plot(times / 60.0, wdot_B[:, 0], label="wx dot")
-    plt.plot(times / 60.0, wdot_B[:, 1], label="wy dot")
-    plt.plot(times / 60.0, wdot_B[:, 2], label="wz dot")
-
-    plt.xlabel("Time [min]")
-    plt.ylabel("Angular Acceleration [1/s^2]")
-
-    plt.title("CADRE Attitude Angular Acceleration")
-
-    plt.grid()
-    plt.legend()
-    plt.tight_layout()
-
-    # Torque plot
-    plt.figure(figsize=(9, 5))
-
-    plt.plot(times / 60.0, T_tot[:, 0], label="Tx")
-    plt.plot(times / 60.0, T_tot[:, 1], label="Ty")
-    plt.plot(times / 60.0, T_tot[:, 2], label="Tz")
-
-    plt.xlabel("Time [min]")
-    plt.ylabel("Torque [N m]")
-
-    plt.title("CADRE Required Attitude Torque")
-
-    plt.grid()
-    plt.legend()
-    plt.tight_layout()
-
+    axes[-1].set_xlabel("Time [hours]")
+    finish_figure(
+        figure,
+        "Spacecraft attitude and control demand",
+        f"Python reference · {len(times):,} time nodes · {times[-1] / 3600:g} hours",
+        "Components are expressed in the spacecraft body frame.",
+    )
     plt.show()
 
 

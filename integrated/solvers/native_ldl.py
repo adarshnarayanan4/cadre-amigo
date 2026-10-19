@@ -1,11 +1,13 @@
 """AMIGO LDL with analytic external Hessians and explicit temporal ordering."""
 
+from time import perf_counter
+
 import amigo as am
 from amigo.algorithm.solvers.linear_solver import LinearSolver
 import numpy as np
 from scipy.sparse import csr_matrix
 
-from integrated.reporting.console import print_status
+from integrated.reporting.console import print_status, print_values
 
 
 def temporal_kkt_ordering(model, nodes):
@@ -83,6 +85,7 @@ class NativeLDLSolver(LinearSolver):
         self.last_flag = None
         self.source_hessian = None
         self.mapping_cache = [None, None]
+        self.factorizations = 0
 
         self.regularization_metric = regularization_metric
         self.diagonal_provider = diagonal_provider
@@ -155,10 +158,35 @@ class NativeLDLSolver(LinearSolver):
         self.last_matrix = original + correction
         self.last_matrix.setdiag(self.last_matrix.diagonal() + effective_diagonal)
 
-        self.last_flag = self.ldl.factor(self.native_diagonal)
+        self.factorizations += 1
 
-        if self.last_flag:
-            print_status("NATIVE LDL FACTORIZATION", [("Factor flag", self.last_flag)])
+        print_status(
+            "NATIVE LDL FACTORIZATION",
+            [
+                ("Factorization", f"{self.factorizations:,}"),
+                ("Status", "Running"),
+            ],
+        )
+
+        started = perf_counter()
+        self.last_flag = self.ldl.factor(self.native_diagonal)
+        self.factor_seconds = perf_counter() - started
+
+        rows = [
+            ("Elapsed time [s]", f"{self.factor_seconds:,.2f}"),
+            ("Factor flag", self.last_flag),
+        ]
+
+        if not self.last_flag:
+            positive, negative = self.ldl.get_inertia()
+            rows.extend(
+                [
+                    ("Positive eigenvalues", f"{positive:,}"),
+                    ("Negative eigenvalues", f"{negative:,}"),
+                ]
+            )
+
+        print_values(rows)
 
         return self.last_flag
 

@@ -2,6 +2,8 @@ import amigo as am
 import numpy as np
 import matplotlib.pyplot as plt
 
+from visualizations.style import configure_style, finish_figure
+
 from orbit.orbit_reference import (
     orbital_elements_to_state,
     orbit_dynamics,
@@ -234,9 +236,7 @@ def build_model(
         start = i * num_time_steps
         end = (i + 1) * num_time_steps
 
-        model.link(
-            f"orbit.q[:{num_time_steps}, {i}]", f"trap.q1[{start}:{end}]"
-        )
+        model.link(f"orbit.q[:{num_time_steps}, {i}]", f"trap.q1[{start}:{end}]")
         model.link(f"orbit.q[1:, {i}]", f"trap.q2[{start}:{end}]")
         model.link(f"orbit.qdot[:-1, {i}]", f"trap.q1dot[{start}:{end}]")
         model.link(f"orbit.qdot[1:, {i}]", f"trap.q2dot[{start}:{end}]")
@@ -339,9 +339,7 @@ def solve_model(model, x):
     return opt_data
 
 
-def report_solution_comparison(
-    x, reference_states, orbital_period, num_time_steps
-):
+def report_solution_comparison(x, reference_states, orbital_period, num_time_steps):
     amigo_states = np.zeros((num_time_steps + 1, 6))
     for i in range(6):
         amigo_states[:, i] = x[f"orbit.q[:, {i}]"]
@@ -376,68 +374,49 @@ def report_solution_comparison(
 
 def plot_solution_comparison(amigo_states, reference_states, times):
     """Plot AMIGO and RK4 trajectories and their differences."""
-    # Extract positions
-    amigo_x = amigo_states[:, 0]
-    amigo_y = amigo_states[:, 1]
-    amigo_z = amigo_states[:, 2]
-
-    rk4_x = reference_states[:, 0]
-    rk4_y = reference_states[:, 1]
-    rk4_z = reference_states[:, 2]
-
-    # 3D trajectory comparison
-    fig = plt.figure(figsize=(9, 8))
-
-    ax = fig.add_subplot(111, projection="3d")
-
-    ax.plot(rk4_x, rk4_y, rk4_z, label="RK4 Reference")
-    ax.plot(amigo_x, amigo_y, amigo_z, linestyle="--", label="AMIGO")
-
-    ax.set_xlabel("X [km]")
-    ax.set_ylabel("Y [km]")
-    ax.set_zlabel("Z [km]")
-
-    ax.set_title("AMIGO vs RK4 Orbit")
-
-    ax.legend()
-
-    plt.tight_layout()
-
-    # Position difference versus time
-    position_difference = np.linalg.norm(
-        amigo_states[:, 0:3] - reference_states[:, 0:3], axis=1
+    configure_style()
+    figure = plt.figure(figsize=(16, 9), constrained_layout=True)
+    layout = figure.add_gridspec(2, 2, width_ratios=[1.2, 1])
+    geometry = figure.add_subplot(layout[:, 0], projection="3d")
+    position = figure.add_subplot(layout[0, 1])
+    velocity = figure.add_subplot(layout[1, 1], sharex=position)
+    geometry.plot(*reference_states[:, :3].T, label="RK4 reference")
+    geometry.plot(*amigo_states[:, :3].T, linestyle="--", label="AMIGO")
+    radius = np.max(
+        np.abs(np.r_[reference_states[:, :3].ravel(), amigo_states[:, :3].ravel()])
     )
-
-    plt.figure(figsize=(9, 5))
-
-    plt.plot(times / 60.0, position_difference)
-
-    plt.xlabel("Time [min]")
-    plt.ylabel("Position Difference [km]")
-
-    plt.title("AMIGO vs RK4 Position Difference")
-
-    plt.grid()
-
-    plt.tight_layout()
-
-    # Velocity difference versus time
-    velocity_difference = np.linalg.norm(
-        amigo_states[:, 3:6] - reference_states[:, 3:6], axis=1
+    geometry.set(
+        xlabel="ECI x [km]",
+        ylabel="ECI y [km]",
+        zlabel="ECI z [km]",
+        xlim=(-radius, radius),
+        ylim=(-radius, radius),
+        zlim=(-radius, radius),
+        title="Orbit trajectory comparison",
     )
-
-    plt.figure(figsize=(9, 5))
-
-    plt.plot(times / 60.0, velocity_difference)
-
-    plt.xlabel("Time [min]")
-    plt.ylabel("Velocity Difference [km/s]")
-
-    plt.title("AMIGO vs RK4 Velocity Difference")
-
-    plt.grid()
-
-    plt.tight_layout()
+    geometry.set_box_aspect((1, 1, 1))
+    position.plot(
+        times / 3600,
+        np.linalg.norm(amigo_states[:, :3] - reference_states[:, :3], axis=1),
+    )
+    position.set(
+        ylabel="Position difference [km]", title="Position difference: vector magnitude"
+    )
+    velocity.plot(
+        times / 3600,
+        np.linalg.norm(amigo_states[:, 3:6] - reference_states[:, 3:6], axis=1),
+    )
+    velocity.set(
+        ylabel="Velocity difference [km/s]",
+        xlabel="Time [hours]",
+        title="Velocity difference: vector magnitude",
+    )
+    finish_figure(
+        figure,
+        "Orbit propagation: AMIGO versus RK4",
+        f"Trajectory comparison · {len(times):,} time nodes · {times[-1] / 3600:g} hours",
+        "Difference panels show vector magnitudes relative to the RK4 trajectory.",
+    )
     plt.show()
 
 
@@ -454,9 +433,7 @@ def main():
     q0 = np.concatenate((r0, v0))
 
     # Time discretization
-    orbital_period = calculate_orbital_period(
-        alt_perigee=500.0, alt_apogee=500.0
-    )
+    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
     num_time_steps = 568
     dt = orbital_period / num_time_steps
 
@@ -479,9 +456,7 @@ def main():
     check_trapezoid_guess_quality(reference_states, reference_rates, dt)
 
     # Build and initialize AMIGO model
-    model = build_model(
-        q0, dt, num_time_steps, reference_states, reference_rates
-    )
+    model = build_model(q0, dt, num_time_steps, reference_states, reference_rates)
 
     report_setup_diagnostics(model)
 

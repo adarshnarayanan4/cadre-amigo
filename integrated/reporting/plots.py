@@ -10,6 +10,17 @@ import numpy as np
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from visualizations.style import (
+    BLUE,
+    TEAL,
+    GOLD,
+    GRAY,
+    RED,
+    configure_style,
+    integer_ticks,
+    save_figure,
+)
+
 LABELS = {
     "P_comm": "Communication power [W]",
     "SOC": "Battery state of charge",
@@ -122,13 +133,42 @@ def comparison_metrics(summary, data, previous, reference):
     return metrics
 
 
+def result_context(summary):
+    status = "Validated result" if summary.get("validated") else "Unvalidated trial"
+    nodes = summary["nodes"]
+    count = summary.get("design_variable_count")
+    controls = (
+        f"{count:,} design variables"
+        if count
+        else f"{summary['control_points']:,} control points per profile"
+    )
+    duration = summary.get(
+        "duration_hours", (nodes - 1) * summary.get("dt_s", 0) / 3600
+    )
+    return f"{status} · {duration:g} hours · {nodes:,} time nodes · {controls}"
+
+
+def result_name(summary):
+    if summary.get("roll_optimized") and summary.get("allocation_optimized"):
+        return "Roll and surface-allocation optimization"
+    if summary.get("roll_optimized"):
+        return "Spacecraft roll optimization"
+    if summary.get("allocation_optimized"):
+        return "Surface-allocation optimization"
+    if summary.get("design_physics_restored"):
+        return "Fixed-design optimization reference"
+    if summary.get("solar_currents_optimized"):
+        return "Communication and solar-current optimization"
+    return "Communication-power optimization"
+
+
 def plot_trajectories(data, summary, output, reference=None):
-    """Plot power, battery limits, and downloaded data on the same time axis."""
+    """Show every trajectory and constraint without clipping baseline curves."""
+    configure_style()
     hours = data["time_s"] / 3600
     constrained = "periodicity_error" in summary
     solar = summary.get("solar_voltage_coupled", False)
     design = summary.get("design_physics_restored", False)
-
     keys = (
         ["P_comm", "SOC", "I_bat", "Data"] if constrained else ["P_comm", "SOC", "Data"]
     )
@@ -139,247 +179,261 @@ def plot_trajectories(data, summary, output, reference=None):
     fig, axes = plt.subplots(
         len(keys),
         1,
-        figsize=(10, 13 if solar else 11 if constrained else 9),
+        figsize=(14, 2.7 * len(keys) + 1.5),
         sharex=True,
         constrained_layout=True,
     )
-
+    candidate = "Optimized" if summary.get("validated") else "Trial iterate"
     comparison = None
 
     if reference:
         previous, old = reference
-        comparison = comparison_metrics(summary, data, previous, old)
-        (output / "comparison.json").write_text(json.dumps(comparison, indent=2) + "\n")
-
+        if summary.get("validated"):
+            comparison = comparison_metrics(summary, data, previous, old)
+            comparison_path = output / "comparison.json"
+            if not comparison_path.exists():
+                comparison_path.write_text(json.dumps(comparison, indent=2) + "\n")
         reference_label = (
-            "Fixed roll/allocation optimum"
+            "Fixed-design optimum"
             if design
-            else "Fixed solar-current optimum" if solar else "Fixed initial SOC optimum"
+            else "Fixed-current optimum" if solar else "Fixed-SOC optimum"
         )
 
         for axis, key in zip(axes, keys):
             axis.plot(
-                hours,
+                old["time_s"] / 3600,
                 old[key],
-                color="#252525",
+                color=TEAL,
                 linestyle="--",
-                linewidth=1.3,
                 label=reference_label,
             )
+
+    titles = {
+        "P_comm": "Communication-power schedule",
+        "SOC": "Battery state of charge",
+        "I_bat": "Battery current",
+        "P_sol": "Solar electrical generation",
+        "Data": "Cumulative downloaded data",
+    }
 
     for axis, key in zip(axes, keys):
         axis.plot(
             hours,
             data[f"baseline_{key}"],
-            color="#6b7280",
+            color=GRAY,
             label="Feasible baseline" if constrained else "Benchmark design",
         )
-        axis.plot(hours, data[key], color="#0866b2", label="Optimized")
-        axis.set_ylabel(LABELS[key])
-        axis.grid(alpha=0.2)
+        axis.plot(hours, data[key], color=BLUE, label=candidate)
+        axis.set(ylabel=LABELS[key], title=titles[key], xlim=(hours[0], hours[-1]))
 
-    power_top = (
-        max(1.0, float(np.max(data["P_comm"])), float(np.max(data["baseline_P_comm"])))
-        * 1.2
-        if constrained
-        else 25
-    )
+        if key == "SOC":
+            axis.axhline(0.2, color=RED, linestyle=":", label="SOC limits: 0.2 to 1.0")
+            axis.axhline(1.0, color=RED, linestyle=":")
+        elif key == "I_bat":
+            axis.axhline(
+                -10, color=RED, linestyle=":", label="Current limits: −10 to 5 A"
+            )
+            axis.axhline(5, color=RED, linestyle=":")
 
     axes[0].fill_between(
         hours,
         0,
-        power_top,
+        1,
         where=data["CommLOS"] > 0,
-        color="#efb83c",
-        alpha=0.25,
+        transform=axes[0].get_xaxis_transform(),
+        color=GOLD,
+        alpha=0.18,
         label="Ground contact",
+        zorder=0,
     )
-    axes[0].set_ylim(-0.2 if constrained else -0.5, power_top)
-    axes[0].legend(loc="upper right", ncol=2, fontsize=8)
+    axes[-1].set_xlabel("Time [hours]")
+    note = f"Downloaded data: baseline {summary['baseline_data']:,.2f}; {candidate.lower()} {summary['optimized_data']:,.2f} CADRE units."
 
-    for limit in (0.2, 1.0):
-        axes[1].axhline(limit, color="#b42e28", linestyle="--", linewidth=1)
+    if summary.get("validated"):
+        note += f" Improvement over baseline: {summary['improvement_percent']:.2f}%."
+    else:
+        note += " This trial has not passed convergence and independent validation."
 
-    axes[1].set_ylim(0.15, 1.05)
+    if comparison:
+        gain = 100 * (summary["optimized_data"] / previous["optimized_data"] - 1)
+        note += f" Gain over {reference_label.lower()}: {gain:.3f}%."
 
     if constrained:
-        for limit in (-10, 5):
-            axes[2].axhline(limit, color="#b42e28", linestyle="--", linewidth=1)
-
-        axes[2].set_ylim(-11, 6)
-
-        axes[1].text(
-            0.99,
-            0.13,
-            f"Optimized SOC start/end = {summary['SOC_initial']:.4f}",
-            transform=axes[1].transAxes,
-            ha="right",
-            fontsize=9,
+        note += (
+            f" Replay SOC start/end: {summary['SOC_initial']:.4f} / {summary['SOC_final']:.4f};"
+            f" periodicity error: {summary['periodicity_error']:.2e}."
         )
 
-        caption = f"Feasible baseline: {summary['baseline_data']:.2f}\nOptimized: {summary['optimized_data']:.2f}"
-
-        if solar and comparison:
-            gain_key = (
-                "improvement_over_fixed_design_percent"
-                if design
-                else "improvement_over_fixed_solar_currents_percent"
-            )
-            gain_label = "fixed roll/allocation" if design else "fixed currents"
-            caption += f"\nGain over {gain_label}: {comparison[gain_key]:.3f}%"
-
-        axes[-1].text(
-            0.99, 0.06, caption, transform=axes[-1].transAxes, ha="right", fontsize=9
-        )
-
-    axes[-1].set_xlabel("Time [hours]")
-
-    scope = (
-        "communication power and initial SOC"
-        if summary.get("initial_soc_optimized")
-        else "communication power"
+    save_figure(
+        fig, output, "optimization", result_name(summary), result_context(summary), note
     )
 
-    if summary.get("solar_currents_optimized"):
-        scope += ", and solar currents"
 
-    if design:
-        if summary.get("roll_optimized") and summary.get("allocation_optimized"):
-            scope = "roll and cell/radiator allocation"
-        elif summary.get("roll_optimized"):
-            scope = "roll"
-        elif summary.get("allocation_optimized"):
-            scope = "cell/radiator allocation"
-        else:
-            scope = "fixed roll/allocation"
-
-    status = "Validated" if summary["validated"] else "Unvalidated"
-    count = summary.get("design_variable_count", summary["control_points"])
-    fig.suptitle(
-        f"{status} CADRE optimization: {scope}\n"
-        f"{summary['nodes']} nodes · {count} design variables · "
-        f"{summary['improvement_percent']:.2f}% more downloaded data",
-        fontsize=12 if summary.get("solar_currents_optimized") else 14,
-    )
-
-    fig.savefig(output / "optimization.png", dpi=180)
-
-    plt.close(fig)
-
-
-def plot_solar_currents(data, output):
-    """Plot prescribed and optimized current profiles for all 12 panels."""
+def plot_solar_currents(data, output, summary=None):
+    """Use one legend and consistent scales for all twelve panel profiles."""
+    configure_style()
     hours = data["time_s"] / 3600
-
     fig, axes = plt.subplots(
-        3, 4, figsize=(12, 8), sharex=True, sharey=True, constrained_layout=True
+        3, 4, figsize=(15, 10), sharex=True, sharey=True, constrained_layout=True
     )
+    candidate = "Optimized" if summary and summary.get("validated") else "Trial iterate"
+    if summary and not summary.get("solar_currents_optimized"):
+        candidate = "Prescribed currents"
+    low = min(0, float(np.min(data["baseline_Isetpt"])), float(np.min(data["Isetpt"])))
+    high = max(
+        0.4, float(np.max(data["baseline_Isetpt"])), float(np.max(data["Isetpt"]))
+    )
+    margin = 0.04 * max(high - low, 0.01)
 
     for panel, axis in enumerate(axes.ravel()):
         axis.plot(
             hours,
             data["baseline_Isetpt"][panel],
-            color="#6b7280",
+            color=GRAY,
             label="Benchmark currents",
         )
-        axis.plot(hours, data["Isetpt"][panel], color="#0866b2", label="Optimized")
-        axis.set_title(f"Panel {panel + 1}")
-        axis.set_ylim(-0.01, 0.41)
-        axis.grid(alpha=0.2)
+        axis.plot(hours, data["Isetpt"][panel], color=BLUE, label=candidate)
+        axis.set(
+            title=f"Panel {panel + 1:02d}",
+            ylim=(low - margin, high + margin),
+            xlim=(hours[0], hours[-1]),
+        )
+        axis.axhline(0.4, color=RED, linestyle=":", label="Control limit: 0.4 A")
 
-    axes[0, 0].legend(fontsize=8)
+    for axis in axes[-1]:
+        axis.set_xlabel("Time [hours]")
+    for axis in axes[:, 0]:
+        axis.set_ylabel("Solar current [A]")
 
-    fig.supxlabel("Time [hours]")
-    fig.supylabel("Solar current [A]")
-    fig.suptitle("Solar-current profiles with temperature-dependent voltage")
-
-    fig.savefig(output / "solar_currents.png", dpi=180)
-
-    plt.close(fig)
+    save_figure(
+        fig,
+        output,
+        "solar_currents",
+        "Solar-current schedules by panel",
+        (
+            result_context(summary)
+            if summary
+            else "Twelve panels · Temperature-dependent voltage"
+        ),
+        "All panels use the same current scale. Curves show time-node currents reconstructed from the spline controls.",
+        shared_legend=True,
+    )
 
 
 def plot_design_controls(data, summary, output):
-    """Plot roll and the shared 7-by-12 thermal allocation matrix."""
+    configure_style()
     hours = data["time_s"] / 3600
-
-    fig, axes = plt.subplots(2, 1, figsize=(11, 8), constrained_layout=True)
+    fig, axes = plt.subplots(2, 1, figsize=(14, 9), constrained_layout=True)
     axes[0].plot(
-        hours,
-        np.rad2deg(data["baseline_gamma"]),
-        color="#6b7280",
-        label="Benchmark roll",
+        hours, np.rad2deg(data["baseline_gamma"]), color=GRAY, label="Benchmark roll"
     )
-    axes[0].plot(
-        hours,
-        np.rad2deg(data["gamma"]),
-        color="#0866b2",
-        label="Optimized roll" if summary.get("roll_optimized") else "Fixed roll",
+    label = "Optimized roll" if summary.get("validated") else "Trial roll"
+    if not summary.get("roll_optimized"):
+        label = "Fixed roll"
+    axes[0].plot(hours, np.rad2deg(data["gamma"]), color=BLUE, label=label)
+    axes[0].set(
+        xlabel="Time [hours]",
+        ylabel="Roll angle [deg]",
+        title="Spacecraft roll schedule",
+        xlim=(hours[0], hours[-1]),
     )
-    axes[0].set_xlabel("Time [hours]")
-    axes[0].set_ylabel("Roll angle [degrees]")
-    axes[0].set_ylim(-2, 92)
-    axes[0].grid(alpha=0.2)
-    axes[0].legend()
-
     allocation = axes[1].imshow(
-        data["cellInstd"], vmin=0, vmax=1, cmap="viridis", aspect="auto"
+        data["cellInstd"], vmin=0, vmax=1, cmap="viridis", aspect="auto", origin="lower"
     )
     axes[1].set_xticks(range(12), range(1, 13))
     axes[1].set_yticks(range(7), range(1, 8))
-    axes[1].set_xlabel("Panel")
-    axes[1].set_ylabel("Surface location")
-    axes[1].set_title(
-        "Shared cell/radiator allocation (0 = radiator, 1 = cell thermal properties)"
+    state = "Free" if summary.get("allocation_optimized") else "Fixed"
+    axes[1].set(
+        xlabel="Panel",
+        ylabel="Cell location",
+        title=f"{state} cell/radiator thermal allocation",
     )
-
-    fig.colorbar(allocation, ax=axes[1], label="Allocation")
-    fig.suptitle("Roll profile and surface allocation")
-
-    fig.savefig(output / "design_controls.png", dpi=180)
-
-    plt.close(fig)
+    fig.colorbar(
+        allocation,
+        ax=axes[1],
+        label="Allocation fraction",
+        ticks=[0, 0.25, 0.5, 0.75, 1],
+    )
+    save_figure(
+        fig,
+        output,
+        "design_controls",
+        "Roll schedule and surface allocation",
+        result_context(summary),
+        "Allocation interpolates thermal properties: 0 = radiator, 1 = solar cell. The same 7 × 12 allocation is shared across all time nodes.",
+    )
 
 
 def plot_convergence(history, summary, output):
-    """Plot the recorded solver residuals without running another optimization."""
+    """Separate feasibility, stationarity, and complementarity diagnostics."""
+    configure_style()
+    if summary.get("warm_start"):
+        history = [row for row in history if row["iteration"] > 0]
     iterations = np.array([row["iteration"] for row in history])
-
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5), constrained_layout=True)
-
-    for axis, key, title, threshold, threshold_label in [
-        (axes[0], "nlp_error", "KKT optimality error", 1e-8, "Requested NLP tolerance"),
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10), constrained_layout=True)
+    specifications = [
         (
-            axes[1],
-            "inf_pr",
-            "Primal infeasibility",
-            1e-6,
-            "Result validation threshold",
+            "nlp_error",
+            "Overall KKT optimality error",
+            1e-8,
+            "Requested tolerance: 1e-8",
         ),
-    ]:
-        values = np.array([row[key] for row in history], dtype=float)
-        positive = np.isfinite(values) & (values > 0)
+        ("inf_pr", "Primal constraint violation", 1e-6, "Validation threshold: 1e-6"),
+        ("inf_du", "Dual stationarity residual", None, None),
+        ("compl", "Bound complementarity", None, None),
+    ]
 
-        axis.semilogy(
-            iterations[positive], values[positive], color="#0866b2", linewidth=1.8
-        )
-        axis.axhline(threshold, color="#b42e28", linestyle="--", label=threshold_label)
-        axis.set_title(title)
-        axis.set_xlabel("Iteration")
-        axis.set_ylabel("Residual")
-        axis.grid(alpha=0.25, which="both")
-        axis.legend(loc="upper right", fontsize=8)
+    for axis, (key, title, threshold, threshold_label) in zip(
+        axes.ravel(), specifications
+    ):
+        values = np.array([row.get(key, np.nan) for row in history], dtype=float)
+        valid = np.isfinite(values) & (values >= 0)
+        plotted = np.where(valid, np.maximum(values, np.finfo(float).tiny), np.nan)
+        axis.semilogy(iterations, plotted, color=BLUE, label="Recorded residual")
 
-    status = "Validated" if summary.get("validated") else "Unvalidated"
-    title = f"{status} CADRE case: {summary['nodes']:,} nodes"
+        if threshold is not None:
+            axis.axhline(threshold, color=RED, linestyle="--", label=threshold_label)
+        if not valid.any():
+            axis.text(
+                0.5,
+                0.5,
+                "Not recorded in this run",
+                ha="center",
+                transform=axis.transAxes,
+            )
+        axis.set(title=title, xlabel="Optimizer iteration", ylabel="Residual")
+        integer_ticks(axis)
 
-    if "design_variable_count" in summary:
-        title += f", {summary['design_variable_count']:,} design variables"
+    note = "KKT error uses AMIGO scaling; dual and complementarity panels show the recorded raw metrics."
+    if summary.get("warm_start"):
+        note += " Warm-start iteration 0 is omitted because it precedes checkpoint restoration."
+    save_figure(
+        fig,
+        output,
+        "convergence",
+        "Optimizer convergence diagnostics",
+        result_context(summary),
+        note,
+        shared_legend=True,
+    )
 
-    fig.suptitle(title)
 
-    fig.savefig(output / "convergence.png", dpi=180)
+def plot_saved_case(results, output):
+    """Refresh figures from saved arrays, keeping numerical results intact."""
+    output.mkdir(parents=True, exist_ok=True)
+    summary = json.loads((results / "summary.json").read_text())
+    reference = find_reference(results, summary)
 
-    plt.close(fig)
+    with np.load(results / "trajectories.npz") as data:
+        plot_trajectories(data, summary, output, reference)
+        if summary.get("solar_voltage_coupled"):
+            plot_solar_currents(data, output, summary)
+        if summary.get("design_physics_restored"):
+            plot_design_controls(data, summary, output)
+
+    history_path = results / "solver_history.json"
+    if history_path.exists():
+        plot_convergence(json.loads(history_path.read_text()), summary, output)
 
 
 def main(argv=None):
@@ -390,29 +444,28 @@ def main(argv=None):
     parser.add_argument(
         "--output", type=Path, help="Save figures separately from the source result"
     )
-
+    parser.add_argument(
+        "--all-results",
+        action="store_true",
+        help="Refresh every saved case in integrated/results; no optimization is run",
+    )
     args = parser.parse_args(argv)
+    cases = [args.results]
 
-    output = args.output or args.results
-    output.mkdir(parents=True, exist_ok=True)
+    if args.all_results:
+        root = Path(__file__).resolve().parents[1] / "results"
+        cases = [
+            path.parent
+            for path in sorted(root.glob("*/summary.json"))
+            if (path.parent / "trajectories.npz").exists()
+        ]
 
-    summary = json.loads((args.results / "summary.json").read_text())
-
-    reference = find_reference(args.results, summary)
-
-    with np.load(args.results / "trajectories.npz") as data:
-        plot_trajectories(data, summary, output, reference)
-
-        if summary.get("solar_voltage_coupled"):
-            plot_solar_currents(data, output)
-
-        if summary.get("design_physics_restored"):
-            plot_design_controls(data, summary, output)
-
-    history_path = args.results / "solver_history.json"
-
-    if history_path.exists():
-        plot_convergence(json.loads(history_path.read_text()), summary, output)
+    for results in cases:
+        output = args.output or results
+        if args.all_results and args.output:
+            output = args.output / results.name
+        plot_saved_case(results, output)
+        print(f"Figures saved to {output.resolve()}", flush=True)
 
 
 if __name__ == "__main__":

@@ -19,6 +19,28 @@ Optimization directory names remain stable so checkpoint restart paths stay vali
 Use each `summary.json` to determine validation status; trial objectives are not
 completed optimization results.
 
+Every saved case with trajectories can be replotted without running AMIGO:
+
+```sh
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.plot_pcomm_results integrated/results/pcomm_solar
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.plot_pcomm_results --all-results
+```
+
+`--all-results` refreshes each case in its existing directory. Add `--output`
+to collect figures in a separate directory, with one subfolder per saved case.
+
+| Figure | Contents |
+| --- | --- |
+| `optimization.png` | Communication power, SOC, current, solar power when modeled, and cumulative data; visible bounds and baseline comparisons |
+| `solar_currents.png` | Twelve panel currents with one shared scale and legend |
+| `design_controls.png` | Roll schedule and the labeled 7 × 12 thermal-allocation matrix |
+| `convergence.png` | KKT error, primal violation, dual stationarity, and complementarity, when history is available |
+
+Headers identify validated results and unvalidated trials. Footers show data
+totals and SOC periodicity where available. Trial curves are labeled as trial
+iterates. These figures use the same formatting as the
+[subsystem guide](../../visualizations/README.md).
+
 Start with [`pcomm_design_reference/`](pcomm_design_reference/) for the full
 validated fixed-design case. Its `optimization.png` shows the trajectories and
 `convergence.png` shows the solver residuals. The `design_smoke/` directory is a

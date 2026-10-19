@@ -277,6 +277,7 @@ def validate_and_save_results(case, args, result):
             "warm-start segment" if args.warm_start else "cold solver phase"
         ),
         "initial_barrier_param": result.initial_barrier_param,
+        "iteration_limit": args.max_iterations,
         "optimized_data": float(Data_replay[-1]),
         "improvement_percent": (
             float(100 * (Data_replay[-1] / Data_baseline[-1] - 1))

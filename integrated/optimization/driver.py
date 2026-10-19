@@ -59,7 +59,7 @@ def optimize_case(model, case, args):
 
     options = {
         "solver": solver,
-        "max_iterations": 200,
+        "max_iterations": args.max_iterations,
         "convergence_tolerance": 1e-8,
         "initial_barrier_param": initial_barrier,
         "barrier_strategy": "monotone",

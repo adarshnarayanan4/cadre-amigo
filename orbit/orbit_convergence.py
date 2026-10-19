@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+
+from visualizations.style import configure_style, finish_figure
 from orbit.orbit_reference import (
     orbital_elements_to_state,
     calculate_orbital_period,
@@ -26,9 +28,7 @@ def run_case(num_time_steps):
     q0 = np.concatenate((r0, v0))
 
     # Time discretization
-    orbital_period = calculate_orbital_period(
-        alt_perigee=500.0, alt_apogee=500.0
-    )
+    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
 
     dt = orbital_period / num_time_steps
 
@@ -157,17 +157,11 @@ def main():
     for i in range(len(results) - 1):
         coarse = results[i]
         fine = results[i + 1]
-        position_order = calculate_observed_order(
-            coarse, fine, "max_position_error"
-        )
-        velocity_order = calculate_observed_order(
-            coarse, fine, "max_velocity_error"
-        )
+        position_order = calculate_observed_order(coarse, fine, "max_position_error")
+        velocity_order = calculate_observed_order(coarse, fine, "max_velocity_error")
 
         print()
-        print(
-            f"{coarse['num_time_steps']} -> {fine['num_time_steps']} intervals"
-        )
+        print(f"{coarse['num_time_steps']} -> {fine['num_time_steps']} intervals")
 
         print("Position order:", position_order)
         print("Velocity order:", velocity_order)
@@ -175,35 +169,33 @@ def main():
     # Convergence plot
     dt_values = np.array([result["dt"] for result in results])
 
-    position_errors = np.array(
-        [result["max_position_error"] for result in results]
-    )
-    velocity_errors = np.array(
-        [result["max_velocity_error"] for result in results]
-    )
+    position_errors = np.array([result["max_position_error"] for result in results])
+    velocity_errors = np.array([result["max_velocity_error"] for result in results])
 
-    plt.figure(figsize=(8, 6))
-
-    plt.loglog(
-        dt_values,
-        position_errors,
-        marker="o",
-        label="Position Difference",
+    configure_style()
+    figure, axes = plt.subplots(
+        2, 1, figsize=(13, 9), sharex=True, constrained_layout=True
     )
 
-    plt.xlabel("Time Step [s]")
-    plt.ylabel("Maximum Position Difference [km]")
+    for axis, errors, title, unit in zip(
+        axes,
+        [position_errors, velocity_errors],
+        ["Maximum position difference", "Maximum velocity difference"],
+        ["Position difference [km]", "Velocity difference [km/s]"],
+    ):
+        order = np.argsort(dt_values)
+        axis.loglog(
+            dt_values[order], errors[order], marker="o", label="AMIGO versus RK4"
+        )
+        axis.set(title=title, ylabel=unit)
 
-    plt.title("AMIGO Grid Convergence")
-
-    plt.grid(
-        True,
-        which="both",
+    axes[-1].set_xlabel("Time step [s]")
+    finish_figure(
+        figure,
+        "Orbit grid-convergence study",
+        "AMIGO trajectories compared with RK4 on each grid",
+        "Both position and velocity differences are shown. Smaller time steps correspond to finer grids.",
     )
-
-    plt.legend()
-
-    plt.tight_layout()
     plt.show()
 
 

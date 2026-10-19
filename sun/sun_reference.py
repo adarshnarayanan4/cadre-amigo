@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from visualizations.style import configure_style, finish_figure
+
 from orbit.orbit_reference import (
     orbital_elements_to_state,
     rk4_step,
@@ -12,7 +14,6 @@ from attitude.attitude_reference import (
     attitude_roll,
     combine_rotation_matrices,
 )
-
 
 RE = 6378.137
 R1 = RE * 0.85
@@ -42,9 +43,7 @@ def sun_position_eci(times, LD=0.0):
         L = D2R * 280.460 + D2R * 0.9856474 * T[i]
         g = D2R * 357.528 + D2R * 0.9856003 * T[i]
 
-        Lambda = (
-            L + D2R * 1.914666 * np.sin(g) + D2R * 0.01999464 * np.sin(2.0 * g)
-        )
+        Lambda = L + D2R * 1.914666 * np.sin(g) + D2R * 0.01999464 * np.sin(2.0 * g)
 
         eps = D2R * 23.439 - D2R * 3.56e-7 * T[i]
 
@@ -240,24 +239,29 @@ def main():
     print("Elevation range [rad]:")
     print(np.min(elevation), np.max(elevation))
 
-    # LOS plot
-    plt.figure()
-    plt.plot(times / 60.0, LOS)
-    plt.xlabel("Time [min]")
-    plt.ylabel("Line of Sight")
-    plt.title("CADRE Sun Line of Sight")
-    plt.grid()
-
-    # Sun angles plot
-    plt.figure()
-    plt.plot(times / 60.0, azimuth, label="Azimuth")
-    plt.plot(times / 60.0, elevation, label="Elevation")
-    plt.xlabel("Time [min]")
-    plt.ylabel("Angle [rad]")
-    plt.title("CADRE Sun Position in Body Frame")
-    plt.legend()
-    plt.grid()
-
+    configure_style()
+    figure, axes = plt.subplots(
+        2, 1, figsize=(13, 8), sharex=True, constrained_layout=True
+    )
+    axes[0].plot(times / 3600, LOS)
+    axes[0].set(
+        title="Sunlight fraction: 0 = eclipse, 1 = full sunlight",
+        ylabel="Sunlight fraction",
+        ylim=(-0.05, 1.05),
+    )
+    axes[1].plot(times / 3600, np.rad2deg(azimuth), label="Azimuth")
+    axes[1].plot(times / 3600, np.rad2deg(elevation), label="Elevation (from +z)")
+    axes[1].set(
+        title="Sun direction in the spacecraft body frame",
+        ylabel="Angle [deg]",
+        xlabel="Time [hours]",
+    )
+    finish_figure(
+        figure,
+        "Solar illumination and Sun direction",
+        f"Python reference · {len(times):,} time nodes · {times[-1] / 3600:g} hours",
+        "The model defines elevation as the angle measured from the positive body z axis.",
+    )
     plt.show()
 
 

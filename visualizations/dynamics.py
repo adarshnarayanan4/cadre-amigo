@@ -40,7 +40,7 @@ def orbit(case, output):
     for node in range(case.n - 1):
         reference[node + 1] = rk4_step(reference[node], case.dt)
 
-    figure = plt.figure(figsize=(13, 7), constrained_layout=True)
+    figure = plt.figure(figsize=(16, 8), constrained_layout=True)
     layout = figure.add_gridspec(2, 2, width_ratios=[1.2, 1])
     geometry = figure.add_subplot(layout[:, 0], projection="3d")
     altitude = figure.add_subplot(layout[0, 1])
@@ -62,6 +62,7 @@ def orbit(case, output):
     radius = np.max(np.linalg.norm(source[:, :3], axis=1))
     geometry.set(xlim=(-radius, radius), ylim=(-radius, radius), zlim=(-radius, radius))
     geometry.set_box_aspect((1, 1, 1))
+    geometry.set_title("Orbit in Earth-centered inertial coordinates")
     geometry.legend(loc="upper left")
 
     compare(
@@ -74,9 +75,11 @@ def orbit(case, output):
     position_error = np.linalg.norm(reference[:, :3] - source[:, :3], axis=1)
     error_axis.plot(case.hours, position_error, color=TEAL)
     error_axis.set_ylabel("Position difference [km]")
+    altitude.set_title("Altitude above a spherical Earth")
+    error_axis.set_title("RK4 position difference: vector magnitude")
     time_axes([altitude, error_axis])
 
-    finish(figure, output, "orbit", "Orbit: the trajectory and its reconstruction")
+    finish(figure, output, "orbit", "Orbit geometry and propagation accuracy")
 
     return {"RK4 position difference max [km]": float(position_error.max())}
 
@@ -90,21 +93,26 @@ def attitude(case, output):
     acceleration = angular_acceleration(velocity, case.dt)
     torque = attitude_torque(velocity, acceleration)
 
-    figure, axes = panels(4)
+    figure, axes = panels(5)
     axes[0].plot(case.hours, np.rad2deg(case.value("gamma")), color=BLUE)
     axes[0].set_ylabel("Prescribed roll [deg]")
+    axes[0].set_title("Prescribed roll schedule")
     components(axes[1], case, velocity.T, "Angular velocity [1/s]")
-    components(axes[2], case, torque.T, "Required torque [N m]")
-    axes[3].plot(case.hours, np.max(np.abs(velocity.T - case.value("w_B")), axis=0))
-    axes[3].set_ylabel("Max axis difference [1/s]")
-    axes[3].set_title("Python angular velocity minus the CADRE benchmark")
+    axes[1].set_title("Body angular velocity")
+    components(axes[2], case, acceleration.T, "Angular acceleration [1/s²]")
+    axes[2].set_title("Body angular acceleration")
+    components(axes[3], case, torque.T, "Required torque [N m]")
+    axes[3].set_title("Required attitude-control torque")
+    axes[4].plot(case.hours, np.max(np.abs(velocity.T - case.value("w_B")), axis=0))
+    axes[4].set_ylabel("Max axis difference [1/s]")
+    axes[4].set_title("Angular-velocity reconstruction error")
     time_axes(axes)
 
     finish(
         figure,
         output,
         "attitude",
-        "Attitude: roll sets the motion the wheels must support",
+        "Spacecraft attitude and control demand",
     )
 
     return {
@@ -125,7 +133,9 @@ def reaction_wheel(case, output):
 
     figure, axes = panels(4)
     components(axes[0], case, torque, "Wheel torque [N m]")
+    axes[0].set_title("Reaction-wheel torque")
     components(axes[1], case, speed, "Wheel speed [1/s]")
+    axes[1].set_title("Reaction-wheel angular velocity")
     compare(
         axes[2],
         case,
@@ -136,18 +146,18 @@ def reaction_wheel(case, output):
     axes[2].set_ylim(
         0, 1.1 * max(case.value("P_RW").sum(axis=0).max(), power.sum(axis=0).max())
     )
-    axes[2].set_title("The total wheel load is nearly constant for this benchmark")
+    axes[2].set_title("Total wheel electrical load")
 
     axes[3].plot(case.hours, np.linalg.norm(trapezoid - speed, axis=0), color=GOLD)
     axes[3].set_ylabel("Speed difference [1/s]")
-    axes[3].set_title("Trapezoidal vs RK4 integration: vector difference magnitude")
+    axes[3].set_title("Trapezoidal versus RK4 speed: vector difference")
     time_axes(axes)
 
     finish(
         figure,
         output,
         "reaction_wheel",
-        "Reaction wheels: attitude control consumes electrical power",
+        "Reaction-wheel dynamics and electrical power",
     )
 
     return {

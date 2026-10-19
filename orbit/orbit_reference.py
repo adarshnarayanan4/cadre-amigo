@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from visualizations.style import configure_style, finish_figure
+
 # Earth constants
 MU = 398600.44  # Earth's gravitational parameter in km^3/s^2
 RE = 6378.137  # Earth's radius in km
@@ -316,7 +318,8 @@ if __name__ == "__main__":
     y = states[:, 1]
     z = states[:, 2]
 
-    fig = plt.figure(figsize=(9, 8))
+    configure_style()
+    fig = plt.figure(figsize=(13, 9), constrained_layout=True)
     ax = fig.add_subplot(111, projection="3d")
 
     # Plot orbit
@@ -339,12 +342,9 @@ if __name__ == "__main__":
     ax.set_ylabel("Y [km]", labelpad=10)
     ax.set_zlabel("Z [km]", labelpad=10)
 
-    ax.set_title("CADRE Orbit Reference Trajectory", pad=20)
+    ax.set_title("Orbit in Earth-centered inertial coordinates", pad=20)
 
     ax.legend()
-
-    plt.tight_layout()
-    plt.show()
 
     # Plot Earth
     u = np.linspace(0, 2 * np.pi, 60)
@@ -356,4 +356,11 @@ if __name__ == "__main__":
 
     earth_z = RE * np.outer(np.ones_like(u), np.cos(v))
 
-    ax.plot_surface(earth_x, earth_y, earth_z, alpha=0.25)
+    ax.plot_surface(earth_x, earth_y, earth_z, alpha=0.25, color="#80b9cb")
+    finish_figure(
+        fig,
+        "Orbit geometry and RK4 propagation",
+        f"Python reference · {len(times):,} time nodes · {times[-1] / 3600:g} hours",
+        "Earth is shown as a sphere. All three spatial axes use the same scale.",
+    )
+    plt.show()

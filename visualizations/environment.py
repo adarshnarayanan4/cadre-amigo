@@ -33,21 +33,21 @@ def sun(case, output):
     figure, axes = panels(3)
     compare(axes[0], case, case.value("LOS"), sunlight, "Sunlight fraction")
     axes[0].set_ylim(-0.05, 1.08)
-    axes[0].set_title(
-        "1 = full sunlight; 0 = eclipse; intermediate values = transition"
-    )
+    axes[0].set_title("Sunlight fraction: 0 = eclipse, 1 = full sunlight")
     axes[1].plot(case.hours, np.rad2deg(azimuth), label="Azimuth", color=BLUE)
     axes[1].plot(
         case.hours, np.rad2deg(elevation), label="Elevation (from +z)", color=GOLD
     )
     axes[1].set_ylabel("Body-frame angle [deg]")
+    axes[1].set_title("Sun direction in the spacecraft body frame")
     axes[1].legend()
     eclipse(axes[1], case)
     axes[2].plot(case.hours, sunlight - case.value("LOS"), color=TEAL)
     axes[2].set_ylabel("Sunlight difference")
+    axes[2].set_title("Sunlight reconstruction error: Python minus CADRE")
     time_axes(axes)
 
-    finish(figure, output, "sun", "Sunlight: eclipse and changing solar direction")
+    finish(figure, output, "sun", "Solar illumination and Sun direction")
 
     return {"sunlight max difference": maximum_error(sunlight, case.value("LOS"))}
 
@@ -63,15 +63,15 @@ def solar(case, output):
     geometric = source.sum(axis=0)
     illuminated = geometric * case.value("LOS")[None, :]
 
-    figure, axes = panels(3, (12, 9))
+    figure, axes = panels(3, (13, 10))
     maximum = max(float(geometric.max()), float(illuminated.max()))
 
     for axis, values, title in zip(
         axes[:2],
         [geometric, illuminated],
         [
-            "Geometric exposure: sum of seven cells per panel",
-            "Effective exposure: geometric area multiplied by sunlight fraction",
+            "Geometric exposed area by panel",
+            "Illuminated area by panel",
         ],
     ):
         image = axis.imshow(
@@ -83,7 +83,7 @@ def solar(case, output):
             vmin=0,
             vmax=maximum,
         )
-        axis.set_yticks([1, 3, 6, 9, 12])
+        axis.set_yticks(np.arange(1, 13))
         axis.set_ylabel("Panel")
         axis.set_title(title)
         figure.colorbar(image, ax=axis, label="Area [m²]")
@@ -92,14 +92,15 @@ def solar(case, output):
         case.hours, np.max(np.abs(reference - source), axis=(0, 1)), color=TEAL
     )
     axes[2].set_ylabel("Max cell difference [m²]")
-    axes[2].set_title("Recreated MBI lookup minus the CADRE exposed-area table output")
+    axes[2].set_title("Exposed-area lookup error: largest cell difference")
     time_axes(axes)
 
     finish(
         figure,
         output,
         "solar",
-        "Solar exposure: orientation and eclipse affect all 12 panels",
+        "Solar-panel exposure and illumination",
+        "Each panel contains seven cells. Both heatmaps share the same area scale; illuminated area equals geometric area × sunlight fraction.",
     )
 
     return {"exposed-area max difference [m²]": maximum_error(reference, source)}
@@ -125,21 +126,22 @@ def thermal(case, output):
         axes[0].plot(case.hours, reference[index], label=label)
 
     axes[0].set_ylabel("Temperature [K]")
+    axes[0].set_title("Five thermal states: four fins and the body")
     axes[0].legend(ncol=5)
     eclipse(axes[0], case)
     axes[1].plot(case.hours, np.max(np.abs(reference - source), axis=0), color=TEAL)
     axes[1].set_ylabel("Max state difference [K]")
-    axes[1].set_title("Python RK4 reconstruction minus the CADRE benchmark")
+    axes[1].set_title("RK4 reconstruction error: largest state difference")
     axes[2].plot(case.hours, np.max(np.abs(trapezoid - reference), axis=0), color=GOLD)
     axes[2].set_ylabel("Max state difference [K]")
-    axes[2].set_title("Trapezoidal vs RK4 integration with the same prescribed inputs")
+    axes[2].set_title("Trapezoidal versus RK4: largest state difference")
     time_axes(axes)
 
     finish(
         figure,
         output,
         "thermal",
-        "Thermal response: five temperatures follow the heating and cooling cycle",
+        "Spacecraft temperatures and integration accuracy",
     )
 
     return {

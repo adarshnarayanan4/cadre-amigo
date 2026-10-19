@@ -14,6 +14,12 @@ def parse_args(argv=None):
 
     parser.add_argument("--nodes", type=int, default=1500)
     parser.add_argument("--control-points", type=int, default=300)
+    parser.add_argument(
+        "--max-iterations",
+        type=int,
+        default=200,
+        help="Maximum optimizer iterations for this run or warm-start segment (default: 200)",
+    )
 
     parser.add_argument(
         "--fixed-initial-soc",
@@ -90,6 +96,9 @@ def parse_args(argv=None):
     )
 
     args = parser.parse_args(argv)
+
+    if args.max_iterations < 1:
+        parser.error("--max-iterations must be positive")
 
     if args.initial_barrier is not None and (
         not np.isfinite(args.initial_barrier) or args.initial_barrier <= 0

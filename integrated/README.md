@@ -90,6 +90,8 @@ Useful options (`--help` lists all):
 - `--legacy-fixed-voltage`: reproduce the earlier fixed-voltage formulation.
 - `--nodes`, `--control-points`, `--output`: select a grid and result directory.
   Short windows retain the original timestep and must include ground contact.
+- `--max-iterations`: limit a run or restart segment (default: 200). Reaching
+  this limit saves diagnostics but does not count as convergence.
 
 The default SuperLU backend retains AMIGO's interior-point algorithm. The native
 LDL backend (`--linear-solver native`) adds full inertia checks with explicit
@@ -97,6 +99,8 @@ temporal ordering. Both include analytic external lookup Hessians. The native
 backend drops stored zeros and expands its symbolic pattern if a zero becomes
 nonzero. `--reduce-all-controls` selects an experimental SuperLU reduction and
 cannot be combined with native LDL.
+Native factorization reports include elapsed seconds and inertia counts, so
+repeated inertia corrections are visible between optimizer iterations.
 
 The evaluator adapter excludes constraint rows from objective directional
 products and refreshes external caches before Hessian evaluation. These local
@@ -111,6 +115,8 @@ Each completed attempt writes `summary.json`, `solver_history.json`, and
 for restored design physics, `design_controls.png`. When iteration history is
 available, plotting also adds `convergence.png`. `--output` on the plotting
 command saves figures separately from the source result.
+Warm-start convergence plots omit iteration 0: AMIGO logs that row before the
+checkpoint callback restores the starting point. The raw history retains it.
 
 Validation requires solver convergence, KKT and primal residuals below `1e-6`,
 bound violations and SOC periodicity below `1e-7`, replay errors below `1e-5`,

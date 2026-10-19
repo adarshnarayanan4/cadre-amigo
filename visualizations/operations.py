@@ -43,23 +43,26 @@ def power(case, output):
         communication_load,
         color=BLUE,
         alpha=0.7,
-        label="Communication electrical load (5 × P_comm)",
+        label="Communication load (5 × P_comm)",
     )
     axes[0].set_ylabel("Power [W]")
+    axes[0].set_title("Solar generation and electrical demand")
     axes[0].legend()
     eclipse(axes[0], case)
     compare(axes[1], case, case.value("P_bat"), battery, "Net battery power [W]")
     axes[1].axhline(0, color=GRAY, linewidth=0.8)
-    axes[1].set_title("Positive = charging; negative = battery supplies the shortfall")
+    axes[1].set_title("Net battery power: positive = charging")
     axes[2].plot(case.hours, battery - case.value("P_bat"), color=TEAL)
     axes[2].set_ylabel("Reconstruction error [W]")
+    axes[2].set_title("Battery-power reconstruction error")
     time_axes(axes)
 
     finish(
         figure,
         output,
         "power",
-        "Power balance: solar supply must cover spacecraft demand",
+        "Spacecraft electrical power balance",
+        "Net battery power = solar supply − (5 × P_comm + wheel load + 2 W base load). Negative net power means discharge.",
     )
 
     return {
@@ -86,33 +89,31 @@ def battery(case, output):
     axes[0].plot(
         case.hours, trapezoid, color=GOLD, linestyle=":", label="Python trapezoid"
     )
-    axes[0].axhline(0.2, color=GRAY, linestyle="--", linewidth=0.8)
+    axes[0].axhline(
+        0.2, color=GRAY, linestyle="--", linewidth=0.8, label="SOC limits: 0.2 to 1.0"
+    )
     axes[0].axhline(1, color=GRAY, linestyle="--", linewidth=0.8)
     axes[0].legend()
     eclipse(axes[0], case)
+    axes[0].set_title("State of charge and integration comparison")
     axes[1].plot(case.hours, current, color=BLUE)
-    axes[1].axhline(
-        -10, color=GOLD, linestyle="--", label="Integrated optimization limits"
-    )
+    axes[1].axhline(-10, color=GOLD, linestyle="--", label="Current limits: −10 to 5 A")
     axes[1].axhline(5, color=GOLD, linestyle="--")
     axes[1].axhline(0, color=GRAY, linewidth=0.8)
     axes[1].set_ylabel("Battery current [A]")
-    axes[1].set_title(
-        "Positive = charging; the original benchmark is not repaired for current limits"
-    )
+    axes[1].set_title("Battery current: positive = charging")
     axes[1].legend()
     axes[2].plot(case.hours, trapezoid - reference, color=GOLD)
     axes[2].set_ylabel("SOC difference")
-    axes[2].set_title(
-        "Trapezoidal minus RK4 integration, using the same prescribed power"
-    )
+    axes[2].set_title("Integration effect on SOC: trapezoidal minus RK4")
     time_axes(axes)
 
     finish(
         figure,
         output,
         "battery",
-        "Battery storage: charging and discharge accumulate into SOC",
+        "Battery state of charge and current",
+        "The original benchmark is not repaired for the integrated optimization limits. RK4 and trapezoidal replay use identical prescribed inputs.",
     )
 
     return {
@@ -130,27 +131,31 @@ def communication(case, output):
     )
     downloaded = propagate_data_rk4(0, rate, case.dt)
 
-    figure, axes = panels(4)
+    figure, axes = panels(6)
     axes[0].fill_between(case.hours, 0, case.value("CommLOS"), color=TEAL)
-    axes[0].set_ylabel("Ground contact")
-    axes[0].set_ylim(-0.05, 1.05)
-    axes[1].plot(case.hours, case.value("GSdist"), color=BLUE)
-    axes[1].set_ylabel("Station distance [km]")
-    compare(axes[2], case, case.value("Dr"), rate, "Data rate [CADRE units/s]")
-    compare(
-        axes[3],
-        case,
-        case.value("Data").ravel(),
-        downloaded,
-        "Downloaded [CADRE units]",
+    axes[0].set(
+        ylabel="Contact fraction", ylim=(-0.05, 1.05), title="Ground-station visibility"
     )
+    axes[1].plot(case.hours, case.value("GSdist"), color=BLUE)
+    axes[1].set(ylabel="Station distance [km]", title="Spacecraft-to-station distance")
+    axes[2].plot(case.hours, case.value("gain"), color=TEAL)
+    axes[2].set(ylabel="Antenna gain", title="Antenna gain toward the station")
+    axes[3].plot(case.hours, case.value("P_comm"), color=GOLD)
+    axes[3].set(
+        ylabel="Communication power [W]", title="Prescribed transmit-power schedule"
+    )
+    compare(axes[4], case, case.value("Dr"), rate, "Data rate [CADRE units/s]")
+    axes[4].set_title("Instantaneous download rate")
+    compare(axes[5], case, case.value("Data").ravel(), downloaded, "Data [CADRE units]")
+    axes[5].set_title("Cumulative downloaded data")
     time_axes(axes)
 
     finish(
         figure,
         output,
         "communication",
-        "Communication: data arrives during brief ground-station contacts",
+        "Ground contact and communication performance",
+        "Data is downloaded only during ground contact. Rate depends on distance, antenna gain, and transmit power. CADRE data units retain the legacy numerical convention.",
     )
 
     return {
@@ -176,7 +181,7 @@ def parameters(case, output):
     sources = [case.value("P_comm"), case.value("gamma"), case.value("Isetpt")[0]]
     labels = ["Communication power [W]", "Roll [rad]", "Panel 1 current [A]"]
 
-    figure, axes = plt.subplots(3, 2, figsize=(12, 9), constrained_layout=True)
+    figure, axes = plt.subplots(3, 2, figsize=(16, 11), constrained_layout=True)
 
     for row, (control, signal, source, label) in enumerate(
         zip(controls, signals, sources, labels)
@@ -190,16 +195,19 @@ def parameters(case, output):
         compare(axes[row, 1], case, source, signal, label)
         time_axes([axes[row, 1]])
 
-    axes[0, 0].set_title("Design weights: not samples of the trajectory")
-    axes[0, 1].set_title(
-        f"Cubic B-spline trajectories evaluated at {case.n:,} time nodes"
-    )
+    axes[0, 0].set_title("Communication-power control weights")
+    axes[1, 0].set_title("Roll control weights")
+    axes[2, 0].set_title("Panel 1 current control weights")
+    axes[1, 1].set_title("Reconstructed roll schedule")
+    axes[2, 1].set_title("Reconstructed panel 1 current")
+    axes[0, 1].set_title("Reconstructed communication power")
 
     finish(
         figure,
         output,
         "parameters",
-        "Spline controls: a compact set of weights produces smooth schedules",
+        "B-spline controls and reconstructed schedules",
+        "Left: spline weights by control-point index. Right: trajectories at the time nodes. Weights are not samples the trajectory must pass through.",
     )
 
     return {

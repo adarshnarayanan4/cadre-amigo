@@ -3,6 +3,22 @@
 These plots use case 0 from the original 12-hour CADRE benchmark and the Python
 reference functions in this repository. Generating them does not run AMIGO.
 
+## Figure index
+
+| Topic | Figures |
+| --- | --- |
+| Motion and control | [Orbit](figures/orbit.png), [attitude](figures/attitude.png), [reaction wheels](figures/reaction_wheel.png) |
+| Environment | [Sunlight](figures/sun.png), [solar exposure](figures/solar.png), [temperature](figures/thermal.png) |
+| Energy and data | [Power](figures/power.png), [battery](figures/battery.png), [communication](figures/communication.png) |
+| Design controls | [B-spline weights and schedules](figures/parameters.png) |
+| Integrated optimization | [Saved cases and figures](../integrated/results/README.md) |
+
+All figures use [the shared style](style.py): a short title, a case/status line,
+labeled panels, units on every quantitative axis, legends outside the data,
+and a footer for conventions or important results. Time histories use hours.
+Multi-panel current plots share their scales and legend. Heatmaps label every
+panel and cell location, with the color scale shown alongside them.
+
 Gray curves are saved CADRE outputs; dashed blue curves are Python
 reconstructions. Gold comparison curves show the effect of switching from RK4
 to trapezoidal integration. Error panels show differences that are too small to
@@ -27,7 +43,9 @@ Set `CADRE_ROOT` if the external CADRE checkout is not at `../CADRE`.
 Figures are saved without opening windows. `figures/measurements.json` records
 the measured reference differences for the selected problems; generating a
 selection replaces that file with measurements for the selection.
-The original interactive plots in the subsystem scripts remain available.
+The standalone orbit, attitude, and Sun scripts use the same formatting and
+still open their figures interactively. The orbit convergence study includes
+both position and velocity differences.
 
 ## Orbit
 
@@ -42,9 +60,10 @@ Source: [orbit dynamics and RK4 propagation](../orbit/orbit_reference.py).
 
 ## Attitude
 
-![Roll, angular velocity, torque, and reference difference](figures/attitude.png)
+![Roll, angular velocity, angular acceleration, torque, and reference difference](figures/attitude.png)
 
-Prescribed roll changes the body's angular velocity and required attitude torque.
+Prescribed roll changes the body's angular velocity, angular acceleration,
+and required attitude torque.
 The three component colors identify x, y, and z. The last panel compares the
 reconstructed angular velocity with the saved benchmark.
 
@@ -118,7 +137,7 @@ Source: [reaction-wheel dynamics and power](../reaction_wheel/reaction_wheel_ref
 
 ## Communication
 
-![Ground contact, station distance, bitrate, and downloaded data](figures/communication.png)
+![Ground contact, distance, antenna gain, transmit power, rate, and downloaded data](figures/communication.png)
 
 The spacecraft can download data only during ground-station contact. Distance,
 antenna gain, and communication power affect the rate during those windows.

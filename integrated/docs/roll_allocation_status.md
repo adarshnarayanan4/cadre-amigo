@@ -5,7 +5,7 @@ Full fixed-design reference: **validated**, in `../results/pcomm_design_referenc
 The shorter 600-node roll/allocation case remains validated in `../results/design_smoke/`.
 
 The full 12-hour roll/allocation optimization is unfinished and currently stopped.
-Last executed log: `../results/pcomm_roll_allocation_native/run_consistent_evaluator.log`.
+Latest completed trial: `../results/pcomm_roll_allocation_superlu_resume/run.log`.
 The sparse-pattern update has passed regression checks but has not completed a
 full-size solve. A completed result requires solver convergence and independent
 validation, recorded as `validated: true` in its summary.
@@ -13,7 +13,7 @@ validation, recorded as `validated: true` in its summary.
 Next restart command from repository root:
 
 ```sh
-OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=4 pixi run --manifest-path ~/git/amigo/pixi.toml python -u -m integrated.cadre_optimize_pcomm --optimize-roll --optimize-allocation --linear-solver native --warm-start integrated/results/pcomm_roll_allocation_native/restart_evaluator.npz --warm-start-push 1e-11 --output integrated/results/pcomm_roll_allocation_native
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=4 pixi run --manifest-path ~/git/amigo/pixi.toml python -u -m integrated.cadre_optimize_pcomm --optimize-roll --optimize-allocation --linear-solver native --max-iterations 20 --warm-start integrated/results/pcomm_roll_allocation_native/restart_evaluator.npz --warm-start-push 1e-11 --output integrated/results/pcomm_roll_allocation_next
 ```
 
 Current backend: full native LDL with analytic external lookup Hessians, explicit
@@ -56,9 +56,37 @@ provenance, and update this note with the completed status.
 
 Meeting result: use `../results/pcomm_design_reference/summary.json` and
 `optimization.png`; see `meeting_result.md`. No new solve is needed to present it.
-The native backend now drops stored numerical zeros and safely expands its symbolic
+The native backend drops stored numerical zeros and safely expands its symbolic
 pattern if previously zero Hessian entries become nonzero. Dense-reference
-regressions passed, but this performance change has not yet run on the full case.
+regressions passed. A full-size restart in `../results/pcomm_roll_allocation_resume/`
+reduced the symbolic pattern from 12,624,480 to 2,212,328 stored entries. It was
+stopped during numerical factorization before accepting a new iterate. A process
+sample confirmed work inside native LDL; fewer stored entries alone did not
+establish a speedup. The original restart remains unchanged.
+Native factorization now prints a running marker, elapsed seconds, and inertia
+counts for every attempt. This distinguishes repeated inertia corrections from
+time spent in one factorization. `--max-iterations` limits a restart segment;
+the default remains 200.
+
+A SuperLU comparison restarted from the same point for 20 iterations. It took
+602.14 solver seconds and failed convergence and independent validation. Primal
+infeasibility rose from 2.096e-4 to 9.982; the final dual residual was 4.616e-2.
+The independently replayed SOC periodicity error was -0.03248. This trial does
+not replace the preserved native restart or the validated fixed-design result.
+Its summary and convergence plot remain local in
+`integrated/results/pcomm_roll_allocation_superlu_resume/`; unsuccessful trial
+outputs are not published as working results. Warm-start plots omit iteration 0 because AMIGO logs it
+before the checkpoint callback restores the point; the raw history retains it.
+
+A subsequent native timing trial isolated the slow phase. The first numerical
+factorization took 3.42 seconds, with inertia (133257 positive, 126029 negative)
+instead of the required (133285 positive, 126001 negative). The second
+factorization, requested by inertia correction, was stopped after roughly 132
+seconds without finishing. No new iterate was accepted. The diagnostic remains
+local at `integrated/results/pcomm_roll_allocation_native_timed/factorization_diagnostic.json`.
+The next investigation is why regularization makes the numerical factorization
+so much slower, rather than another long uninstrumented restart. Any scaling or
+ordering change must retain correct inertia and checked full KKT solve residuals.
 The existing ordering already uses four-control spline aliases to capture local
 support; no additional spline-ordering change was made.
 
