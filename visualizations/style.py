@@ -73,7 +73,7 @@ def finish_figure(figure, title, subtitle="", note="", shared_legend=False):
         if axis.get_label() != "<colorbar>":
             format_axes(axis)
 
-    header = 0.85
+    header = 0.85 if subtitle else 0.55
 
     if shared_legend:
         entries = {}
@@ -90,11 +90,11 @@ def finish_figure(figure, title, subtitle="", note="", shared_legend=False):
                 entries.values(),
                 entries.keys(),
                 loc="upper left",
-                bbox_to_anchor=(0.06, 1 - 0.64 / height),
+                bbox_to_anchor=(0.06, 1 - (0.64 if subtitle else 0.34) / height),
                 ncol=min(3, len(entries)),
                 borderaxespad=0,
             )
-            header = 0.85 + 0.25 * ((len(entries) + 2) // 3)
+            header += 0.25 * ((len(entries) + 2) // 3)
 
     wrapped_note = textwrap.fill(note, width=int(width * 13))
     footer = 0.22 + 0.16 * len(wrapped_note.splitlines()) if note else 0.15
@@ -107,7 +107,10 @@ def finish_figure(figure, title, subtitle="", note="", shared_legend=False):
         wspace=0.08,
     )
     figure.text(0.06, 1 - 0.12 / height, title, va="top", fontsize=16, weight="bold")
-    figure.text(0.06, 1 - 0.45 / height, subtitle, va="top", fontsize=10, color=GRAY)
+    if subtitle:
+        figure.text(
+            0.06, 1 - 0.45 / height, subtitle, va="top", fontsize=10, color=GRAY
+        )
 
     if note:
         figure.text(

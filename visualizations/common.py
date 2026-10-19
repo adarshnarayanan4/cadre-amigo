@@ -102,8 +102,7 @@ def finish(figure, output, name, title, note=""):
         output,
         name,
         title,
-        "CADRE benchmark · Case 0 · 12 hours · 1,500 time nodes · Python reference replay",
-        note
+        note=note
         or "Source: CADRE test/data1346.pkl. Difference panels compare reconstructions; no new AMIGO optimization.",
     )
 

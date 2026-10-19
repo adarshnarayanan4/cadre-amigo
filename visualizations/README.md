@@ -13,11 +13,12 @@ reference functions in this repository. Generating them does not run AMIGO.
 | Design controls | [B-spline weights and schedules](figures/parameters.png) |
 | Integrated optimization | [Saved cases and figures](../integrated/results/README.md) |
 
-All figures use [the shared style](style.py): a short title, a case/status line,
+All figures use [the shared style](style.py): a short title,
 labeled panels, units on every quantitative axis, legends outside the data,
 and a footer for conventions or important results. Time histories use hours.
 Multi-panel current plots share their scales and legend. Heatmaps label every
 panel and cell location, with the color scale shown alongside them.
+Optimization figures also identify validation status.
 
 Gray curves are saved CADRE outputs; dashed blue curves are Python
 reconstructions. Gold comparison curves show the effect of switching from RK4
