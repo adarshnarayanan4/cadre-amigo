@@ -1,0 +1,148 @@
+{
+  "scope": "Input and reference checks only; no baseline repair, compilation, KKT factorization, or optimization",
+  "source_sha256": "b1c76b4daf98686e815973b84813a935b4ec0fe278373e1a22bdfa0c90061ce2",
+  "environment": {
+    "python": "3.13.15",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "packages": {
+      "amigo": "0.0.1",
+      "numpy": "2.5.2",
+      "scipy": "1.18.0",
+      "matplotlib": "3.11.1"
+    },
+    "build_tools": {
+      "cmake": "/Users/adarshnarayanan/git/amigo/.pixi/envs/default/bin/cmake",
+      "c++": "/Users/adarshnarayanan/git/amigo/.pixi/envs/default/bin/c++"
+    }
+  },
+  "cases": [
+    {
+      "case_index": 0,
+      "benchmark_LD_days": 5233.5,
+      "source_nodes": 1500,
+      "nodes": 1500,
+      "control_points": 300,
+      "duration_hours": 12.0,
+      "contact_nodes": 44,
+      "single_case_design_variables_with_roll_and_allocation": 4285,
+      "spline_reconstruction_max_errors": {
+        "communication_power_W": 1.8740564655672642e-13,
+        "roll_rad": 4.9960036108132044e-14,
+        "solar_current_A": 1.634803403760543e-14
+      },
+      "lookup_replay_checked": true,
+      "lookup_replay_max_errors": {
+        "exposed_area_m2": 3.0314292742694704e-16,
+        "antenna_gain": 1.1218803663837207e-13
+      }
+    },
+    {
+      "case_index": 1,
+      "benchmark_LD_days": 5294.5,
+      "source_nodes": 1500,
+      "nodes": 1500,
+      "control_points": 300,
+      "duration_hours": 12.0,
+      "contact_nodes": 66,
+      "single_case_design_variables_with_roll_and_allocation": 4285,
+      "spline_reconstruction_max_errors": {
+        "communication_power_W": 5.786482404346316e-13,
+        "roll_rad": 6.256106743762757e-14,
+        "solar_current_A": 2.042810365310288e-14
+      },
+      "lookup_replay_checked": true,
+      "lookup_replay_max_errors": {
+        "exposed_area_m2": 6.546412717467476e-16,
+        "antenna_gain": 1.2528866832894892e-13
+      }
+    },
+    {
+      "case_index": 2,
+      "benchmark_LD_days": 5356.5,
+      "source_nodes": 1500,
+      "nodes": 1500,
+      "control_points": 300,
+      "duration_hours": 12.0,
+      "contact_nodes": 49,
+      "single_case_design_variables_with_roll_and_allocation": 4285,
+      "spline_reconstruction_max_errors": {
+        "communication_power_W": 2.042810365310288e-13,
+        "roll_rad": 4.318767565791859e-14,
+        "solar_current_A": 1.459943277382081e-14
+      },
+      "lookup_replay_checked": true,
+      "lookup_replay_max_errors": {
+        "exposed_area_m2": 3.9790219730218013e-16,
+        "antenna_gain": 9.692247004977617e-14
+      }
+    },
+    {
+      "case_index": 3,
+      "benchmark_LD_days": 5417.5,
+      "source_nodes": 1500,
+      "nodes": 1500,
+      "control_points": 300,
+      "duration_hours": 12.0,
+      "contact_nodes": 54,
+      "single_case_design_variables_with_roll_and_allocation": 4285,
+      "spline_reconstruction_max_errors": {
+        "communication_power_W": 7.860379014346108e-14,
+        "roll_rad": 3.6415315207705135e-14,
+        "solar_current_A": 1.0283440765590512e-14
+      },
+      "lookup_replay_checked": true,
+      "lookup_replay_max_errors": {
+        "exposed_area_m2": 2.813504637599884e-16,
+        "antenna_gain": 1.1244893904915898e-12
+      }
+    },
+    {
+      "case_index": 4,
+      "benchmark_LD_days": 5478.5,
+      "source_nodes": 1500,
+      "nodes": 1500,
+      "control_points": 300,
+      "duration_hours": 12.0,
+      "contact_nodes": 38,
+      "single_case_design_variables_with_roll_and_allocation": 4285,
+      "spline_reconstruction_max_errors": {
+        "communication_power_W": 3.9124259387790516e-13,
+        "roll_rad": 7.388534228880417e-14,
+        "solar_current_A": 1.9567680809018384e-14
+      },
+      "lookup_replay_checked": true,
+      "lookup_replay_max_errors": {
+        "exposed_area_m2": 6.440160904563896e-16,
+        "antenna_gain": 1.0873524303178783e-12
+      }
+    },
+    {
+      "case_index": 5,
+      "benchmark_LD_days": 5537.5,
+      "source_nodes": 1500,
+      "nodes": 1500,
+      "control_points": 300,
+      "duration_hours": 12.0,
+      "contact_nodes": 54,
+      "single_case_design_variables_with_roll_and_allocation": 4285,
+      "spline_reconstruction_max_errors": {
+        "communication_power_W": 3.8813396940895473e-13,
+        "roll_rad": 5.5067062021407764e-14,
+        "solar_current_A": 2.366162821232365e-14
+      },
+      "lookup_replay_checked": true,
+      "lookup_replay_max_errors": {
+        "exposed_area_m2": 6.497623619705628e-16,
+        "antenna_gain": 9.35918009759007e-14
+      }
+    }
+  ],
+  "joint_model_implemented": true,
+  "joint_optimization_validated": false,
+  "planned_joint_design_variables": 25292,
+  "remaining_model_work": [
+    "Server-scale compilation and numerical profiling",
+    "Joint optimizer/checkpoint/reporting driver integration",
+    "Full-resolution optimization convergence and independent validation"
+  ]
+}

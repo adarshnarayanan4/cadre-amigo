@@ -339,6 +339,7 @@ def main():
     ):
         for index, label in enumerate("xyz"):
             axis.plot(times / 3600, values[:, index], label=label)
+
         axis.set(title=title, ylabel=unit)
 
     axes[-1].set_xlabel("Time [hours]")

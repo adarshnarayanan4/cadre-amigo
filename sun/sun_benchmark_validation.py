@@ -23,24 +23,14 @@ def report_difference(
     reference,
     source,
 ):
-    difference = np.abs(
-        reference - source
-    )
+    difference = np.abs(reference - source)
 
     print()
-    print(
-        f"Maximum {name} difference:"
-    )
-    print(
-        np.max(difference)
-    )
+    print(f"Maximum {name} difference:")
+    print(np.max(difference))
 
-    print(
-        f"Mean {name} difference:"
-    )
-    print(
-        np.mean(difference)
-    )
+    print(f"Mean {name} difference:")
+    print(np.mean(difference))
 
 
 def main():
@@ -48,9 +38,7 @@ def main():
     # Load original CADRE benchmark
     # --------------------------------------------------------
 
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(
         data_path,
@@ -81,7 +69,9 @@ def main():
         get_case_value(
             data,
             "LD",
-        ).reshape(-1)[0]
+        ).reshape(
+            -1
+        )[0]
     )
 
     n = orbit_source.shape[0]
@@ -89,9 +79,7 @@ def main():
     t1 = 0.0
     t2 = 43200.0
 
-    dt = (
-        t2 - t1
-    ) / (n - 1)
+    dt = (t2 - t1) / (n - 1)
 
     times = np.linspace(
         t1,
@@ -101,9 +89,7 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "CADRE SUN BENCHMARK VALIDATION"
-    )
+    print("CADRE SUN BENCHMARK VALIDATION")
     print("=" * 70)
 
     print()
@@ -122,33 +108,25 @@ def main():
     # Our recreated Sun calculations
     # --------------------------------------------------------
 
-    r_e2s_I_reference = (
-        sun_position_eci(
-            times,
-            LD=LD,
-        )
+    r_e2s_I_reference = sun_position_eci(
+        times,
+        LD=LD,
     )
 
-    LOS_reference = (
-        sun_line_of_sight(
-            orbit_source,
-            r_e2s_I_reference,
-        )
+    LOS_reference = sun_line_of_sight(
+        orbit_source,
+        r_e2s_I_reference,
     )
 
-    r_e2s_B_reference = (
-        sun_position_body(
-            O_BI_source,
-            r_e2s_I_reference,
-        )
+    r_e2s_B_reference = sun_position_body(
+        O_BI_source,
+        r_e2s_I_reference,
     )
 
     (
         azimuth_reference,
         elevation_reference,
-    ) = sun_position_spherical(
-        r_e2s_B_reference
-    )
+    ) = sun_position_spherical(r_e2s_B_reference)
 
     # --------------------------------------------------------
     # Original CADRE outputs
@@ -189,9 +167,7 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "PYTHON SUN VS ORIGINAL CADRE"
-    )
+    print("PYTHON SUN VS ORIGINAL CADRE")
     print("=" * 70)
 
     report_difference(
@@ -228,25 +204,15 @@ def main():
     # LOS region counts
     # --------------------------------------------------------
 
-    full_sunlight = np.sum(
-        LOS_reference == 1.0
-    )
+    full_sunlight = np.sum(LOS_reference == 1.0)
 
-    full_eclipse = np.sum(
-        LOS_reference == 0.0
-    )
+    full_eclipse = np.sum(LOS_reference == 0.0)
 
-    transition = (
-        n
-        - full_sunlight
-        - full_eclipse
-    )
+    transition = n - full_sunlight - full_eclipse
 
     print()
     print("=" * 70)
-    print(
-        "SUN SANITY CHECKS"
-    )
+    print("SUN SANITY CHECKS")
     print("=" * 70)
 
     print()
@@ -267,20 +233,12 @@ def main():
     )
 
     print()
-    print(
-        "Minimum Sun-vector magnitude:"
-    )
-    print(
-        np.min(sun_norm)
-    )
+    print("Minimum Sun-vector magnitude:")
+    print(np.min(sun_norm))
 
     print()
-    print(
-        "Maximum Sun-vector magnitude:"
-    )
-    print(
-        np.max(sun_norm)
-    )
+    print("Maximum Sun-vector magnitude:")
+    print(np.max(sun_norm))
 
     print()
     print("Azimuth range [rad]:")

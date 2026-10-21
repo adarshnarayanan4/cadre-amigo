@@ -24,7 +24,6 @@ from solar.solar_reference import (
 )
 from thermal.thermal_reference import propagate_temperature
 
-
 m_f = 0.4
 m_b = 2.0
 cp_f = 0.6e3
@@ -58,9 +57,7 @@ def thermal_rhs(state, exposed_area, LOS, P_comm, cellInstd):
         cooling = 0.0
 
         for c in range(7):
-            alpha = (
-                alpha_c * cellInstd[c, p] + alpha_r - alpha_r * cellInstd[c, p]
-            )
+            alpha = alpha_c * cellInstd[c, p] + alpha_r - alpha_r * cellInstd[c, p]
             eps = eps_c * cellInstd[c, p] + eps_r - eps_r * cellInstd[c, p]
             heating += alpha * exposed_area[c, p]
             cooling += eps
@@ -73,9 +70,7 @@ def thermal_rhs(state, exposed_area, LOS, P_comm, cellInstd):
     return f
 
 
-def propagate_temperature_trapezoid(
-    T0, exposed_area, LOS, P_comm, cellInstd, dt
-):
+def propagate_temperature_trapezoid(T0, exposed_area, LOS, P_comm, cellInstd, dt):
     num_nodes = LOS.size
     temperature = np.zeros((5, num_nodes))
     temperature_dot = np.zeros((num_nodes, 5))
@@ -83,9 +78,7 @@ def propagate_temperature_trapezoid(
 
     for k in range(num_nodes - 1):
         y0 = temperature[:, k]
-        f0 = thermal_rhs(
-            y0, exposed_area[:, :, k], LOS[k], P_comm[k], cellInstd
-        )
+        f0 = thermal_rhs(y0, exposed_area[:, :, k], LOS[k], P_comm[k], cellInstd)
         y1 = y0 + dt * f0
 
         for _ in range(100):
@@ -162,13 +155,9 @@ class ThermalDynamics(am.Component):
             for c in range(7):
                 index = c * 12 + p
                 alpha = (
-                    alpha_c * cellInstd[index]
-                    + alpha_r
-                    - alpha_r * cellInstd[index]
+                    alpha_c * cellInstd[index] + alpha_r - alpha_r * cellInstd[index]
                 )
-                eps = (
-                    eps_c * cellInstd[index] + eps_r - eps_r * cellInstd[index]
-                )
+                eps = eps_c * cellInstd[index] + eps_r - eps_r * cellInstd[index]
                 heating += alpha * exposedArea[index]
                 cooling += eps
 
@@ -253,9 +242,7 @@ def main():
     )
     q0 = np.concatenate((r0, v0))
 
-    orbital_period = calculate_orbital_period(
-        alt_perigee=500.0, alt_apogee=500.0
-    )
+    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
     num_time_steps = 568
     num_nodes = num_time_steps + 1
     dt = orbital_period / num_time_steps
@@ -288,16 +275,12 @@ def main():
     # Sun
     r_e2s_I_reference = sun_position_eci(times)
     r_e2s_B_reference = sun_position_body(O_BI_reference, r_e2s_I_reference)
-    azimuth_reference, elevation_reference = sun_position_spherical(
-        r_e2s_B_reference
-    )
+    azimuth_reference, elevation_reference = sun_position_spherical(r_e2s_B_reference)
     LOS_reference = sun_line_of_sight(reference_states, r_e2s_I_reference)
 
     # Solar
     angle, azimuth_grid, elevation_grid, data = load_solar_data()
-    interpolators = build_interpolators(
-        angle, azimuth_grid, elevation_grid, data
-    )
+    interpolators = build_interpolators(angle, azimuth_grid, elevation_grid, data)
     exposed_area = solar_exposed_area(
         0.0, azimuth_reference, elevation_reference, interpolators
     )
@@ -318,15 +301,13 @@ def main():
     )
 
     # Trapezoid reference
-    temperature_trapezoid, temperature_dot_trapezoid = (
-        propagate_temperature_trapezoid(
-            T0,
-            exposed_area,
-            LOS_reference,
-            P_comm_reference,
-            cellInstd_reference,
-            dt,
-        )
+    temperature_trapezoid, temperature_dot_trapezoid = propagate_temperature_trapezoid(
+        T0,
+        exposed_area,
+        LOS_reference,
+        P_comm_reference,
+        cellInstd_reference,
+        dt,
     )
 
     # Python checks
@@ -352,14 +333,9 @@ def main():
             - temperature_trapezoid[:, k]
             - 0.5
             * dt
-            * (
-                temperature_dot_trapezoid[k, :]
-                + temperature_dot_trapezoid[k + 1, :]
-            )
+            * (temperature_dot_trapezoid[k, :] + temperature_dot_trapezoid[k + 1, :])
         )
-        max_trapezoid_residual = max(
-            max_trapezoid_residual, np.max(np.abs(res))
-        )
+        max_trapezoid_residual = max(max_trapezoid_residual, np.max(np.abs(res)))
 
     rk4_trapezoid_difference = np.max(
         np.abs(temperature_reference - temperature_trapezoid)
@@ -424,15 +400,9 @@ def main():
 
     # Fix exposed area
     for i in range(84):
-        model.set_meta(
-            "value", f"thermal.exposedArea[:, {i}]", exposed_area_flat[:, i]
-        )
-        model.set_meta(
-            "lower", f"thermal.exposedArea[:, {i}]", exposed_area_flat[:, i]
-        )
-        model.set_meta(
-            "upper", f"thermal.exposedArea[:, {i}]", exposed_area_flat[:, i]
-        )
+        model.set_meta("value", f"thermal.exposedArea[:, {i}]", exposed_area_flat[:, i])
+        model.set_meta("lower", f"thermal.exposedArea[:, {i}]", exposed_area_flat[:, i])
+        model.set_meta("upper", f"thermal.exposedArea[:, {i}]", exposed_area_flat[:, i])
 
     # Fix LOS
     model.set_meta("value", "thermal.LOS[:]", LOS_reference)
@@ -482,20 +452,14 @@ def main():
     print("AMIGO solve complete.")
 
     # Extract AMIGO results
-    temperature_amigo = extract_vector(
-        x, "thermal.temperature", num_nodes, 5
-    ).T
-    temperature_dot_amigo = extract_vector(
-        x, "thermal.temperature_dot", num_nodes, 5
-    )
+    temperature_amigo = extract_vector(x, "thermal.temperature", num_nodes, 5).T
+    temperature_dot_amigo = extract_vector(x, "thermal.temperature_dot", num_nodes, 5)
 
     # Differences
     amigo_trapezoid_difference = np.max(
         np.abs(temperature_amigo - temperature_trapezoid)
     )
-    amigo_rk4_difference = np.max(
-        np.abs(temperature_amigo - temperature_reference)
-    )
+    amigo_rk4_difference = np.max(np.abs(temperature_amigo - temperature_reference))
     final_rk4_difference = np.max(
         np.abs(temperature_amigo[:, -1] - temperature_reference[:, -1])
     )
@@ -523,9 +487,7 @@ def main():
         res = (
             temperature_amigo[:, k + 1]
             - temperature_amigo[:, k]
-            - 0.5
-            * dt
-            * (temperature_dot_amigo[k, :] + temperature_dot_amigo[k + 1, :])
+            - 0.5 * dt * (temperature_dot_amigo[k, :] + temperature_dot_amigo[k + 1, :])
         )
         max_amigo_trapezoid_residual = max(
             max_amigo_trapezoid_residual, np.max(np.abs(res))

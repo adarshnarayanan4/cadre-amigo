@@ -92,9 +92,7 @@ def main():
     )
     q0 = np.concatenate((r0, v0))
 
-    orbital_period = calculate_orbital_period(
-        alt_perigee=500.0, alt_apogee=500.0
-    )
+    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
     num_time_steps = 568
     num_nodes = num_time_steps + 1
     dt = orbital_period / num_time_steps
@@ -119,9 +117,7 @@ def main():
     # Sun
     r_e2s_I_reference = sun_position_eci(times)
     r_e2s_B_reference = sun_position_body(O_BI_reference, r_e2s_I_reference)
-    azimuth_reference, elevation_reference = sun_position_spherical(
-        r_e2s_B_reference
-    )
+    azimuth_reference, elevation_reference = sun_position_spherical(r_e2s_B_reference)
     LOS_reference = sun_line_of_sight(reference_states, r_e2s_I_reference)
 
     # Solar
@@ -146,9 +142,7 @@ def main():
 
     # Power lookup table
     T_grid, A_grid, I_grid, V_data = load_power_data()
-    power_interpolator = build_power_interpolator(
-        T_grid, A_grid, I_grid, V_data
-    )
+    power_interpolator = build_power_interpolator(T_grid, A_grid, I_grid, V_data)
 
     # Cell/panel voltage
     V_sol = power_cell_voltage(

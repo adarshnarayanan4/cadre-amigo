@@ -16,6 +16,7 @@ from power.mbi_modern import knotopen
 from power.voltage_spline import VoltageSpline
 from solar.solar_mbi_validation import build_solar_mbi
 from thermal.thermal_amigo import cp_b, cp_f, m_b, m_f
+from integrated.reference.benchmark import select_case
 
 
 class PhysicalSplineAxis:
@@ -60,13 +61,14 @@ class PhysicalSplineAxis:
 
 
 class DesignLookups:
-    def __init__(self, data, n, voltage=None):
+    def __init__(self, data, n, voltage=None, case_index=0):
+        data = select_case(data, case_index)
         self.n = n
         self.voltage = voltage or VoltageSpline()
         self.voltage_axes = [PhysicalSplineAxis(self.voltage.mbi, i) for i in range(3)]
 
-        self.base_orientation = np.asarray(data["0:O_RI"])[:, :, :n].transpose(2, 0, 1)
-        sun = np.asarray(data["0:r_e2s_I"])[:, :n].T
+        self.base_orientation = np.asarray(data["O_RI"])[:, :, :n].transpose(2, 0, 1)
+        sun = np.asarray(data["r_e2s_I"])[:, :n].T
         sun_base = np.einsum("nij,nj->ni", self.base_orientation, sun)
 
         self.sun_azimuth = np.arctan2(sun_base[:, 1], sun_base[:, 0])
@@ -86,6 +88,9 @@ class DesignLookups:
         be = axes[2].evaluate(self.sun_elevation)[0]
         # Solar output order is cell-fast (Fortran); store cell-major like thermal.
         tensor = solar.C.reshape((4, 10, 8, 7, 12), order="F")
+        self.solar_axes = axes
+        self.solar_tensor = tensor
+        self.solar_elevation_basis = be
         self.area_coeff = np.einsum("na,nc,abcij->nbij", bf, be, tensor)
         self.area_axis = axes[1]
 
@@ -95,12 +100,12 @@ class DesignLookups:
         self.gain_axes = [PhysicalSplineAxis(gain, i) for i in range(2)]
         self.gain_coeff = gain.C.reshape((15, 15), order="F")
 
-        ground = np.asarray(data["0:r_b2g_I"])[:, :n].T
+        ground = np.asarray(data["r_b2g_I"])[:, :n].T
         self.ground_inertial = ground
         self.ground_base = np.einsum("nij,nj->ni", self.base_orientation, ground)
-        self.antenna = np.asarray(data["0:O_AB"])[:, :, :n].transpose(2, 0, 1)
+        self.antenna = np.asarray(data["O_AB"])[:, :, :n].transpose(2, 0, 1)
 
-        self.LOS = np.asarray(data["0:LOS"])[:n]
+        self.LOS = np.asarray(data["LOS"])[:n]
 
         self.panel_temperature = np.array([4, 4, 4, 4, 0, 1, 2, 3, 0, 1, 2, 3])
         self.thermal_temperature = np.array(

@@ -99,9 +99,7 @@ def main():
     T_grid, A_grid, I_grid, V_data = load_power_data()
     interpolator = build_power_interpolator(T_grid, A_grid, I_grid, V_data)
 
-    V_sol_test = power_cell_voltage(
-        LOS, temperature, exposedArea, Isetpt, interpolator
-    )
+    V_sol_test = power_cell_voltage(LOS, temperature, exposedArea, Isetpt, interpolator)
     P_sol_test = solar_power(V_sol_test, Isetpt)
 
     voltage_difference = np.max(np.abs(V_sol_test - V_sol_source))

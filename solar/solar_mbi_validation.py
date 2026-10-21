@@ -66,9 +66,7 @@ def main():
     with open(cadre_path("test/data1346.pkl"), "rb") as f:
         data = pickle.load(f, encoding="latin1")
 
-    fin_angle = float(
-        np.asarray(data["finAngle"]).reshape(-1)[0]
-    )
+    fin_angle = float(np.asarray(data["finAngle"]).reshape(-1)[0])
 
     azimuth = np.asarray(data["0:azimuth"])
     elevation = np.asarray(data["0:elevation"])

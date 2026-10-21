@@ -9,7 +9,6 @@ from communication.communication_gain_validation import (
     load_gain_data,
 )
 
-
 PI = np.pi
 C = 299792458.0
 GR = 10.0 ** (12.9 / 10.0)
@@ -19,18 +18,7 @@ K = 1.3806503e-23
 SNR = 10.0 ** (5.0 / 10.0)
 T = 500.0
 
-ALPHA = (
-    C**2
-    * GR
-    * LL
-    / 16.0
-    / PI**2
-    / FREQ**2
-    / K
-    / SNR
-    / T
-    / 1.0e6
-)
+ALPHA = C**2 * GR * LL / 16.0 / PI**2 / FREQ**2 / K / SNR / T / 1.0e6
 
 
 def communication_bit_rate(
@@ -49,13 +37,7 @@ def communication_bit_rate(
         else:
             distance = 1.0e-10
 
-        Dr[i] = (
-            ALPHA
-            * P_comm[i]
-            * gain[i]
-            * CommLOS[i]
-            / distance**2
-        )
+        Dr[i] = ALPHA * P_comm[i] * gain[i] * CommLOS[i] / distance**2
 
     return Dr
 
@@ -76,25 +58,13 @@ def propagate_data_rk4(
         c = Dr[k]
         d = Dr[k]
 
-        Data[k + 1] = (
-            Data[k]
-            + dt
-            / 6.0
-            * (
-                a
-                + 2.0 * b
-                + 2.0 * c
-                + d
-            )
-        )
+        Data[k + 1] = Data[k] + dt / 6.0 * (a + 2.0 * b + 2.0 * c + d)
 
     return Data
 
 
 def main():
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(data_path, "rb") as f:
         data = pickle.load(
@@ -182,9 +152,7 @@ def main():
         )
     )
 
-    gain_mbi = mbi.evaluate(
-        points
-    )
+    gain_mbi = mbi.evaluate(points)
 
     # End-to-end using recreated MBI
     Dr_mbi = communication_bit_rate(
@@ -207,45 +175,23 @@ def main():
 
     print()
     print("Maximum bitrate difference [Gibyte/s]:")
-    print(
-        np.max(
-            np.abs(
-                Dr_reference - Dr_source
-            )
-        )
-    )
+    print(np.max(np.abs(Dr_reference - Dr_source)))
 
     print()
     print("Mean bitrate difference [Gibyte/s]:")
-    print(
-        np.mean(
-            np.abs(
-                Dr_reference - Dr_source
-            )
-        )
-    )
+    print(np.mean(np.abs(Dr_reference - Dr_source)))
 
     print()
     print("Maximum downloaded-data difference [Gibyte]:")
-    print(
-        np.max(
-            np.abs(
-                Data_reference - Data_source.reshape(-1)
-            )
-        )
-    )
+    print(np.max(np.abs(Data_reference - Data_source.reshape(-1))))
 
     print()
     print("Final source downloaded data [Gibyte]:")
-    print(
-        Data_source.reshape(-1)[-1]
-    )
+    print(Data_source.reshape(-1)[-1])
 
     print()
     print("Final reference downloaded data [Gibyte]:")
-    print(
-        Data_reference[-1]
-    )
+    print(Data_reference[-1])
 
     print()
     print("=" * 70)
@@ -254,49 +200,23 @@ def main():
 
     print()
     print("Maximum gain difference:")
-    print(
-        np.max(
-            np.abs(
-                gain_mbi - gain_source
-            )
-        )
-    )
+    print(np.max(np.abs(gain_mbi - gain_source)))
 
     print()
     print("Maximum bitrate difference [Gibyte/s]:")
-    print(
-        np.max(
-            np.abs(
-                Dr_mbi - Dr_source
-            )
-        )
-    )
+    print(np.max(np.abs(Dr_mbi - Dr_source)))
 
     print()
     print("Mean bitrate difference [Gibyte/s]:")
-    print(
-        np.mean(
-            np.abs(
-                Dr_mbi - Dr_source
-            )
-        )
-    )
+    print(np.mean(np.abs(Dr_mbi - Dr_source)))
 
     print()
     print("Maximum downloaded-data difference [Gibyte]:")
-    print(
-        np.max(
-            np.abs(
-                Data_mbi - Data_source.reshape(-1)
-            )
-        )
-    )
+    print(np.max(np.abs(Data_mbi - Data_source.reshape(-1))))
 
     print()
     print("Final modern-MBI downloaded data [Gibyte]:")
-    print(
-        Data_mbi[-1]
-    )
+    print(Data_mbi[-1])
 
     print()
     print("Source bitrate min / max [Gibyte/s]:")

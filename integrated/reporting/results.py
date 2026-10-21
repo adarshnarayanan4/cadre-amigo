@@ -237,6 +237,7 @@ def validate_and_save_results(case, args, result):
     )
 
     summary = {
+        "case_index": case.case_index,
         "validated": validated,
         "converged": bool(opt_data.get("converged", False)),
         "acceptable": bool(opt_data.get("acceptable", False)),
@@ -359,7 +360,7 @@ def validate_and_save_results(case, args, result):
         "control_range": (np.min(CP_P_comm_amigo), np.max(CP_P_comm_amigo)),
         "power_range": (np.min(P_comm_amigo), np.max(P_comm_amigo)),
         "endpoint_soc": (SOC_amigo[0], SOC_amigo[-1]),
-        "original_data": data["0:Data"].reshape(-1)[n - 1],
+        "original_data": data[f"{case.case_index}:Data"].reshape(-1)[n - 1],
         "battery_metrics": optimized_metrics,
     }
 

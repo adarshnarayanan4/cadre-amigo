@@ -1,6 +1,7 @@
 """Check analytic lookup Jacobians/Hessians and source equation agreement."""
 
 import json, pickle
+import argparse
 from pathlib import Path
 
 import amigo as am
@@ -22,13 +23,17 @@ from power.power_amigo import PowerSolar
 from thermal.thermal_amigo import thermal_rhs
 
 
-def main():
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--case-index", type=int, choices=range(6), default=0)
+    args = parser.parse_args(argv)
+
     with open(cadre_path("test/data1346.pkl"), "rb") as f:
         data = pickle.load(f, encoding="latin1")
 
     # Cover illumination changes across the orbit, including the region
     # where the full-size solve showed large voltage residuals.
-    full_n = len(data["0:P_comm"])
+    full_n = len(data[f"{args.case_index}:P_comm"])
     nodes = np.unique(np.r_[np.linspace(0, full_n - 1, 16, dtype=int), 812, 815, 927])
 
     for key, value in data.items():
@@ -36,7 +41,7 @@ def main():
             data[key] = value[..., nodes]
 
     n = len(nodes)
-    l = DesignLookups(data, n)
+    l = DesignLookups(data, n, case_index=args.case_index)
     l.dt = 43200 / 1499
     physics = DesignPhysics(l)
     rng = np.random.default_rng(295)
@@ -212,9 +217,10 @@ def main():
 
     Path("integrated/results/validation").mkdir(parents=True, exist_ok=True)
 
-    Path("integrated/results/validation/design_derivative_validation.json").write_text(
-        json.dumps(result, indent=2) + "\n"
-    )
+    suffix = f"_case_{args.case_index}" if args.case_index else ""
+    Path(
+        f"integrated/results/validation/design_derivative_validation{suffix}.json"
+    ).write_text(json.dumps(result, indent=2) + "\n")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,6 @@ import numpy as np
 
 from cadre_paths import cadre_path
 
-
 RE = 6378.137
 
 
@@ -18,9 +17,7 @@ def get_case_value(data, name):
 
 
 def scalar_value(value):
-    return float(
-        np.asarray(value).reshape(-1)[0]
-    )
+    return float(np.asarray(value).reshape(-1)[0])
 
 
 def antenna_rotation(ant_angle, n):
@@ -123,17 +120,11 @@ def ground_station_position_earth(lon, lat, alt, n):
 
     r_e2g_E = np.zeros((3, n))
 
-    r_e2g_E[0, :] = (
-        radius * cos_lat * cos_lon
-    )
+    r_e2g_E[0, :] = radius * cos_lat * cos_lon
 
-    r_e2g_E[1, :] = (
-        radius * cos_lat * sin_lon
-    )
+    r_e2g_E[1, :] = radius * cos_lat * sin_lon
 
-    r_e2g_E[2, :] = (
-        radius * sin_lat
-    )
+    r_e2g_E[2, :] = radius * sin_lat
 
     return r_e2g_E
 
@@ -144,9 +135,7 @@ def rotate_vectors(matrix, vectors):
     result = np.zeros_like(vectors)
 
     for i in range(n):
-        result[:, i] = (
-            matrix[:, :, i] @ vectors[:, i]
-        )
+        result[:, i] = matrix[:, :, i] @ vectors[:, i]
 
     return result
 
@@ -180,10 +169,7 @@ def communication_los(r_b2g_I, r_e2g_I):
         else:
             x = proj / -Rb
 
-            CommLOS[i] = (
-                3.0 * x**2
-                - 2.0 * x**3
-            )
+            CommLOS[i] = 3.0 * x**2 - 2.0 * x**3
 
     return CommLOS
 
@@ -253,19 +239,13 @@ def vector_spherical(r_b2g_A):
             y,
         )
 
-    elevation = np.arccos(
-        r_b2g_A[2, :] / radius
-    )
+    elevation = np.arccos(r_b2g_A[2, :] / radius)
 
     return azimuth, elevation
 
 
 def print_difference(name, reference, source):
-    difference = np.max(
-        np.abs(
-            reference - source
-        )
-    )
+    difference = np.max(np.abs(reference - source))
 
     print()
     print(name)
@@ -273,9 +253,7 @@ def print_difference(name, reference, source):
 
 
 def main():
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(data_path, "rb") as f:
         data = pickle.load(
@@ -391,10 +369,8 @@ def main():
     )
 
     # Azimuth and elevation
-    azimuthGS, elevationGS = (
-        vector_spherical(
-            r_b2g_A,
-        )
+    azimuthGS, elevationGS = vector_spherical(
+        r_b2g_A,
     )
 
     print()

@@ -13,6 +13,13 @@ def parse_args(argv=None):
     )
 
     parser.add_argument("--nodes", type=int, default=1500)
+    parser.add_argument(
+        "--case-index",
+        type=int,
+        choices=range(6),
+        default=0,
+        help="Original CADRE benchmark case, from 0 to 5 (default: 0)",
+    )
     parser.add_argument("--control-points", type=int, default=300)
     parser.add_argument(
         "--max-iterations",
@@ -154,5 +161,8 @@ def parse_args(argv=None):
             )
 
         args.output = Path("integrated/results") / name
+
+        if args.case_index:
+            args.output = args.output.with_name(f"{name}_case_{args.case_index}")
 
     return args

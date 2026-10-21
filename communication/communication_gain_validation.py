@@ -28,15 +28,9 @@ def fixangles(azimuth0, elevation0):
         )
 
         if elevation[i] > np.pi:
-            elevation[i] = (
-                2.0 * np.pi
-                - elevation[i]
-            )
+            elevation[i] = 2.0 * np.pi - elevation[i]
 
-            azimuth[i] = (
-                np.pi
-                + azimuth[i]
-            )
+            azimuth[i] = np.pi + azimuth[i]
 
             azimuth[i] = cadre_modulo(
                 azimuth[i],
@@ -47,17 +41,11 @@ def fixangles(azimuth0, elevation0):
 
 
 def load_gain_data():
-    path = cadre_path(
-        "data/Comm/Gain.txt"
-    )
+    path = cadre_path("data/Comm/Gain.txt")
 
-    raw_gain = np.genfromtxt(
-        path
-    )
+    raw_gain = np.genfromtxt(path)
 
-    gain_data = (
-        10.0 ** (raw_gain / 10.0)
-    ).reshape(
+    gain_data = (10.0 ** (raw_gain / 10.0)).reshape(
         (361, 361),
         order="F",
     )
@@ -82,9 +70,7 @@ def load_gain_data():
 
 
 def main():
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(data_path, "rb") as f:
         data = pickle.load(
@@ -92,17 +78,11 @@ def main():
             encoding="latin1",
         )
 
-    azimuth_source = data[
-        "0:azimuthGS"
-    ]
+    azimuth_source = data["0:azimuthGS"]
 
-    elevation_source = data[
-        "0:elevationGS"
-    ]
+    elevation_source = data["0:elevationGS"]
 
-    gain_source = data[
-        "0:gain"
-    ]
+    gain_source = data["0:gain"]
 
     azimuth, elevation = fixangles(
         azimuth_source,
@@ -153,13 +133,9 @@ def main():
     print()
     print("Evaluating antenna gain...")
 
-    gain_test = mbi.evaluate(
-        points
-    )
+    gain_test = mbi.evaluate(points)
 
-    difference = np.abs(
-        gain_test - gain_source
-    )
+    difference = np.abs(gain_test - gain_source)
 
     print()
     print("=" * 70)

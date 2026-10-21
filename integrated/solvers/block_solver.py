@@ -225,6 +225,7 @@ class SparseLUSolver(LinearSolver):
 
     def _form_schur(self):
         """Form the reduced matrix, limiting memory for large control sets."""
+
         if self.local_shared.nnz == 0:
             self.core_coupling = None
             schur = self.shared_block

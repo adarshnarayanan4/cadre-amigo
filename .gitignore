@@ -12,3 +12,4 @@ integrated/results/**/checkpoint*.npz
 integrated/results/**/best_checkpoint*.npz
 integrated/results/**/restart*.npz
 integrated/results/**/diagnostic_snapshot.npz
+integrated/results/**/build/

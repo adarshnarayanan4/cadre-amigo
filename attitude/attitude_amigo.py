@@ -105,33 +105,15 @@ class AttitudeOrientation(am.Component):
         # O_BI = O_BR @ O_RI
         O_BI_calc = 9 * [None]
 
-        O_BI_calc[0] = (
-            O_BR[0] * O_RI[0] + O_BR[1] * O_RI[3] + O_BR[2] * O_RI[6]
-        )
-        O_BI_calc[1] = (
-            O_BR[0] * O_RI[1] + O_BR[1] * O_RI[4] + O_BR[2] * O_RI[7]
-        )
-        O_BI_calc[2] = (
-            O_BR[0] * O_RI[2] + O_BR[1] * O_RI[5] + O_BR[2] * O_RI[8]
-        )
-        O_BI_calc[3] = (
-            O_BR[3] * O_RI[0] + O_BR[4] * O_RI[3] + O_BR[5] * O_RI[6]
-        )
-        O_BI_calc[4] = (
-            O_BR[3] * O_RI[1] + O_BR[4] * O_RI[4] + O_BR[5] * O_RI[7]
-        )
-        O_BI_calc[5] = (
-            O_BR[3] * O_RI[2] + O_BR[4] * O_RI[5] + O_BR[5] * O_RI[8]
-        )
-        O_BI_calc[6] = (
-            O_BR[6] * O_RI[0] + O_BR[7] * O_RI[3] + O_BR[8] * O_RI[6]
-        )
-        O_BI_calc[7] = (
-            O_BR[6] * O_RI[1] + O_BR[7] * O_RI[4] + O_BR[8] * O_RI[7]
-        )
-        O_BI_calc[8] = (
-            O_BR[6] * O_RI[2] + O_BR[7] * O_RI[5] + O_BR[8] * O_RI[8]
-        )
+        O_BI_calc[0] = O_BR[0] * O_RI[0] + O_BR[1] * O_RI[3] + O_BR[2] * O_RI[6]
+        O_BI_calc[1] = O_BR[0] * O_RI[1] + O_BR[1] * O_RI[4] + O_BR[2] * O_RI[7]
+        O_BI_calc[2] = O_BR[0] * O_RI[2] + O_BR[1] * O_RI[5] + O_BR[2] * O_RI[8]
+        O_BI_calc[3] = O_BR[3] * O_RI[0] + O_BR[4] * O_RI[3] + O_BR[5] * O_RI[6]
+        O_BI_calc[4] = O_BR[3] * O_RI[1] + O_BR[4] * O_RI[4] + O_BR[5] * O_RI[7]
+        O_BI_calc[5] = O_BR[3] * O_RI[2] + O_BR[4] * O_RI[5] + O_BR[5] * O_RI[8]
+        O_BI_calc[6] = O_BR[6] * O_RI[0] + O_BR[7] * O_RI[3] + O_BR[8] * O_RI[6]
+        O_BI_calc[7] = O_BR[6] * O_RI[1] + O_BR[7] * O_RI[4] + O_BR[8] * O_RI[7]
+        O_BI_calc[8] = O_BR[6] * O_RI[2] + O_BR[7] * O_RI[5] + O_BR[8] * O_RI[8]
 
         # Residual equations
         res = 27 * [None]
@@ -271,21 +253,9 @@ class AttitudeAngular(am.Component):
         # [3 4 5]
         # [6 7 8]
 
-        wx = (
-            Odot[6] * rotation[3]
-            + Odot[7] * rotation[4]
-            + Odot[8] * rotation[5]
-        )
-        wy = (
-            Odot[0] * rotation[6]
-            + Odot[1] * rotation[7]
-            + Odot[2] * rotation[8]
-        )
-        wz = (
-            Odot[3] * rotation[0]
-            + Odot[4] * rotation[1]
-            + Odot[5] * rotation[2]
-        )
+        wx = Odot[6] * rotation[3] + Odot[7] * rotation[4] + Odot[8] * rotation[5]
+        wy = Odot[0] * rotation[6] + Odot[1] * rotation[7] + Odot[2] * rotation[8]
+        wz = Odot[3] * rotation[0] + Odot[4] * rotation[1] + Odot[5] * rotation[2]
 
         self.constraints["res"] = [w[0] - wx, w[1] - wy, w[2] - wz]
 
@@ -435,9 +405,7 @@ def main():
     q0 = np.concatenate((r0, v0))
 
     # Time grid
-    orbital_period = calculate_orbital_period(
-        alt_perigee=500.0, alt_apogee=500.0
-    )
+    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
     num_time_steps = 568
     num_nodes = num_time_steps + 1
     dt = orbital_period / num_time_steps
@@ -506,9 +474,7 @@ def main():
     model.add_component("rate_backward", 1, rate_backward)
     model.add_component("angular", num_nodes, angular)
     model.add_component("angular_rate_forward", 1, angular_rate_forward)
-    model.add_component(
-        "angular_rate_central", num_nodes - 2, angular_rate_central
-    )
+    model.add_component("angular_rate_central", num_nodes - 2, angular_rate_central)
     model.add_component("angular_rate_backward", 1, angular_rate_backward)
     model.add_component("torque", num_nodes, torque)
     model.add_component("sideslip", num_nodes, sideslip)
@@ -518,9 +484,7 @@ def main():
         start = i * num_time_steps
         end = (i + 1) * num_time_steps
 
-        model.link(
-            f"orbit.q[:{num_time_steps}, {i}]", f"trap.q1[{start}:{end}]"
-        )
+        model.link(f"orbit.q[:{num_time_steps}, {i}]", f"trap.q1[{start}:{end}]")
         model.link(f"orbit.q[1:, {i}]", f"trap.q2[{start}:{end}]")
         model.link(f"orbit.qdot[:-1, {i}]", f"trap.q1dot[{start}:{end}]")
         model.link(f"orbit.qdot[1:, {i}]", f"trap.q2dot[{start}:{end}]")
@@ -543,12 +507,8 @@ def main():
     model.link("attitude.O_BI[2:, :]", "rate_central.O_next")
 
     # Final orientation-rate point
-    model.link(
-        f"attitude.O_BI[{num_nodes - 2}, :]", "rate_backward.O_prev[0, :]"
-    )
-    model.link(
-        f"attitude.O_BI[{num_nodes - 1}, :]", "rate_backward.O_last[0, :]"
-    )
+    model.link(f"attitude.O_BI[{num_nodes - 2}, :]", "rate_backward.O_prev[0, :]")
+    model.link(f"attitude.O_BI[{num_nodes - 1}, :]", "rate_backward.O_last[0, :]")
 
     # Orientation to angular velocity
     model.link("attitude.O_BI", "angular.O_BI")
@@ -556,18 +516,14 @@ def main():
     # Orientation rate to angular velocity
     model.link("rate_forward.Odot[0, :]", "angular.Odot_BI[0, :]")
     model.link("rate_central.Odot", f"angular.Odot_BI[1:{num_nodes - 1}, :]")
-    model.link(
-        "rate_backward.Odot[0, :]", f"angular.Odot_BI[{num_nodes - 1}, :]"
-    )
+    model.link("rate_backward.Odot[0, :]", f"angular.Odot_BI[{num_nodes - 1}, :]")
 
     # First angular-acceleration point
     model.link("angular.w_B[0, :]", "angular_rate_forward.w0[0, :]")
     model.link("angular.w_B[1, :]", "angular_rate_forward.w1[0, :]")
 
     # Interior angular-acceleration points
-    model.link(
-        f"angular.w_B[:{num_nodes - 2}, :]", "angular_rate_central.w_prev"
-    )
+    model.link(f"angular.w_B[:{num_nodes - 2}, :]", "angular_rate_central.w_prev")
     model.link("angular.w_B[2:, :]", "angular_rate_central.w_next")
 
     # Final angular-acceleration point
@@ -585,9 +541,7 @@ def main():
 
     # Angular acceleration to torque
     model.link("angular_rate_forward.wdot[0, :]", "torque.wdot_B[0, :]")
-    model.link(
-        "angular_rate_central.wdot", f"torque.wdot_B[1:{num_nodes - 1}, :]"
-    )
+    model.link("angular_rate_central.wdot", f"torque.wdot_B[1:{num_nodes - 1}, :]")
     model.link(
         "angular_rate_backward.wdot[0, :]",
         f"torque.wdot_B[{num_nodes - 1}, :]",
@@ -727,9 +681,7 @@ def main():
     # Build reference using same AMIGO orbit
     O_RI_same_orbit = attitude_from_orbit(amigo_states)
     O_BR_same_orbit = attitude_roll(gamma_reference)
-    O_BI_same_orbit = combine_rotation_matrices(
-        O_BR_same_orbit, O_RI_same_orbit
-    )
+    O_BI_same_orbit = combine_rotation_matrices(O_BR_same_orbit, O_RI_same_orbit)
     Odot_BI_same_orbit = rotation_matrix_rates(O_BI_same_orbit, dt)
     w_B_same_orbit = angular_velocity(O_BI_same_orbit, Odot_BI_same_orbit)
     wdot_B_same_orbit = angular_acceleration(w_B_same_orbit, dt)
@@ -740,13 +692,9 @@ def main():
     O_RI_attitude_difference = np.max(np.abs(O_RI_amigo - O_RI_same_orbit))
     O_BR_attitude_difference = np.max(np.abs(O_BR_amigo - O_BR_same_orbit))
     O_BI_attitude_difference = np.max(np.abs(O_BI_amigo - O_BI_same_orbit))
-    Odot_attitude_difference = np.max(
-        np.abs(Odot_BI_amigo - Odot_BI_same_orbit)
-    )
+    Odot_attitude_difference = np.max(np.abs(Odot_BI_amigo - Odot_BI_same_orbit))
     w_B_attitude_difference = np.max(np.abs(w_B_amigo - w_B_same_orbit))
-    wdot_B_attitude_difference = np.max(
-        np.abs(wdot_B_amigo - wdot_B_same_orbit)
-    )
+    wdot_B_attitude_difference = np.max(np.abs(wdot_B_amigo - wdot_B_same_orbit))
     T_tot_attitude_difference = np.max(np.abs(T_tot_amigo - T_tot_same_orbit))
     v_B_attitude_difference = np.max(np.abs(v_B_amigo - v_B_same_orbit))
 

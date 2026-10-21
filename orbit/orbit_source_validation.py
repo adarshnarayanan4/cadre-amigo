@@ -75,12 +75,8 @@ def cadre_initial_source(
     O_IP = np.eye(3)
 
     O_IP = np.dot(O_IP, get_rotation(np.array([0.0, 0.0, 1.0]), raan * d2r))
-    O_IP = np.dot(
-        O_IP, get_rotation(np.array([1.0, 0.0, 0.0]), inclination * d2r)
-    )
-    O_IP = np.dot(
-        O_IP, get_rotation(np.array([0.0, 0.0, 1.0]), arg_perigee * d2r)
-    )
+    O_IP = np.dot(O_IP, get_rotation(np.array([1.0, 0.0, 0.0]), inclination * d2r))
+    O_IP = np.dot(O_IP, get_rotation(np.array([0.0, 0.0, 1.0]), arg_perigee * d2r))
 
     r0_ECI = np.dot(O_IP, r0_P)
     v0_ECI = np.dot(O_IP, v0_P)
@@ -177,9 +173,7 @@ def main():
     print(initial_difference)
 
     # Compare dynamics over one orbit
-    orbital_period = calculate_orbital_period(
-        alt_perigee=500.0, alt_apogee=500.0
-    )
+    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
 
     num_time_steps = 568
     dt = orbital_period / num_time_steps
@@ -195,9 +189,7 @@ def main():
         our_rate = orbit_dynamics(state)
 
         dynamics_difference = np.max(np.abs(cadre_rate - our_rate))
-        max_dynamics_difference = max(
-            max_dynamics_difference, dynamics_difference
-        )
+        max_dynamics_difference = max(max_dynamics_difference, dynamics_difference)
 
         # Compare one RK4 step
         cadre_next = cadre_rk4_step_source(state, dt)
@@ -248,8 +240,7 @@ def main():
     else:
         print()
         print(
-            "CHECK NEEDED: at least one comparison was larger than the "
-            + "tolerance."
+            "CHECK NEEDED: at least one comparison was larger than the " + "tolerance."
         )
 
 

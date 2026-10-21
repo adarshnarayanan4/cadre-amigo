@@ -5,8 +5,9 @@ with the individual subsystems, checked them against the original CADRE code,
 and then connected them into a single-case optimization.
 
 The coupled model now optimizes communication power, solar currents, and initial
-battery state of charge over a 12-hour window. The full-size version with free
-roll and surface allocation is still unfinished.
+battery state of charge over a 12-hour window. Full-size roll/allocation
+convergence remains unfinished. A joint six-case model with shared fin and
+antenna angles is also implemented and has passed reduced-model checks.
 
 ## Running the code
 
@@ -115,10 +116,33 @@ The integrated solver, evaluator, checkpoint, and derivative checks are in
 
 ## Remaining work
 
+All six source cases can now be selected individually, with isolated output
+directories and case-aware checkpoint checks. Input replay and lookup derivative
+checks passed across the six cases. Run `python -m integrated.prepare_cadre
+--check-lookups` to write a preparation report without compiling or optimizing.
+
 A shorter 600-node case with free roll and surface allocation has passed
 validation. The full 1,500-node, 4,285-variable version still needs to converge
-and pass independent replay. The next step is to finish that case before
-expanding toward the original multi-case problem.
+and pass independent replay.
+
+The joint model now has six case blocks, one shared allocation, shared fin and
+antenna angles, and a summed data objective. Analytic shared-angle derivatives,
+compiled small-model assembly, and independent initial replay have passed checks.
+At the original resolution it has 25,292 design variables. No joint optimization
+has been run; the joint command currently prepares or compiles the model only.
 
 The [roll/allocation status note](integrated/docs/roll_allocation_status.md)
 records the current solver setup and restart command.
+The [server preparation notes](integrated/docs/server_preparation.md) describe
+the joint model commands and remaining server/optimization work.
+
+## Code style
+
+Use blank lines to separate setup, calculations, and reporting. Keep short
+equations on one line and use descriptive names for intermediate derivatives.
+CADRE variable names stay the same so they can be checked against the source.
+Comments should explain a convention, unit, or numerical choice rather than
+repeat the next line of code.
+
+Format Python files from the repository root with `python -m black .`.
+The formatter settings are in `pyproject.toml`; Black is only needed for editing.

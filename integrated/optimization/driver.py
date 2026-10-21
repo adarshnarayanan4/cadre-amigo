@@ -96,6 +96,7 @@ def optimize_case(model, case, args):
 def _checkpoint_signature(case, args):
     """Record the model settings that must match a warm-start checkpoint."""
     return {
+        "case_index": case.case_index,
         "nodes": case.n,
         "control_points": case.m,
         "fixed_initial_soc": args.fixed_initial_soc,
@@ -109,6 +110,7 @@ def _checkpoint_signature(case, args):
 
 def _shared_control_indices(model, optimizer, case, args):
     """Choose the shared variables for Newton and multiplier-initialization solves."""
+
     if not case.design_physics:
         return None, None
 

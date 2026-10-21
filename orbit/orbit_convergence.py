@@ -60,6 +60,7 @@ def run_case(num_time_steps):
 
     # Extract AMIGO trajectory
     amigo_states = np.zeros((num_time_steps + 1, 6))
+
     for i in range(6):
         amigo_states[:, i] = x[f"orbit.q[:, {i}]"]
 

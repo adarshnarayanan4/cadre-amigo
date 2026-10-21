@@ -64,7 +64,6 @@ from communication.communication_amigo import (
     propagate_data_trapezoid,
 )
 
-
 # ================================================================
 # Integrated-model components
 # ================================================================
@@ -130,9 +129,7 @@ class BatteryDynamicsLinked(am.Component):
 
         self.add_constant(
             "alpha",
-            value=np.log(
-                1.0 / 1.1**5
-            ),
+            value=np.log(1.0 / 1.1**5),
         )
 
         self.add_constant(
@@ -155,51 +152,23 @@ class BatteryDynamicsLinked(am.Component):
         IR = self.constants["IR"]
         T0 = self.constants["T0"]
         alpha = self.constants["alpha"]
-        e_minus_1 = self.constants[
-            "e_minus_1"
-        ]
+        e_minus_1 = self.constants["e_minus_1"]
 
         P_bat = self.inputs["P_bat"]
-        temperature = self.inputs[
-            "temperature"
-        ]
+        temperature = self.inputs["temperature"]
 
         SOC = self.inputs["SOC"]
         SOCdot = self.inputs["SOCdot"]
 
-        voc = (
-            3.0
-            + (
-                am.exp(SOC) - 1.0
-            )
-            / e_minus_1
-        )
+        voc = 3.0 + (am.exp(SOC) - 1.0) / e_minus_1
 
-        voltage = (
-            IR
-            * voc
-            * (
-                2.0
-                - am.exp(
-                    alpha
-                    * (
-                        temperature - T0
-                    )
-                    / T0
-                )
-            )
-        )
+        voltage = IR * voc * (2.0 - am.exp(alpha * (temperature - T0) / T0))
 
         current = P_bat / voltage
 
-        rate = (
-            -sigma / 24.0 * SOC
-            + eta / Cp * current
-        )
+        rate = -sigma / 24.0 * SOC + eta / Cp * current
 
-        self.constraints["res"] = (
-            rate - SOCdot
-        )
+        self.constraints["res"] = rate - SOCdot
 
 
 class BatteryInitialCondition(am.Component):
@@ -218,10 +187,7 @@ class BatteryInitialCondition(am.Component):
     def compute(self):
         SOC = self.inputs["SOC"]
 
-        self.constraints["res"] = (
-            SOC
-            - self.constants["initial_soc"]
-        )
+        self.constraints["res"] = SOC - self.constants["initial_soc"]
 
 
 class DataInitialCondition(am.Component):
@@ -233,9 +199,7 @@ class DataInitialCondition(am.Component):
         self.add_constraint("res")
 
     def compute(self):
-        self.constraints["res"] = (
-            self.inputs["Data"]
-        )
+        self.constraints["res"] = self.inputs["Data"]
 
 
 class DownloadObjective(am.Component):
@@ -249,9 +213,7 @@ class DownloadObjective(am.Component):
     def compute(self):
         # AMIGO minimizes.
         # Therefore minimize -Data to maximize downloaded data.
-        self.objective["obj"] = (
-            -self.inputs["Data"]
-        )
+        self.objective["obj"] = -self.inputs["Data"]
 
 
 # ================================================================
@@ -284,14 +246,10 @@ def extract_vector(
     n,
     width,
 ):
-    values = np.zeros(
-        (n, width)
-    )
+    values = np.zeros((n, width))
 
     for i in range(width):
-        values[:, i] = x[
-            f"{variable_name}[:, {i}]"
-        ]
+        values[:, i] = x[f"{variable_name}[:, {i}]"]
 
     return values
 
@@ -306,9 +264,7 @@ def main():
     # Load original CADRE benchmark case
     # --------------------------------------------------------
 
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(
         data_path,
@@ -334,9 +290,7 @@ def main():
     # The mission duration remains 12 hours.
     # ========================================================
 
-    full_n = len(
-        data["0:P_comm"]
-    )
+    full_n = len(data["0:P_comm"])
 
     n = 300
 
@@ -350,16 +304,11 @@ def main():
 
     num_intervals = n - 1
 
-    dt = (
-        43200.0
-        / num_intervals
-    )
+    dt = 43200.0 / num_intervals
 
     print()
     print("=" * 70)
-    print(
-        "CADRE REDUCED P_COMM OPTIMIZATION"
-    )
+    print("CADRE REDUCED P_COMM OPTIMIZATION")
     print("=" * 70)
 
     print()
@@ -382,21 +331,13 @@ def main():
     # Reduce the original 300 control points to 60
     # ========================================================
 
-    CP_P_comm_full = np.asarray(
-        data["0:CP_P_comm"]
-    )
+    CP_P_comm_full = np.asarray(data["0:CP_P_comm"])
 
-    CP_gamma_full = np.asarray(
-        data["0:CP_gamma"]
-    )
+    CP_gamma_full = np.asarray(data["0:CP_gamma"])
 
-    CP_Isetpt_full = np.asarray(
-        data["0:CP_Isetpt"]
-    )
+    CP_Isetpt_full = np.asarray(data["0:CP_Isetpt"])
 
-    full_m = len(
-        CP_P_comm_full
-    )
+    full_m = len(CP_P_comm_full)
 
     m = 60
 
@@ -424,9 +365,7 @@ def main():
         CP_gamma_full,
     )
 
-    CP_Isetpt = np.zeros(
-        (12, m)
-    )
+    CP_Isetpt = np.zeros((12, m))
 
     for panel in range(12):
         CP_Isetpt[
@@ -442,71 +381,47 @@ def main():
         )
 
     print()
-    print(
-        "Communication-power control points:"
-    )
+    print("Communication-power control points:")
     print(m)
 
     # ========================================================
     # Downsample fixed CADRE trajectory inputs
     # ========================================================
 
-    P_comm_source = np.asarray(
-        data["0:P_comm"]
-    )[sample_indices]
+    P_comm_source = np.asarray(data["0:P_comm"])[sample_indices]
 
-    exposed_area = np.asarray(
-        data["0:exposedArea"]
-    )[
+    exposed_area = np.asarray(data["0:exposedArea"])[
         :,
         :,
         sample_indices,
     ]
 
-    LOS = np.asarray(
-        data["0:LOS"]
-    )[sample_indices]
+    LOS = np.asarray(data["0:LOS"])[sample_indices]
 
-    cellInstd = np.asarray(
-        data["cellInstd"]
-    )
+    cellInstd = np.asarray(data["cellInstd"])
 
-    w_B = np.asarray(
-        data["0:w_B"]
-    )[
+    w_B = np.asarray(data["0:w_B"])[
         :,
         sample_indices,
     ]
 
-    T_tot = np.asarray(
-        data["0:T_tot"]
-    )[
+    T_tot = np.asarray(data["0:T_tot"])[
         :,
         sample_indices,
     ]
 
-    V_sol = np.asarray(
-        data["0:V_sol"]
-    )[
+    V_sol = np.asarray(data["0:V_sol"])[
         :,
         sample_indices,
     ]
 
-    gain = np.asarray(
-        data["0:gain"]
-    )[sample_indices]
+    gain = np.asarray(data["0:gain"])[sample_indices]
 
-    GSdist = np.asarray(
-        data["0:GSdist"]
-    )[sample_indices]
+    GSdist = np.asarray(data["0:GSdist"])[sample_indices]
 
-    CommLOS = np.asarray(
-        data["0:CommLOS"]
-    )[sample_indices]
+    CommLOS = np.asarray(data["0:CommLOS"])[sample_indices]
 
-    initial_soc = float(
-        data["0:iSOC"][0]
-    )
+    initial_soc = float(data["0:iSOC"][0])
 
     # ========================================================
     # Original CADRE-design baseline
@@ -537,31 +452,23 @@ def main():
         dt,
     )
 
-    T_RW_baseline = (
-        reaction_wheel_torque(
-            T_tot
-        )
-    )
+    T_RW_baseline = reaction_wheel_torque(T_tot)
 
     w_RW0 = np.zeros(3)
 
     (
         w_RW_baseline,
         w_RW_dot_baseline,
-    ) = (
-        propagate_reaction_wheel_trapezoid(
-            w_RW0,
-            w_B,
-            T_RW_baseline,
-            dt,
-        )
+    ) = propagate_reaction_wheel_trapezoid(
+        w_RW0,
+        w_B,
+        T_RW_baseline,
+        dt,
     )
 
-    P_RW_baseline = (
-        reaction_wheel_power(
-            w_RW_baseline,
-            T_RW_baseline,
-        )
+    P_RW_baseline = reaction_wheel_power(
+        w_RW_baseline,
+        T_RW_baseline,
     )
 
     P_sol_baseline = solar_power(
@@ -575,22 +482,18 @@ def main():
         P_RW_baseline,
     )
 
-    SOC_baseline = (
-        propagate_soc_trapezoid(
-            initial_soc,
-            P_bat_baseline,
-            temperature_baseline,
-            dt,
-        )
+    SOC_baseline = propagate_soc_trapezoid(
+        initial_soc,
+        P_bat_baseline,
+        temperature_baseline,
+        dt,
     )
 
-    Dr_baseline = (
-        communication_bit_rate(
-            P_comm_baseline,
-            gain,
-            GSdist,
-            CommLOS,
-        )
+    Dr_baseline = communication_bit_rate(
+        P_comm_baseline,
+        gain,
+        GSdist,
+        CommLOS,
     )
 
     (
@@ -608,29 +511,19 @@ def main():
     print("=" * 70)
 
     print()
-    print(
-        "Baseline final SOC:"
-    )
-    print(
-        SOC_baseline[-1]
-    )
+    print("Baseline final SOC:")
+    print(SOC_baseline[-1])
 
     print()
-    print(
-        "Baseline SOC min / max:"
-    )
+    print("Baseline SOC min / max:")
     print(
         np.min(SOC_baseline),
         np.max(SOC_baseline),
     )
 
     print()
-    print(
-        "Baseline downloaded data [Gibyte]:"
-    )
-    print(
-        Data_baseline[-1]
-    )
+    print("Baseline downloaded data [Gibyte]:")
+    print(Data_baseline[-1])
 
     # ========================================================
     # Interior optimization starting point
@@ -714,34 +607,28 @@ def main():
     # Battery initial guess
     # --------------------------------------------------------
 
-    SOC_guess = (
-        propagate_soc_trapezoid(
-            initial_soc,
-            P_bat_guess,
-            temperature_guess,
-            dt,
-        )
+    SOC_guess = propagate_soc_trapezoid(
+        initial_soc,
+        P_bat_guess,
+        temperature_guess,
+        dt,
     )
 
-    SOCdot_guess = (
-        calculate_battery_rates(
-            SOC_guess,
-            P_bat_guess,
-            temperature_guess[4],
-        )
+    SOCdot_guess = calculate_battery_rates(
+        SOC_guess,
+        P_bat_guess,
+        temperature_guess[4],
     )
 
     # --------------------------------------------------------
     # Communications initial guess
     # --------------------------------------------------------
 
-    Dr_guess = (
-        communication_bit_rate(
-            P_comm_guess,
-            gain,
-            GSdist,
-            CommLOS,
-        )
+    Dr_guess = communication_bit_rate(
+        P_comm_guess,
+        gain,
+        GSdist,
+        CommLOS,
     )
 
     (
@@ -759,156 +646,90 @@ def main():
     print("=" * 70)
 
     print()
-    print(
-        "Initial-guess final SOC:"
-    )
-    print(
-        SOC_guess[-1]
-    )
+    print("Initial-guess final SOC:")
+    print(SOC_guess[-1])
 
     print()
-    print(
-        "Initial-guess SOC min / max:"
-    )
+    print("Initial-guess SOC min / max:")
     print(
         np.min(SOC_guess),
         np.max(SOC_guess),
     )
 
     print()
-    print(
-        "Initial-guess downloaded data [Gibyte]:"
-    )
-    print(
-        Data_guess[-1]
-    )
+    print("Initial-guess downloaded data [Gibyte]:")
+    print(Data_guess[-1])
 
     # ========================================================
     # Sparse B-spline structure
     # ========================================================
 
-    weights, indices = (
-        build_sparse_basis(
-            n,
-            m,
-        )
+    weights, indices = build_sparse_basis(
+        n,
+        m,
     )
 
     # ========================================================
     # AMIGO components
     # ========================================================
 
-    parameter_control_points = (
-        ParameterControlPoints()
-    )
+    parameter_control_points = ParameterControlPoints()
 
-    parameter_values = (
-        ParameterValues()
-    )
+    parameter_values = ParameterValues()
 
-    parameter_kernel = (
-        ParameterSplineKernel()
-    )
+    parameter_kernel = ParameterSplineKernel()
 
     thermal = ThermalDynamics()
 
-    thermal_trapezoid = (
-        ThermalTrapezoidRule(
-            dt
-        )
-    )
+    thermal_trapezoid = ThermalTrapezoidRule(dt)
 
     # Important:
     # Different modules all contain classes named TrapezoidRule.
     # Give each one a unique AMIGO/C++ class name.
-    thermal_trapezoid.name = (
-        "ThermalTrapezoidRule"
-    )
+    thermal_trapezoid.name = "ThermalTrapezoidRule"
 
-    thermal_initial = (
-        ThermalInitialConditions()
-    )
+    thermal_initial = ThermalInitialConditions()
 
-    rw_torque = (
-        ReactionWheelTorque()
-    )
+    rw_torque = ReactionWheelTorque()
 
-    rw_dynamics = (
-        ReactionWheelDynamics()
-    )
+    rw_dynamics = ReactionWheelDynamics()
 
-    rw_trapezoid = (
-        ReactionWheelTrapezoidRule(
-            dt
-        )
-    )
+    rw_trapezoid = ReactionWheelTrapezoidRule(dt)
 
-    rw_trapezoid.name = (
-        "ReactionWheelTrapezoidRule"
-    )
+    rw_trapezoid.name = "ReactionWheelTrapezoidRule"
 
-    rw_initial = (
-        ReactionWheelInitialCondition()
-    )
+    rw_initial = ReactionWheelInitialCondition()
 
-    rw_power = (
-        ReactionWheelPower()
-    )
+    rw_power = ReactionWheelPower()
 
     power_solar = PowerSolar()
     power_total = PowerTotal()
 
-    battery = (
-        BatteryDynamicsLinked()
-    )
+    battery = BatteryDynamicsLinked()
 
-    battery_trapezoid = (
-        BatteryTrapezoidRule(
-            dt
-        )
-    )
+    battery_trapezoid = BatteryTrapezoidRule(dt)
 
-    battery_trapezoid.name = (
-        "BatteryTrapezoidRule"
-    )
+    battery_trapezoid.name = "BatteryTrapezoidRule"
 
-    battery_initial = (
-        BatteryInitialCondition(
-            initial_soc
-        )
-    )
+    battery_initial = BatteryInitialCondition(initial_soc)
 
-    comm_rate = (
-        CommunicationBitRate()
-    )
+    comm_rate = CommunicationBitRate()
 
     comm_data = DataDynamics()
 
-    comm_trapezoid = (
-        DataTrapezoidRule(
-            dt
-        )
-    )
+    comm_trapezoid = DataTrapezoidRule(dt)
 
-    comm_trapezoid.name = (
-        "CommunicationTrapezoidRule"
-    )
+    comm_trapezoid.name = "CommunicationTrapezoidRule"
 
-    comm_initial = (
-        DataInitialCondition()
-    )
+    comm_initial = DataInitialCondition()
 
-    objective = (
-        DownloadObjective()
-    )
+    objective = DownloadObjective()
 
     # ========================================================
     # AMIGO model
     # ========================================================
 
-    model = am.Model(
-        "cadre_optimize_pcomm"
-    )
+    model = am.Model("cadre_optimize_pcomm")
 
     # --------------------------------------------------------
     # Parameters
@@ -1069,56 +890,28 @@ def main():
     # ========================================================
 
     print()
-    print(
-        "Creating parameter links..."
-    )
+    print("Creating parameter links...")
 
     for i in range(n):
         for j in range(4):
-            control_index = (
-                indices[i, j]
+            control_index = indices[i, j]
+
+            model.link(
+                ("control_points." f"CP_P_comm[{control_index}]"),
+                ("parameter_kernel." f"CP_P_comm[{i}, {j}]"),
             )
 
             model.link(
-                (
-                    "control_points."
-                    f"CP_P_comm[{control_index}]"
-                ),
-                (
-                    "parameter_kernel."
-                    f"CP_P_comm[{i}, {j}]"
-                ),
-            )
-
-            model.link(
-                (
-                    "control_points."
-                    f"CP_gamma[{control_index}]"
-                ),
-                (
-                    "parameter_kernel."
-                    f"CP_gamma[{i}, {j}]"
-                ),
+                ("control_points." f"CP_gamma[{control_index}]"),
+                ("parameter_kernel." f"CP_gamma[{i}, {j}]"),
             )
 
             for panel in range(12):
-                local_index = (
-                    4 * panel + j
-                )
+                local_index = 4 * panel + j
 
                 model.link(
-                    (
-                        "control_points."
-                        "CP_Isetpt"
-                        f"[{control_index}, "
-                        f"{panel}]"
-                    ),
-                    (
-                        "parameter_kernel."
-                        "CP_Isetpt"
-                        f"[{i}, "
-                        f"{local_index}]"
-                    ),
+                    ("control_points." "CP_Isetpt" f"[{control_index}, " f"{panel}]"),
+                    ("parameter_kernel." "CP_Isetpt" f"[{i}, " f"{local_index}]"),
                 )
 
     model.link(
@@ -1357,18 +1150,13 @@ def main():
     model.set_meta(
         "lower",
         "control_points.CP_P_comm[:]",
-        np.zeros_like(
-            CP_P_comm
-        ),
+        np.zeros_like(CP_P_comm),
     )
 
     model.set_meta(
         "upper",
         "control_points.CP_P_comm[:]",
-        25.0
-        * np.ones_like(
-            CP_P_comm
-        ),
+        25.0 * np.ones_like(CP_P_comm),
     )
 
     # --------------------------------------------------------
@@ -1403,10 +1191,7 @@ def main():
             :,
         ]
 
-        variable = (
-            "control_points."
-            f"CP_Isetpt[:, {panel}]"
-        )
+        variable = "control_points." f"CP_Isetpt[:, {panel}]"
 
         model.set_meta(
             "value",
@@ -1445,10 +1230,7 @@ def main():
     for panel in range(12):
         model.set_meta(
             "value",
-            (
-                "values."
-                f"Isetpt[:, {panel}]"
-            ),
+            ("values." f"Isetpt[:, {panel}]"),
             Isetpt_guess[
                 panel,
                 :,
@@ -1459,31 +1241,22 @@ def main():
     # Fixed thermal inputs
     # ========================================================
 
-    exposed_area_flat = np.zeros(
-        (n, 84)
-    )
+    exposed_area_flat = np.zeros((n, 84))
 
     for k in range(n):
-        exposed_area_flat[k] = (
-            exposed_area[
-                :,
-                :,
-                k,
-            ].reshape(84)
-        )
+        exposed_area_flat[k] = exposed_area[
+            :,
+            :,
+            k,
+        ].reshape(84)
 
     for i in range(84):
-        variable = (
-            "thermal."
-            f"exposedArea[:, {i}]"
-        )
+        variable = "thermal." f"exposedArea[:, {i}]"
 
-        values = (
-            exposed_area_flat[
-                :,
-                i,
-            ]
-        )
+        values = exposed_area_flat[
+            :,
+            i,
+        ]
 
         model.set_meta(
             "value",
@@ -1521,20 +1294,12 @@ def main():
         LOS,
     )
 
-    cell_flat = (
-        cellInstd.reshape(84)
-    )
+    cell_flat = cellInstd.reshape(84)
 
     for i in range(84):
-        values = (
-            cell_flat[i]
-            * np.ones(n)
-        )
+        values = cell_flat[i] * np.ones(n)
 
-        variable = (
-            "thermal."
-            f"cellInstd[:, {i}]"
-        )
+        variable = "thermal." f"cellInstd[:, {i}]"
 
         model.set_meta(
             "value",
@@ -1558,10 +1323,7 @@ def main():
     for i in range(5):
         model.set_meta(
             "value",
-            (
-                "thermal."
-                f"temperature[:, {i}]"
-            ),
+            ("thermal." f"temperature[:, {i}]"),
             temperature_guess[
                 i,
                 :,
@@ -1570,10 +1332,7 @@ def main():
 
         model.set_meta(
             "value",
-            (
-                "thermal."
-                f"temperature_dot[:, {i}]"
-            ),
+            ("thermal." f"temperature_dot[:, {i}]"),
             temperature_dot_guess[
                 :,
                 i,
@@ -1587,91 +1346,61 @@ def main():
     for i in range(3):
         model.set_meta(
             "value",
-            (
-                "rw_torque."
-                f"T_tot[:, {i}]"
-            ),
+            ("rw_torque." f"T_tot[:, {i}]"),
             T_tot[i],
         )
 
         model.set_meta(
             "lower",
-            (
-                "rw_torque."
-                f"T_tot[:, {i}]"
-            ),
+            ("rw_torque." f"T_tot[:, {i}]"),
             T_tot[i],
         )
 
         model.set_meta(
             "upper",
-            (
-                "rw_torque."
-                f"T_tot[:, {i}]"
-            ),
+            ("rw_torque." f"T_tot[:, {i}]"),
             T_tot[i],
         )
 
         model.set_meta(
             "value",
-            (
-                "rw_dynamics."
-                f"w_B[:, {i}]"
-            ),
+            ("rw_dynamics." f"w_B[:, {i}]"),
             w_B[i],
         )
 
         model.set_meta(
             "lower",
-            (
-                "rw_dynamics."
-                f"w_B[:, {i}]"
-            ),
+            ("rw_dynamics." f"w_B[:, {i}]"),
             w_B[i],
         )
 
         model.set_meta(
             "upper",
-            (
-                "rw_dynamics."
-                f"w_B[:, {i}]"
-            ),
+            ("rw_dynamics." f"w_B[:, {i}]"),
             w_B[i],
         )
 
         model.set_meta(
             "value",
-            (
-                "rw_torque."
-                f"T_RW[:, {i}]"
-            ),
+            ("rw_torque." f"T_RW[:, {i}]"),
             T_RW_guess[i],
         )
 
         model.set_meta(
             "value",
-            (
-                "rw_dynamics."
-                f"w_RW[:, {i}]"
-            ),
+            ("rw_dynamics." f"w_RW[:, {i}]"),
             w_RW_guess[i],
         )
 
         model.set_meta(
             "value",
-            (
-                "rw_dynamics."
-                f"w_RW_dot[:, {i}]"
-            ),
+            ("rw_dynamics." f"w_RW_dot[:, {i}]"),
             w_RW_dot_guess[i],
         )
 
         model.set_meta(
             "value",
-            (
-                "rw_power."
-                f"P_RW[:, {i}]"
-            ),
+            ("rw_power." f"P_RW[:, {i}]"),
             P_RW_guess[i],
         )
 
@@ -1680,10 +1409,7 @@ def main():
     # ========================================================
 
     for panel in range(12):
-        variable = (
-            "power_solar."
-            f"V_sol[:, {panel}]"
-        )
+        variable = "power_solar." f"V_sol[:, {panel}]"
 
         values = V_sol[
             panel,
@@ -1771,9 +1497,7 @@ def main():
             CommLOS,
         ),
     ]:
-        variable = (
-            f"comm_rate.{name}[:]"
-        )
+        variable = f"comm_rate.{name}[:]"
 
         model.set_meta(
             "value",
@@ -1817,26 +1541,17 @@ def main():
     # ========================================================
 
     print()
-    print(
-        "Building reduced CADRE "
-        "optimization model..."
-    )
+    print("Building reduced CADRE " "optimization model...")
 
     model.build_module()
 
-    print(
-        "Build successful."
-    )
+    print("Build successful.")
 
     # NATURAL ordering is currently used because it was stable
     # for the integrated CADRE model on this machine.
-    model.initialize(
-        order_type=am.OrderingType.NESTED_DISSECTION
-    )
+    model.initialize(order_type=am.OrderingType.NESTED_DISSECTION)
 
-    print(
-        "Initialization successful."
-    )
+    print("Initialization successful.")
 
     # ========================================================
     # Optimize
@@ -1859,24 +1574,16 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "RUNNING P_COMM OPTIMIZATION"
-    )
+    print("RUNNING P_COMM OPTIMIZATION")
     print("=" * 70)
 
-    opt_data = optimizer.optimize(
-        options
-    )
+    opt_data = optimizer.optimize(options)
 
     print()
-    print(
-        "Optimization finished."
-    )
+    print("Optimization finished.")
 
     print()
-    print(
-        "Optimizer converged:"
-    )
+    print("Optimizer converged:")
     print(
         opt_data.get(
             "converged",
@@ -1884,22 +1591,11 @@ def main():
         )
     )
 
-    if (
-        "iterations" in opt_data
-        and len(
-            opt_data["iterations"]
-        ) > 0
-    ):
-        last_iteration = (
-            opt_data[
-                "iterations"
-            ][-1]
-        )
+    if "iterations" in opt_data and len(opt_data["iterations"]) > 0:
+        last_iteration = opt_data["iterations"][-1]
 
         print()
-        print(
-            "Final NLP residual:"
-        )
+        print("Final NLP residual:")
         print(
             last_iteration.get(
                 "residual",
@@ -1908,9 +1604,7 @@ def main():
         )
 
         print()
-        print(
-            "Final iteration number:"
-        )
+        print("Final iteration number:")
         print(
             last_iteration.get(
                 "iteration",
@@ -1922,51 +1616,24 @@ def main():
     # Extract optimized solution
     # ========================================================
 
-    CP_P_comm_amigo = np.array(
-        x[
-            "control_points."
-            "CP_P_comm[:]"
-        ]
-    )
+    CP_P_comm_amigo = np.array(x["control_points." "CP_P_comm[:]"])
 
-    P_comm_amigo = np.array(
-        x[
-            "values.P_comm[:]"
-        ]
-    )
+    P_comm_amigo = np.array(x["values.P_comm[:]"])
 
-    temperature_amigo = (
-        extract_vector(
-            x,
-            "thermal.temperature",
-            n,
-            5,
-        ).T
-    )
+    temperature_amigo = extract_vector(
+        x,
+        "thermal.temperature",
+        n,
+        5,
+    ).T
 
-    P_bat_amigo = np.array(
-        x[
-            "power_total.P_bat[:]"
-        ]
-    )
+    P_bat_amigo = np.array(x["power_total.P_bat[:]"])
 
-    SOC_amigo = np.array(
-        x[
-            "battery.SOC[:]"
-        ]
-    )
+    SOC_amigo = np.array(x["battery.SOC[:]"])
 
-    Dr_amigo = np.array(
-        x[
-            "comm_rate.Dr[:]"
-        ]
-    )
+    Dr_amigo = np.array(x["comm_rate.Dr[:]"])
 
-    Data_amigo = np.array(
-        x[
-            "comm_data.Data[:]"
-        ]
-    )
+    Data_amigo = np.array(x["comm_data.Data[:]"])
 
     # Battery current is only reported here.
     # It is NOT yet constrained in this reduced optimization.
@@ -1982,144 +1649,72 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "P_COMM OPTIMIZATION RESULTS"
-    )
+    print("P_COMM OPTIMIZATION RESULTS")
     print("=" * 70)
 
     print()
+    print("Baseline downloaded data [Gibyte]:")
+    print(Data_baseline[-1])
+
+    print()
+    print("Initial-guess downloaded data [Gibyte]:")
+    print(Data_guess[-1])
+
+    print()
+    print("Optimized downloaded data [Gibyte]:")
+    print(Data_amigo[-1])
+
+    print()
+    print("Improvement over baseline [Gibyte]:")
+    print(Data_amigo[-1] - Data_baseline[-1])
+
+    print()
+    print("Percent improvement over baseline:")
+    print(100.0 * (Data_amigo[-1] - Data_baseline[-1]) / Data_baseline[-1])
+
+    print()
+    print("Maximum CP_P_comm change " "from CADRE design [W]:")
+    print(np.max(np.abs(CP_P_comm_amigo - CP_P_comm)))
+
+    print()
+    print("Optimized CP_P_comm min / max [W]:")
     print(
-        "Baseline downloaded data [Gibyte]:"
-    )
-    print(
-        Data_baseline[-1]
+        np.min(CP_P_comm_amigo),
+        np.max(CP_P_comm_amigo),
     )
 
     print()
+    print("Optimized P_comm min / max [W]:")
     print(
-        "Initial-guess downloaded data [Gibyte]:"
-    )
-    print(
-        Data_guess[-1]
-    )
-
-    print()
-    print(
-        "Optimized downloaded data [Gibyte]:"
-    )
-    print(
-        Data_amigo[-1]
+        np.min(P_comm_amigo),
+        np.max(P_comm_amigo),
     )
 
     print()
+    print("Optimized SOC min / max:")
     print(
-        "Improvement over baseline [Gibyte]:"
-    )
-    print(
-        Data_amigo[-1]
-        - Data_baseline[-1]
+        np.min(SOC_amigo),
+        np.max(SOC_amigo),
     )
 
     print()
-    print(
-        "Percent improvement over baseline:"
-    )
-    print(
-        100.0
-        * (
-            Data_amigo[-1]
-            - Data_baseline[-1]
-        )
-        / Data_baseline[-1]
-    )
-
-    print()
-    print(
-        "Maximum CP_P_comm change "
-        "from CADRE design [W]:"
-    )
-    print(
-        np.max(
-            np.abs(
-                CP_P_comm_amigo
-                - CP_P_comm
-            )
-        )
-    )
-
-    print()
-    print(
-        "Optimized CP_P_comm min / max [W]:"
-    )
-    print(
-        np.min(
-            CP_P_comm_amigo
-        ),
-        np.max(
-            CP_P_comm_amigo
-        ),
-    )
-
-    print()
-    print(
-        "Optimized P_comm min / max [W]:"
-    )
-    print(
-        np.min(
-            P_comm_amigo
-        ),
-        np.max(
-            P_comm_amigo
-        ),
-    )
-
-    print()
-    print(
-        "Optimized SOC min / max:"
-    )
-    print(
-        np.min(
-            SOC_amigo
-        ),
-        np.max(
-            SOC_amigo
-        ),
-    )
-
-    print()
-    print(
-        "Initial / final SOC:"
-    )
+    print("Initial / final SOC:")
     print(
         SOC_amigo[0],
         SOC_amigo[-1],
     )
 
     print()
+    print("Battery current min / max [A]")
+    print("(diagnostic only; not constrained)")
     print(
-        "Battery current min / max [A]"
-    )
-    print(
-        "(diagnostic only; not constrained)"
-    )
-    print(
-        np.min(
-            I_bat_amigo
-        ),
-        np.max(
-            I_bat_amigo
-        ),
+        np.min(I_bat_amigo),
+        np.max(I_bat_amigo),
     )
 
     print()
-    print(
-        "Original CADRE final "
-        "downloaded data [Gibyte]:"
-    )
-    print(
-        data["0:Data"]
-        .reshape(-1)[-1]
-    )
+    print("Original CADRE final " "downloaded data [Gibyte]:")
+    print(data["0:Data"].reshape(-1)[-1])
 
     print()
     print("=" * 70)

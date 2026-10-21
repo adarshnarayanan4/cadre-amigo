@@ -1,0 +1,21 @@
+{
+  "cases": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "design_variables": 428,
+  "shared_design_variables": 86,
+  "shared_aliases_verified": true,
+  "design_and_battery_bounds_verified": true,
+  "scoped_temporal_permutation_verified": true,
+  "summed_objective_error": 0.0,
+  "separate_soc_periodicity_verified": true,
+  "independent_initial_replay_max_error": 2.4442670110147446e-12,
+  "assembled_hessian_direction_relative_error": 3.8252864178026795e-13,
+  "assembled_hessian_asymmetry": 1.1102230246251565e-16,
+  "optimization_run": false
+}

@@ -43,17 +43,9 @@ class CommunicationBitRate(am.Component):
 
         distance = GSdist * 1.0e3
 
-        rate = (
-            alpha
-            * P_comm
-            * gain
-            * CommLOS
-            / distance**2
-        )
+        rate = alpha * P_comm * gain * CommLOS / distance**2
 
-        self.constraints["res"] = (
-            Dr - rate
-        )
+        self.constraints["res"] = Dr - rate
 
 
 class DataDynamics(am.Component):
@@ -70,9 +62,7 @@ class DataDynamics(am.Component):
         Dr = self.inputs["Dr"]
         Data_dot = self.inputs["Data_dot"]
 
-        self.constraints["res"] = (
-            Data_dot - Dr
-        )
+        self.constraints["res"] = Data_dot - Dr
 
 
 class TrapezoidRule(am.Component):
@@ -101,16 +91,7 @@ class TrapezoidRule(am.Component):
         Data_dot0 = self.inputs["Data_dot0"]
         Data_dot1 = self.inputs["Data_dot1"]
 
-        self.constraints["res"] = (
-            Data1
-            - Data0
-            - 0.5
-            * dt
-            * (
-                Data_dot0
-                + Data_dot1
-            )
-        )
+        self.constraints["res"] = Data1 - Data0 - 0.5 * dt * (Data_dot0 + Data_dot1)
 
 
 class InitialCondition(am.Component):
@@ -127,9 +108,7 @@ class InitialCondition(am.Component):
 
         self.constraints["res"] = Data
 
-        self.objective["obj"] = (
-            1.0e-12 * Data * Data
-        )
+        self.objective["obj"] = 1.0e-12 * Data * Data
 
 
 def propagate_data_trapezoid(
@@ -148,23 +127,13 @@ def propagate_data_trapezoid(
         Data_dot[k] = Dr[k]
 
     for k in range(n - 1):
-        Data[k + 1] = (
-            Data[k]
-            + 0.5
-            * dt
-            * (
-                Data_dot[k]
-                + Data_dot[k + 1]
-            )
-        )
+        Data[k + 1] = Data[k] + 0.5 * dt * (Data_dot[k] + Data_dot[k + 1])
 
     return Data, Data_dot
 
 
 def main():
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(data_path, "rb") as f:
         data = pickle.load(
@@ -238,9 +207,7 @@ def main():
         )
     )
 
-    gain = mbi.evaluate(
-        points
-    )
+    gain = mbi.evaluate(points)
 
     # Python bitrate
     Dr_reference = communication_bit_rate(
@@ -251,12 +218,10 @@ def main():
     )
 
     # Python trapezoid reference
-    Data_trap, Data_dot_trap = (
-        propagate_data_trapezoid(
-            0.0,
-            Dr_reference,
-            dt,
-        )
+    Data_trap, Data_dot_trap = propagate_data_trapezoid(
+        0.0,
+        Dr_reference,
+        dt,
     )
 
     print()
@@ -266,23 +231,11 @@ def main():
 
     print()
     print("Maximum bitrate difference from CADRE [Gibyte/s]:")
-    print(
-        np.max(
-            np.abs(
-                Dr_reference - Dr_source
-            )
-        )
-    )
+    print(np.max(np.abs(Dr_reference - Dr_source)))
 
     print()
     print("CADRE RK4 vs trapezoid maximum Data difference [Gibyte]:")
-    print(
-        np.max(
-            np.abs(
-                Data_trap - Data_source
-            )
-        )
-    )
+    print(np.max(np.abs(Data_trap - Data_source)))
 
     max_trapezoid_residual = 0.0
 
@@ -290,12 +243,7 @@ def main():
         residual = (
             Data_trap[k + 1]
             - Data_trap[k]
-            - 0.5
-            * dt
-            * (
-                Data_dot_trap[k]
-                + Data_dot_trap[k + 1]
-            )
+            - 0.5 * dt * (Data_dot_trap[k] + Data_dot_trap[k + 1])
         )
 
         max_trapezoid_residual = max(
@@ -305,9 +253,7 @@ def main():
 
     print()
     print("Python trapezoid residual:")
-    print(
-        max_trapezoid_residual
-    )
+    print(max_trapezoid_residual)
 
     # Components
     bitrate = CommunicationBitRate()
@@ -316,9 +262,7 @@ def main():
     initial = InitialCondition()
 
     # Model
-    model = am.Model(
-        "cadre_communication"
-    )
+    model = am.Model("cadre_communication")
 
     model.add_component(
         "bitrate",
@@ -502,25 +446,17 @@ def main():
     print()
     print("Solving AMIGO communication model...")
 
-    opt.optimize(
-        opt_options
-    )
+    opt.optimize(opt_options)
 
     print()
     print("AMIGO solve complete.")
 
     # Extract results
-    Dr_amigo = np.array(
-        x["bitrate.Dr[:]"]
-    )
+    Dr_amigo = np.array(x["bitrate.Dr[:]"])
 
-    Data_amigo = np.array(
-        x["dynamics.Data[:]"]
-    )
+    Data_amigo = np.array(x["dynamics.Data[:]"])
 
-    Data_dot_amigo = np.array(
-        x["dynamics.Data_dot[:]"]
-    )
+    Data_dot_amigo = np.array(x["dynamics.Data_dot[:]"])
 
     print()
     print("=" * 70)
@@ -529,33 +465,15 @@ def main():
 
     print()
     print("AMIGO vs Python bitrate difference [Gibyte/s]:")
-    print(
-        np.max(
-            np.abs(
-                Dr_amigo - Dr_reference
-            )
-        )
-    )
+    print(np.max(np.abs(Dr_amigo - Dr_reference)))
 
     print()
     print("AMIGO vs Python trapezoid Data difference [Gibyte]:")
-    print(
-        np.max(
-            np.abs(
-                Data_amigo - Data_trap
-            )
-        )
-    )
+    print(np.max(np.abs(Data_amigo - Data_trap)))
 
     print()
     print("AMIGO vs Python Data-dot difference [Gibyte/s]:")
-    print(
-        np.max(
-            np.abs(
-                Data_dot_amigo - Data_dot_trap
-            )
-        )
-    )
+    print(np.max(np.abs(Data_dot_amigo - Data_dot_trap)))
 
     max_amigo_trapezoid_residual = 0.0
 
@@ -563,12 +481,7 @@ def main():
         residual = (
             Data_amigo[k + 1]
             - Data_amigo[k]
-            - 0.5
-            * dt
-            * (
-                Data_dot_amigo[k]
-                + Data_dot_amigo[k + 1]
-            )
+            - 0.5 * dt * (Data_dot_amigo[k] + Data_dot_amigo[k + 1])
         )
 
         max_amigo_trapezoid_residual = max(
@@ -578,9 +491,7 @@ def main():
 
     print()
     print("AMIGO trapezoid residual:")
-    print(
-        max_amigo_trapezoid_residual
-    )
+    print(max_amigo_trapezoid_residual)
 
     print()
     print("=" * 70)
@@ -589,25 +500,15 @@ def main():
 
     print()
     print("Maximum Data difference [Gibyte]:")
-    print(
-        np.max(
-            np.abs(
-                Data_amigo - Data_source
-            )
-        )
-    )
+    print(np.max(np.abs(Data_amigo - Data_source)))
 
     print()
     print("Final CADRE downloaded data [Gibyte]:")
-    print(
-        Data_source[-1]
-    )
+    print(Data_source[-1])
 
     print()
     print("Final AMIGO downloaded data [Gibyte]:")
-    print(
-        Data_amigo[-1]
-    )
+    print(Data_amigo[-1])
 
 
 if __name__ == "__main__":

@@ -12,6 +12,29 @@ pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.plot_pcomm_r
 Set `CADRE_ROOT` if the external CADRE checkout is not at `../CADRE`. Compilation
 requires the AMIGO environment's CMake and compiler on `PATH`.
 
+To prepare inputs without compilation or optimization:
+
+```sh
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.prepare_cadre --check-lookups
+```
+
+This checks all six benchmark cases. The [server preparation notes](docs/server_preparation.md)
+describe the report, joint model, and remaining server run work.
+
+The joint formulation is in `model/joint.py`. It shares 84 allocations and two
+angles across all case trajectories and minimizes the negative sum of final
+downloaded data. To compile a small six-case model without optimizing:
+
+```sh
+pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.cadre_joint --nodes 8 --control-points 4 --build --output /tmp/cadre-joint-check
+```
+
+Omit the grid options for the original 1,500-node/300-control formulation on the
+server. `--build` compiles into the output directory's `build/` subfolder and
+initializes the model; it never optimizes. Initial states are unrepaired reference
+guesses and need not satisfy feasibility. The existing single-case optimization
+driver remains separate from this joint assembly command.
+
 ## Directory layout
 
 ```text
@@ -79,6 +102,8 @@ interior starting guess.
 
 Useful options (`--help` lists all):
 
+- `--case-index 0` through `--case-index 5`: select one original benchmark case.
+  The default is 0. Other cases get separate default output directories.
 - `--design-physics`: restore roll-dependent lookup/attitude physics while retaining
   fixed roll/allocation; provides the matched reference for design optimization.
 - `--optimize-roll --optimize-allocation`: add 300 roll controls and 84 continuous
@@ -105,6 +130,8 @@ repeated inertia corrections are visible between optimizer iterations.
 The evaluator adapter excludes constraint rows from objective directional
 products and refreshes external caches before Hessian evaluation. These local
 adapters leave the external AMIGO checkout unchanged.
+Checkpoint signatures include the case index. Older checkpoints belong to case 0;
+cross-case warm starts and plot comparisons are rejected.
 
 ## Results and restarts
 

@@ -107,6 +107,7 @@ def finish_figure(figure, title, subtitle="", note="", shared_legend=False):
         wspace=0.08,
     )
     figure.text(0.06, 1 - 0.12 / height, title, va="top", fontsize=16, weight="bold")
+
     if subtitle:
         figure.text(
             0.06, 1 - 0.45 / height, subtitle, va="top", fontsize=10, color=GRAY

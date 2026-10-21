@@ -4,7 +4,6 @@ import numpy as np
 
 from cadre_paths import cadre_path
 
-
 sigma = 1e-10
 eta = 0.99
 Cp = 2900.0 * 0.001 * 3600.0

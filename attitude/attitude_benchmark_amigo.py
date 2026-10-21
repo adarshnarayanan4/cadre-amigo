@@ -45,9 +45,7 @@ class DummyObjective(am.Component):
     def compute(self):
         value = self.inputs["value"]
 
-        self.objective["obj"] = (
-            1.0e-12 * value * value
-        )
+        self.objective["obj"] = 1.0e-12 * value * value
 
 
 def extract_vector(
@@ -56,16 +54,10 @@ def extract_vector(
     n,
     size,
 ):
-    values = np.zeros(
-        (n, size)
-    )
+    values = np.zeros((n, size))
 
     for i in range(size):
-        values[:, i] = (
-            x[
-                f"{variable_name}[:, {i}]"
-            ]
-        )
+        values[:, i] = x[f"{variable_name}[:, {i}]"]
 
     return values
 
@@ -75,25 +67,14 @@ def report_difference(
     amigo_value,
     reference_value,
 ):
-    difference = np.abs(
-        amigo_value
-        - reference_value
-    )
+    difference = np.abs(amigo_value - reference_value)
 
     print()
-    print(
-        f"Maximum {name} difference:"
-    )
-    print(
-        np.max(difference)
-    )
+    print(f"Maximum {name} difference:")
+    print(np.max(difference))
 
-    print(
-        f"Mean {name} difference:"
-    )
-    print(
-        np.mean(difference)
-    )
+    print(f"Mean {name} difference:")
+    print(np.mean(difference))
 
 
 def main():
@@ -101,9 +82,7 @@ def main():
     # Load original CADRE benchmark
     # --------------------------------------------------------
 
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(
         data_path,
@@ -130,15 +109,11 @@ def main():
     t1 = 0.0
     t2 = 43200.0
 
-    dt = (
-        t2 - t1
-    ) / (n - 1)
+    dt = (t2 - t1) / (n - 1)
 
     print()
     print("=" * 70)
-    print(
-        "CADRE ATTITUDE AMIGO BENCHMARK"
-    )
+    print("CADRE ATTITUDE AMIGO BENCHMARK")
     print("=" * 70)
 
     print()
@@ -153,28 +128,18 @@ def main():
     # Python reference
     # --------------------------------------------------------
 
-    O_RI_reference = (
-        attitude_from_orbit(
-            orbit_source
-        )
+    O_RI_reference = attitude_from_orbit(orbit_source)
+
+    O_BR_reference = attitude_roll(gamma_source)
+
+    O_BI_reference = combine_rotation_matrices(
+        O_BR_reference,
+        O_RI_reference,
     )
 
-    O_BR_reference = attitude_roll(
-        gamma_source
-    )
-
-    O_BI_reference = (
-        combine_rotation_matrices(
-            O_BR_reference,
-            O_RI_reference,
-        )
-    )
-
-    Odot_BI_reference = (
-        rotation_matrix_rates(
-            O_BI_reference,
-            dt,
-        )
+    Odot_BI_reference = rotation_matrix_rates(
+        O_BI_reference,
+        dt,
     )
 
     w_B_reference = angular_velocity(
@@ -182,11 +147,9 @@ def main():
         Odot_BI_reference,
     )
 
-    wdot_B_reference = (
-        angular_acceleration(
-            w_B_reference,
-            dt,
-        )
+    wdot_B_reference = angular_acceleration(
+        w_B_reference,
+        dt,
     )
 
     T_tot_reference = attitude_torque(
@@ -210,11 +173,9 @@ def main():
         9,
     )
 
-    Odot_BI_flat = (
-        Odot_BI_reference.reshape(
-            n,
-            9,
-        )
+    Odot_BI_flat = Odot_BI_reference.reshape(
+        n,
+        9,
     )
 
     # --------------------------------------------------------
@@ -223,31 +184,19 @@ def main():
 
     attitude = AttitudeOrientation()
 
-    rate_forward = ForwardMatrixRate(
-        dt
-    )
+    rate_forward = ForwardMatrixRate(dt)
 
-    rate_central = CentralMatrixRate(
-        dt
-    )
+    rate_central = CentralMatrixRate(dt)
 
-    rate_backward = BackwardMatrixRate(
-        dt
-    )
+    rate_backward = BackwardMatrixRate(dt)
 
     angular = AttitudeAngular()
 
-    angular_rate_forward = (
-        ForwardAngularRate(dt)
-    )
+    angular_rate_forward = ForwardAngularRate(dt)
 
-    angular_rate_central = (
-        CentralAngularRate(dt)
-    )
+    angular_rate_central = CentralAngularRate(dt)
 
-    angular_rate_backward = (
-        BackwardAngularRate(dt)
-    )
+    angular_rate_backward = BackwardAngularRate(dt)
 
     torque = AttitudeTorque()
 
@@ -257,9 +206,7 @@ def main():
     # Build model
     # --------------------------------------------------------
 
-    model = am.Model(
-        "cadre_attitude_benchmark"
-    )
+    model = am.Model("cadre_attitude_benchmark")
 
     model.add_component(
         "attitude",
@@ -449,9 +396,7 @@ def main():
     # --------------------------------------------------------
 
     for i in range(6):
-        variable = (
-            f"attitude.q[:, {i}]"
-        )
+        variable = f"attitude.q[:, {i}]"
 
         model.set_meta(
             "value",
@@ -571,9 +516,7 @@ def main():
     # --------------------------------------------------------
 
     print()
-    print(
-        "Building AMIGO attitude benchmark..."
-    )
+    print("Building AMIGO attitude benchmark...")
 
     model.build_module()
 
@@ -581,9 +524,7 @@ def main():
 
     model.initialize()
 
-    print(
-        "Initialization successful."
-    )
+    print("Initialization successful.")
 
     x = model.create_vector()
 
@@ -601,18 +542,12 @@ def main():
     }
 
     print()
-    print(
-        "Solving AMIGO attitude benchmark..."
-    )
+    print("Solving AMIGO attitude benchmark...")
 
-    optimizer.optimize(
-        options
-    )
+    optimizer.optimize(options)
 
     print()
-    print(
-        "AMIGO solve complete."
-    )
+    print("AMIGO solve complete.")
 
     # --------------------------------------------------------
     # Extract AMIGO results
@@ -636,33 +571,21 @@ def main():
         n,
     )
 
-    Odot_BI_amigo = np.zeros(
-        (n, 3, 3)
-    )
+    Odot_BI_amigo = np.zeros((n, 3, 3))
 
-    Odot_flat = np.zeros(
-        (n, 9)
-    )
+    Odot_flat = np.zeros((n, 9))
 
     for i in range(9):
-        Odot_flat[0, i] = x[
-            f"rate_forward.Odot[0, {i}]"
-        ]
+        Odot_flat[0, i] = x[f"rate_forward.Odot[0, {i}]"]
 
-        Odot_flat[1:-1, i] = x[
-            f"rate_central.Odot[:, {i}]"
-        ]
+        Odot_flat[1:-1, i] = x[f"rate_central.Odot[:, {i}]"]
 
-        Odot_flat[-1, i] = x[
-            f"rate_backward.Odot[0, {i}]"
-        ]
+        Odot_flat[-1, i] = x[f"rate_backward.Odot[0, {i}]"]
 
-    Odot_BI_amigo[:] = (
-        Odot_flat.reshape(
-            n,
-            3,
-            3,
-        )
+    Odot_BI_amigo[:] = Odot_flat.reshape(
+        n,
+        3,
+        3,
     )
 
     w_B_amigo = extract_vector(
@@ -672,22 +595,14 @@ def main():
         3,
     )
 
-    wdot_B_amigo = np.zeros(
-        (n, 3)
-    )
+    wdot_B_amigo = np.zeros((n, 3))
 
     for i in range(3):
-        wdot_B_amigo[0, i] = x[
-            f"angular_rate_forward.wdot[0, {i}]"
-        ]
+        wdot_B_amigo[0, i] = x[f"angular_rate_forward.wdot[0, {i}]"]
 
-        wdot_B_amigo[1:-1, i] = x[
-            f"angular_rate_central.wdot[:, {i}]"
-        ]
+        wdot_B_amigo[1:-1, i] = x[f"angular_rate_central.wdot[:, {i}]"]
 
-        wdot_B_amigo[-1, i] = x[
-            f"angular_rate_backward.wdot[0, {i}]"
-        ]
+        wdot_B_amigo[-1, i] = x[f"angular_rate_backward.wdot[0, {i}]"]
 
     T_tot_amigo = extract_vector(
         x,
@@ -702,9 +617,7 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "AMIGO VS PYTHON ATTITUDE"
-    )
+    print("AMIGO VS PYTHON ATTITUDE")
     print("=" * 70)
 
     report_difference(
@@ -783,9 +696,7 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "AMIGO VS ORIGINAL CADRE"
-    )
+    print("AMIGO VS ORIGINAL CADRE")
     print("=" * 70)
 
     report_difference(

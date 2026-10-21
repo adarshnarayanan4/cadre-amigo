@@ -46,20 +46,23 @@ from thermal.thermal_amigo import (
 )
 
 
-def build_model(case, args):
-    """Build components, link disciplines, set values, and register fixed inputs."""
-    model = _add_components(case, args)
-
+def stage_model(case, args, include_objective=True):
+    """Assemble equations and bounds without compilation or initialization."""
+    model = _add_components(case, args, include_objective)
     _link_components(model, case)
-
     _set_initial_values(model, case, args)
-
-    _initialize_model(model, case, args)
-
+    _register_fixed_inputs(model, case, args)
     return model
 
 
-def _add_components(case, args):
+def build_model(case, args):
+    """Build one case using the same staging path as the joint model."""
+    model = stage_model(case, args)
+    _initialize_model(model, case, args)
+    return model
+
+
+def _add_components(case, args, include_objective=True):
     """Register the discipline components and optional design lookup residuals."""
 
     # AMIGO components
@@ -143,7 +146,8 @@ def _add_components(case, args):
     model.add_component("comm_ic", 1, comm_initial)
 
     # Objective
-    model.add_component("objective", 1, objective)
+    if include_objective:
+        model.add_component("objective", 1, objective)
 
     if case.design_physics:
         model.add_component("surface", 1, SurfaceAllocation())
@@ -292,7 +296,8 @@ def _link_components(model, case):
     model.link("comm_data.Data[0]", "comm_ic.Data[0]")
 
     # Final downloaded data is the optimization objective.
-    model.link(f"comm_data.Data[{case.n - 1}]", "objective.Data[0]")
+    if "objective" in model.comp:
+        model.link(f"comm_data.Data[{case.n - 1}]", "objective.Data[0]")
 
 
 def _set_initial_values(model, case, args):
@@ -419,6 +424,7 @@ def _set_thermal_values(model, case):
 
 def _set_reaction_wheel_values(model, case):
     """Set prescribed attitude inputs and reaction-wheel trajectory guesses."""
+
     # Fixed attitude inputs to reaction wheels
     for i in range(3):
         model.set_meta(
@@ -455,6 +461,7 @@ def _set_reaction_wheel_values(model, case):
 
 def _set_power_values(model, case):
     """Set solar voltage bounds and initial solar and battery power."""
+
     # Solar-cell voltage initial guesses
     for panel in range(12):
         variable = f"power_solar.V_sol[:, {panel}]"
@@ -500,6 +507,7 @@ def _set_battery_values(model, case, args):
 
 def _set_communication_values(model, case):
     """Set prescribed communication geometry and downloaded-data guesses."""
+
     # Fixed communication geometry and antenna gain
     for name, values in [
         ("gain", case.initial_guess["gain"]),
@@ -526,6 +534,14 @@ def _initialize_model(model, case, args):
     model.build_module()
 
     print("\n  Build successful. Initializing the model...\n", flush=True)
+
+    model.initialize(order_type=am.OrderingType.NATURAL)
+
+    print("\n  Model initialization successful.\n", flush=True)
+
+
+def _register_fixed_inputs(model, case, args):
+    """Remove prescribed inputs from the barrier before submodel assembly."""
 
     # The solver orders the complete KKT matrix rather than only variables.
     # Equal bounds alone do not mark a variable FIXED in this AMIGO version.
@@ -586,7 +602,3 @@ def _initialize_model(model, case, args):
             # finite equal bounds so the barrier never divides by a zero gap.
             model.set_meta("lower", expression, -np.inf)
             model.set_meta("upper", expression, np.inf)
-
-    model.initialize(order_type=am.OrderingType.NATURAL)
-
-    print("\n  Model initialization successful.\n", flush=True)

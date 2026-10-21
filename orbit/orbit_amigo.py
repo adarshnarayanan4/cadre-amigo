@@ -192,6 +192,7 @@ def build_reference_trajectory(q0, dt, num_time_steps):
         reference_states[i + 1] = rk4_step(reference_states[i], dt)
 
     reference_rates = np.zeros((num_time_steps + 1, 6))
+
     for i in range(num_time_steps + 1):
         reference_rates[i] = orbit_dynamics(reference_states[i])
 
@@ -341,6 +342,7 @@ def solve_model(model, x):
 
 def report_solution_comparison(x, reference_states, orbital_period, num_time_steps):
     amigo_states = np.zeros((num_time_steps + 1, 6))
+
     for i in range(6):
         amigo_states[:, i] = x[f"orbit.q[:, {i}]"]
 

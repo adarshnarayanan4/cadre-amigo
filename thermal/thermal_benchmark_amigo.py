@@ -28,9 +28,7 @@ def main():
     # Load original CADRE benchmark
     # --------------------------------------------------------
 
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(
         data_path,
@@ -76,17 +74,13 @@ def main():
     t1 = 0.0
     t2 = 43200.0
 
-    dt = (
-        t2 - t1
-    ) / num_intervals
+    dt = (t2 - t1) / num_intervals
 
     T0 = 273.0 * np.ones(5)
 
     print()
     print("=" * 70)
-    print(
-        "CADRE THERMAL AMIGO BENCHMARK"
-    )
+    print("CADRE THERMAL AMIGO BENCHMARK")
     print("=" * 70)
 
     print()
@@ -101,15 +95,13 @@ def main():
     # Python RK4 reference
     # --------------------------------------------------------
 
-    temperature_rk4 = (
-        propagate_temperature(
-            T0,
-            exposed_area,
-            LOS,
-            P_comm,
-            cellInstd,
-            dt,
-        )
+    temperature_rk4 = propagate_temperature(
+        T0,
+        exposed_area,
+        LOS,
+        P_comm,
+        cellInstd,
+        dt,
     )
 
     # --------------------------------------------------------
@@ -143,97 +135,56 @@ def main():
             cellInstd,
         )
 
-        residual = (
-            f
-            - temperature_dot_trap[k]
-        )
+        residual = f - temperature_dot_trap[k]
 
         max_dynamics_residual = max(
             max_dynamics_residual,
-            np.max(
-                np.abs(residual)
-            ),
+            np.max(np.abs(residual)),
         )
 
     max_trapezoid_residual = 0.0
 
-    for k in range(
-        num_intervals
-    ):
+    for k in range(num_intervals):
         residual = (
             temperature_trap[:, k + 1]
             - temperature_trap[:, k]
-            - 0.5
-            * dt
-            * (
-                temperature_dot_trap[k]
-                + temperature_dot_trap[k + 1]
-            )
+            - 0.5 * dt * (temperature_dot_trap[k] + temperature_dot_trap[k + 1])
         )
 
         max_trapezoid_residual = max(
             max_trapezoid_residual,
-            np.max(
-                np.abs(residual)
-            ),
+            np.max(np.abs(residual)),
         )
 
-    rk4_trap_difference = np.max(
-        np.abs(
-            temperature_rk4
-            - temperature_trap
-        )
-    )
+    rk4_trap_difference = np.max(np.abs(temperature_rk4 - temperature_trap))
 
     print()
     print("=" * 70)
-    print(
-        "PYTHON PRECHECK"
-    )
+    print("PYTHON PRECHECK")
     print("=" * 70)
 
     print()
-    print(
-        "Python dynamics residual:"
-    )
-    print(
-        max_dynamics_residual
-    )
+    print("Python dynamics residual:")
+    print(max_dynamics_residual)
 
     print()
-    print(
-        "Python trapezoid residual:"
-    )
-    print(
-        max_trapezoid_residual
-    )
+    print("Python trapezoid residual:")
+    print(max_trapezoid_residual)
 
     print()
-    print(
-        "RK4 vs trapezoid maximum "
-        "temperature difference [K]:"
-    )
-    print(
-        rk4_trap_difference
-    )
+    print("RK4 vs trapezoid maximum " "temperature difference [K]:")
+    print(rk4_trap_difference)
 
     # --------------------------------------------------------
     # Flatten CADRE inputs for AMIGO
     # --------------------------------------------------------
 
-    exposed_area_flat = np.zeros(
-        (n, 84)
-    )
+    exposed_area_flat = np.zeros((n, 84))
 
     for k in range(n):
-        exposed_area_flat[k] = (
-            exposed_area[:, :, k]
-            .reshape(84)
-        )
+        exposed_area_flat[k] = exposed_area[:, :, k].reshape(84)
 
-    cell_flat = (
-        cellInstd.reshape(84)
-    )
+    cell_flat = cellInstd.reshape(84)
 
     # --------------------------------------------------------
     # AMIGO components
@@ -241,15 +192,11 @@ def main():
 
     thermal = ThermalDynamics()
 
-    trapezoid = TrapezoidRule(
-        dt
-    )
+    trapezoid = TrapezoidRule(dt)
 
     initial = InitialConditions()
 
-    model = am.Model(
-        "cadre_thermal_benchmark"
-    )
+    model = am.Model("cadre_thermal_benchmark")
 
     model.add_component(
         "thermal",
@@ -320,13 +267,9 @@ def main():
     # --------------------------------------------------------
 
     for i in range(84):
-        variable = (
-            f"thermal.exposedArea[:, {i}]"
-        )
+        variable = f"thermal.exposedArea[:, {i}]"
 
-        values = (
-            exposed_area_flat[:, i]
-        )
+        values = exposed_area_flat[:, i]
 
         model.set_meta(
             "value",
@@ -395,14 +338,9 @@ def main():
     # --------------------------------------------------------
 
     for i in range(84):
-        values = (
-            cell_flat[i]
-            * np.ones(n)
-        )
+        values = cell_flat[i] * np.ones(n)
 
-        variable = (
-            f"thermal.cellInstd[:, {i}]"
-        )
+        variable = f"thermal.cellInstd[:, {i}]"
 
         model.set_meta(
             "value",
@@ -427,9 +365,7 @@ def main():
     # --------------------------------------------------------
 
     print()
-    print(
-        "Building AMIGO thermal benchmark..."
-    )
+    print("Building AMIGO thermal benchmark...")
 
     model.build_module()
 
@@ -437,9 +373,7 @@ def main():
 
     model.initialize()
 
-    print(
-        "Initialization successful."
-    )
+    print("Initialization successful.")
 
     x = model.create_vector()
 
@@ -457,191 +391,108 @@ def main():
     }
 
     print()
-    print(
-        "Solving AMIGO thermal benchmark..."
-    )
+    print("Solving AMIGO thermal benchmark...")
 
-    optimizer.optimize(
-        options
-    )
+    optimizer.optimize(options)
 
     print()
-    print(
-        "AMIGO solve complete."
-    )
+    print("AMIGO solve complete.")
 
     # --------------------------------------------------------
     # Extract results
     # --------------------------------------------------------
 
-    temperature_amigo = (
-        extract_vector(
-            x,
-            "thermal.temperature",
-            n,
-            5,
-        ).T
-    )
+    temperature_amigo = extract_vector(
+        x,
+        "thermal.temperature",
+        n,
+        5,
+    ).T
 
-    temperature_dot_amigo = (
-        extract_vector(
-            x,
-            "thermal.temperature_dot",
-            n,
-            5,
-        )
+    temperature_dot_amigo = extract_vector(
+        x,
+        "thermal.temperature_dot",
+        n,
+        5,
     )
 
     # --------------------------------------------------------
     # AMIGO vs Python trapezoid
     # --------------------------------------------------------
 
-    temperature_difference = (
-        np.max(
-            np.abs(
-                temperature_amigo
-                - temperature_trap
-            )
-        )
-    )
+    temperature_difference = np.max(np.abs(temperature_amigo - temperature_trap))
 
-    rate_difference = np.max(
-        np.abs(
-            temperature_dot_amigo
-            - temperature_dot_trap
-        )
-    )
+    rate_difference = np.max(np.abs(temperature_dot_amigo - temperature_dot_trap))
 
     amigo_trapezoid_residual = 0.0
 
-    for k in range(
-        num_intervals
-    ):
+    for k in range(num_intervals):
         residual = (
             temperature_amigo[:, k + 1]
             - temperature_amigo[:, k]
-            - 0.5
-            * dt
-            * (
-                temperature_dot_amigo[k]
-                + temperature_dot_amigo[k + 1]
-            )
+            - 0.5 * dt * (temperature_dot_amigo[k] + temperature_dot_amigo[k + 1])
         )
 
         amigo_trapezoid_residual = max(
             amigo_trapezoid_residual,
-            np.max(
-                np.abs(residual)
-            ),
+            np.max(np.abs(residual)),
         )
 
     print()
     print("=" * 70)
-    print(
-        "AMIGO VS PYTHON TRAPEZOID"
-    )
+    print("AMIGO VS PYTHON TRAPEZOID")
     print("=" * 70)
 
     print()
-    print(
-        "Maximum temperature difference [K]:"
-    )
-    print(
-        temperature_difference
-    )
+    print("Maximum temperature difference [K]:")
+    print(temperature_difference)
 
     print()
-    print(
-        "Maximum temperature-rate difference:"
-    )
-    print(
-        rate_difference
-    )
+    print("Maximum temperature-rate difference:")
+    print(rate_difference)
 
     print()
-    print(
-        "AMIGO trapezoid residual:"
-    )
-    print(
-        amigo_trapezoid_residual
-    )
+    print("AMIGO trapezoid residual:")
+    print(amigo_trapezoid_residual)
 
     # --------------------------------------------------------
     # AMIGO vs original CADRE
     # --------------------------------------------------------
 
-    cadre_difference = np.max(
-        np.abs(
-            temperature_amigo
-            - temperature_source
-        )
-    )
+    cadre_difference = np.max(np.abs(temperature_amigo - temperature_source))
 
     final_difference = np.max(
-        np.abs(
-            temperature_amigo[:, -1]
-            - temperature_source[:, -1]
-        )
+        np.abs(temperature_amigo[:, -1] - temperature_source[:, -1])
     )
 
     print()
     print("=" * 70)
-    print(
-        "AMIGO VS ORIGINAL CADRE"
-    )
+    print("AMIGO VS ORIGINAL CADRE")
     print("=" * 70)
 
     print()
-    print(
-        "Maximum temperature difference [K]:"
-    )
-    print(
-        cadre_difference
-    )
+    print("Maximum temperature difference [K]:")
+    print(cadre_difference)
 
     print()
-    print(
-        "Final temperature difference [K]:"
-    )
-    print(
-        final_difference
-    )
+    print("Final temperature difference [K]:")
+    print(final_difference)
 
     print()
-    print(
-        "Original CADRE final temperatures [K]:"
-    )
-    print(
-        temperature_source[:, -1]
-    )
+    print("Original CADRE final temperatures [K]:")
+    print(temperature_source[:, -1])
 
     print()
-    print(
-        "AMIGO final temperatures [K]:"
-    )
-    print(
-        temperature_amigo[:, -1]
-    )
+    print("AMIGO final temperatures [K]:")
+    print(temperature_amigo[:, -1])
 
     print()
-    print(
-        "AMIGO minimum temperature [K]:"
-    )
-    print(
-        np.min(
-            temperature_amigo
-        )
-    )
+    print("AMIGO minimum temperature [K]:")
+    print(np.min(temperature_amigo))
 
     print()
-    print(
-        "AMIGO maximum temperature [K]:"
-    )
-    print(
-        np.max(
-            temperature_amigo
-        )
-    )
+    print("AMIGO maximum temperature [K]:")
+    print(np.max(temperature_amigo))
 
 
 if __name__ == "__main__":

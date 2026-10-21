@@ -18,24 +18,14 @@ def report_difference(
     reference,
     source,
 ):
-    difference = np.abs(
-        reference - source
-    )
+    difference = np.abs(reference - source)
 
     print()
-    print(
-        f"Maximum {name} difference:"
-    )
-    print(
-        np.max(difference)
-    )
+    print(f"Maximum {name} difference:")
+    print(np.max(difference))
 
-    print(
-        f"Mean {name} difference:"
-    )
-    print(
-        np.mean(difference)
-    )
+    print(f"Mean {name} difference:")
+    print(np.mean(difference))
 
 
 def main():
@@ -43,9 +33,7 @@ def main():
     # Load original CADRE benchmark
     # --------------------------------------------------------
 
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(
         data_path,
@@ -90,15 +78,11 @@ def main():
     t1 = 0.0
     t2 = 43200.0
 
-    dt = (
-        t2 - t1
-    ) / (n - 1)
+    dt = (t2 - t1) / (n - 1)
 
     print()
     print("=" * 70)
-    print(
-        "CADRE THERMAL BENCHMARK VALIDATION"
-    )
+    print("CADRE THERMAL BENCHMARK VALIDATION")
     print("=" * 70)
 
     print()
@@ -111,29 +95,21 @@ def main():
 
     print()
     print("Exposed-area shape:")
-    print(
-        exposed_area.shape
-    )
+    print(exposed_area.shape)
 
     print()
     print("cellInstd shape:")
-    print(
-        cellInstd.shape
-    )
+    print(cellInstd.shape)
 
     print()
-    print(
-        "P_comm minimum / maximum [W]:"
-    )
+    print("P_comm minimum / maximum [W]:")
     print(
         np.min(P_comm),
         np.max(P_comm),
     )
 
     print()
-    print(
-        "LOS minimum / maximum:"
-    )
+    print("LOS minimum / maximum:")
     print(
         np.min(LOS),
         np.max(LOS),
@@ -143,26 +119,22 @@ def main():
     # Recreate original CADRE RK4 thermal trajectory
     # --------------------------------------------------------
 
-    temperature_reference = (
-        propagate_temperature(
-            T0,
-            exposed_area,
-            LOS,
-            P_comm,
-            cellInstd,
-            dt,
-        )
+    temperature_reference = propagate_temperature(
+        T0,
+        exposed_area,
+        LOS,
+        P_comm,
+        cellInstd,
+        dt,
     )
 
     # --------------------------------------------------------
     # Original CADRE output
     # --------------------------------------------------------
 
-    temperature_source = (
-        get_case_value(
-            data,
-            "temperature",
-        )
+    temperature_source = get_case_value(
+        data,
+        "temperature",
     )
 
     # --------------------------------------------------------
@@ -171,9 +143,7 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "PYTHON RK4 THERMAL VS ORIGINAL CADRE"
-    )
+    print("PYTHON RK4 THERMAL VS ORIGINAL CADRE")
     print("=" * 70)
 
     report_difference(
@@ -182,34 +152,19 @@ def main():
         temperature_source,
     )
 
-    final_difference = np.abs(
-        temperature_reference[:, -1]
-        - temperature_source[:, -1]
-    )
+    final_difference = np.abs(temperature_reference[:, -1] - temperature_source[:, -1])
 
     print()
-    print(
-        "Maximum final temperature difference [K]:"
-    )
-    print(
-        np.max(final_difference)
-    )
+    print("Maximum final temperature difference [K]:")
+    print(np.max(final_difference))
 
     print()
-    print(
-        "Original CADRE final temperatures [K]:"
-    )
-    print(
-        temperature_source[:, -1]
-    )
+    print("Original CADRE final temperatures [K]:")
+    print(temperature_source[:, -1])
 
     print()
-    print(
-        "Python RK4 final temperatures [K]:"
-    )
-    print(
-        temperature_reference[:, -1]
-    )
+    print("Python RK4 final temperatures [K]:")
+    print(temperature_reference[:, -1])
 
     # --------------------------------------------------------
     # Sanity checks
@@ -217,47 +172,27 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "THERMAL SANITY CHECKS"
-    )
+    print("THERMAL SANITY CHECKS")
     print("=" * 70)
 
     print()
-    print(
-        "Original CADRE minimum temperature [K]:"
-    )
-    print(
-        np.min(temperature_source)
-    )
+    print("Original CADRE minimum temperature [K]:")
+    print(np.min(temperature_source))
 
     print()
-    print(
-        "Original CADRE maximum temperature [K]:"
-    )
-    print(
-        np.max(temperature_source)
-    )
+    print("Original CADRE maximum temperature [K]:")
+    print(np.max(temperature_source))
 
     print()
-    print(
-        "Python minimum temperature [K]:"
-    )
-    print(
-        np.min(temperature_reference)
-    )
+    print("Python minimum temperature [K]:")
+    print(np.min(temperature_reference))
 
     print()
-    print(
-        "Python maximum temperature [K]:"
-    )
-    print(
-        np.max(temperature_reference)
-    )
+    print("Python maximum temperature [K]:")
+    print(np.max(temperature_reference))
 
     print()
-    print(
-        "Minimum temperature by state [K]:"
-    )
+    print("Minimum temperature by state [K]:")
     print(
         np.min(
             temperature_reference,
@@ -266,9 +201,7 @@ def main():
     )
 
     print()
-    print(
-        "Maximum temperature by state [K]:"
-    )
+    print("Maximum temperature by state [K]:")
     print(
         np.max(
             temperature_reference,

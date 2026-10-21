@@ -243,14 +243,9 @@ def main():
     amigo_cadre_battery_difference = np.max(np.abs(P_bat_amigo - P_bat_source))
 
     # Residual checks
-    solar_residual = np.max(
-        np.abs(P_sol_amigo - np.sum(V_sol_mbi * Isetpt, axis=0))
-    )
+    solar_residual = np.max(np.abs(P_sol_amigo - np.sum(V_sol_mbi * Isetpt, axis=0)))
     battery_residual = np.max(
-        np.abs(
-            P_bat_amigo
-            - (P_sol_amigo - 5.0 * P_comm - np.sum(P_RW, axis=0) - 2.0)
-        )
+        np.abs(P_bat_amigo - (P_sol_amigo - 5.0 * P_comm - np.sum(P_RW, axis=0) - 2.0))
     )
 
     print()

@@ -190,9 +190,7 @@ def main():
     q0 = np.concatenate((r0, v0))
 
     # Time grid
-    orbital_period = calculate_orbital_period(
-        alt_perigee=500.0, alt_apogee=500.0
-    )
+    orbital_period = calculate_orbital_period(alt_perigee=500.0, alt_apogee=500.0)
 
     num_time_steps = 568
 
@@ -319,8 +317,7 @@ def main():
     else:
         print()
         print(
-            "CHECK NEEDED: at least one comparison is larger than the "
-            + "tolerance."
+            "CHECK NEEDED: at least one comparison is larger than the " + "tolerance."
         )
 
 

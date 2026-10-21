@@ -32,9 +32,7 @@ def get_case_value(data, *names):
                 dtype=float,
             )
 
-    raise KeyError(
-        f"Could not find any of these variables: {names}"
-    )
+    raise KeyError(f"Could not find any of these variables: {names}")
 
 
 def matrix_history(array):
@@ -74,30 +72,18 @@ def report_difference(
     reference,
     source,
 ):
-    difference = np.abs(
-        reference - source
-    )
+    difference = np.abs(reference - source)
 
     print()
-    print(
-        f"Maximum {name} difference:"
-    )
-    print(
-        np.max(difference)
-    )
+    print(f"Maximum {name} difference:")
+    print(np.max(difference))
 
-    print(
-        f"Mean {name} difference:"
-    )
-    print(
-        np.mean(difference)
-    )
+    print(f"Mean {name} difference:")
+    print(np.mean(difference))
 
 
 def main():
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(
         data_path,
@@ -128,15 +114,11 @@ def main():
     t1 = 0.0
     t2 = 43200.0
 
-    dt = (
-        t2 - t1
-    ) / (n - 1)
+    dt = (t2 - t1) / (n - 1)
 
     print()
     print("=" * 70)
-    print(
-        "CADRE ATTITUDE BENCHMARK VALIDATION"
-    )
+    print("CADRE ATTITUDE BENCHMARK VALIDATION")
     print("=" * 70)
 
     print()
@@ -149,40 +131,28 @@ def main():
 
     print()
     print("Gamma minimum [rad]:")
-    print(
-        np.min(gamma_source)
-    )
+    print(np.min(gamma_source))
 
     print()
     print("Gamma maximum [rad]:")
-    print(
-        np.max(gamma_source)
-    )
+    print(np.max(gamma_source))
 
     # --------------------------------------------------------
     # Our recreated attitude calculations
     # --------------------------------------------------------
 
-    O_RI_reference = attitude_from_orbit(
-        orbit_source
+    O_RI_reference = attitude_from_orbit(orbit_source)
+
+    O_BR_reference = attitude_roll(gamma_source)
+
+    O_BI_reference = combine_rotation_matrices(
+        O_BR_reference,
+        O_RI_reference,
     )
 
-    O_BR_reference = attitude_roll(
-        gamma_source
-    )
-
-    O_BI_reference = (
-        combine_rotation_matrices(
-            O_BR_reference,
-            O_RI_reference,
-        )
-    )
-
-    Odot_BI_reference = (
-        rotation_matrix_rates(
-            O_BI_reference,
-            dt,
-        )
+    Odot_BI_reference = rotation_matrix_rates(
+        O_BI_reference,
+        dt,
     )
 
     w_B_reference = angular_velocity(
@@ -190,11 +160,9 @@ def main():
         Odot_BI_reference,
     )
 
-    wdot_B_reference = (
-        angular_acceleration(
-            w_B_reference,
-            dt,
-        )
+    wdot_B_reference = angular_acceleration(
+        w_B_reference,
+        dt,
     )
 
     T_tot_reference = attitude_torque(
@@ -261,9 +229,7 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "PYTHON ATTITUDE VS ORIGINAL CADRE"
-    )
+    print("PYTHON ATTITUDE VS ORIGINAL CADRE")
     print("=" * 70)
 
     report_difference(
@@ -315,13 +281,7 @@ def main():
     maximum_orthogonality_error = 0.0
 
     for i in range(n):
-        error = np.max(
-            np.abs(
-                O_BI_reference[i]
-                @ O_BI_reference[i].T
-                - np.eye(3)
-            )
-        )
+        error = np.max(np.abs(O_BI_reference[i] @ O_BI_reference[i].T - np.eye(3)))
 
         maximum_orthogonality_error = max(
             maximum_orthogonality_error,
@@ -330,24 +290,15 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "ATTITUDE SANITY CHECKS"
-    )
+    print("ATTITUDE SANITY CHECKS")
     print("=" * 70)
 
     print()
-    print(
-        "Maximum rotation-matrix "
-        "orthogonality error:"
-    )
-    print(
-        maximum_orthogonality_error
-    )
+    print("Maximum rotation-matrix " "orthogonality error:")
+    print(maximum_orthogonality_error)
 
     print()
-    print(
-        "Maximum angular velocity magnitude [1/s]:"
-    )
+    print("Maximum angular velocity magnitude [1/s]:")
     print(
         np.max(
             np.linalg.norm(
@@ -358,9 +309,7 @@ def main():
     )
 
     print()
-    print(
-        "Maximum angular acceleration magnitude [1/s^2]:"
-    )
+    print("Maximum angular acceleration magnitude [1/s^2]:")
     print(
         np.max(
             np.linalg.norm(
@@ -371,9 +320,7 @@ def main():
     )
 
     print()
-    print(
-        "Maximum torque magnitude [N*m]:"
-    )
+    print("Maximum torque magnitude [N*m]:")
     print(
         np.max(
             np.linalg.norm(

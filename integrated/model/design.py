@@ -137,7 +137,7 @@ class DesignPhysics:
     def get_constraint_jacobian_csr(self):
         return self.ncon, self.nvars, self.rowp, self.cols
 
-    def register(self, model):
+    def set_expressions(self):
         self.inputs = ["values.Gamma[:]"] + [
             f"thermal.temperature[:, {k}]" for k in range(5)
         ]
@@ -155,6 +155,8 @@ class DesignPhysics:
             "design_lookup.gain[:]"
         ]
 
+    def register(self, model):
+        self.set_expressions()
         model.add_external_component(
             "design_physics", self, self.inputs, self.constraints
         )

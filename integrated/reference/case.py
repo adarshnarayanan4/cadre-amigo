@@ -1,12 +1,11 @@
 """Reference trajectories and initialization for an integrated CADRE case."""
 
 from dataclasses import dataclass
-import pickle
 
 import numpy as np
 
 from battery.battery_reference import battery_current, propagate_soc_trapezoid, soc_rate
-from cadre_paths import cadre_path
+from integrated.reference.benchmark import load_benchmark, select_case
 from communication.communication_amigo import propagate_data_trapezoid
 from communication.communication_data_validation import communication_bit_rate
 from integrated.reference.feasibility import feasibility_metrics, repair_baseline
@@ -33,6 +32,7 @@ class CadreCase:
     """
 
     design_physics: bool
+    case_index: int
     coupled_voltage: bool
     free_solar: bool
     initial_guess: dict[str, np.ndarray | None]
@@ -92,8 +92,12 @@ def extract_vector(x, variable_name, n, width):
     return values
 
 
-def prepare_case(args):
-    """Load the selected case, repair its baseline, and replay starting controls."""
+def prepare_case(args, repair_initialization=True, lookups_type=DesignLookups):
+    """Prepare a case; disable repair for assembly checks without any LP solves.
+
+    Unrepaired initialization can be infeasible and permits contact-free short
+    windows for structural tests. Optimization keeps the repaired default.
+    """
     design_physics = (
         args.design_physics or args.optimize_roll or args.optimize_allocation
     )
@@ -102,20 +106,18 @@ def prepare_case(args):
 
     start_geometry = tT_guess = tI_guess = None
 
-    data_path = cadre_path("test/data1346.pkl")
-
-    with open(data_path, "rb") as file:
-        data = pickle.load(file, encoding="latin1")
+    data = load_benchmark()
+    selected = select_case(data, args.case_index)
 
     # Preserve the original time resolution and use a contiguous prefix.
-    full_n = len(data["0:P_comm"])
+    full_n = len(selected["P_comm"])
     n = args.nodes
     m = args.control_points
 
     if not 4 <= m <= n <= full_n:
         raise ValueError("Require 4 <= control-points <= nodes <= benchmark nodes")
 
-    if not np.any(np.asarray(data["0:CommLOS"])[:n] > 0):
+    if repair_initialization and not np.any(np.asarray(selected["CommLOS"])[:n] > 0):
         raise ValueError(
             "Selected window contains no ground-station contact; increase --nodes"
         )
@@ -127,11 +129,16 @@ def prepare_case(args):
 
     window_duration = dt * num_intervals
 
-    print_heading("CADRE P_COMM OPTIMIZATION")
+    print_heading(
+        "CADRE P_COMM OPTIMIZATION"
+        if repair_initialization
+        else "CADRE CASE PREPARATION"
+    )
 
     print_values(
         [
             ("Original CADRE nodes", f"{full_n:,}"),
+            ("Benchmark case", args.case_index),
             ("Optimization nodes", f"{n:,}"),
             ("Time intervals", f"{num_intervals:,}"),
             ("Time step", f"{dt:.4f} s"),
@@ -141,41 +148,41 @@ def prepare_case(args):
 
     # Fixed CADRE trajectory inputs for the selected window
 
-    P_comm_target = np.asarray(data["0:P_comm"])[:n]
+    P_comm_target = np.asarray(selected["P_comm"])[:n]
 
-    gamma_target = np.asarray(data["0:gamma"])[:n]
+    gamma_target = np.asarray(selected["gamma"])[:n]
 
-    Isetpt_target = np.asarray(data["0:Isetpt"])[:, :n]
+    Isetpt_target = np.asarray(selected["Isetpt"])[:, :n]
 
-    exposed_area = np.asarray(data["0:exposedArea"])[:, :, :n]
+    exposed_area = np.asarray(selected["exposedArea"])[:, :, :n]
 
-    LOS = np.asarray(data["0:LOS"])[:n]
+    LOS = np.asarray(selected["LOS"])[:n]
 
     cellInstd = np.asarray(data["cellInstd"])
 
-    w_B = np.asarray(data["0:w_B"])[:, :n]
+    w_B = np.asarray(selected["w_B"])[:, :n]
 
-    T_tot = np.asarray(data["0:T_tot"])[:, :n]
+    T_tot = np.asarray(selected["T_tot"])[:, :n]
 
-    V_sol = np.asarray(data["0:V_sol"])[:, :n]
+    V_sol = np.asarray(selected["V_sol"])[:, :n]
 
-    gain = np.asarray(data["0:gain"])[:n]
+    gain = np.asarray(selected["gain"])[:n]
 
-    GSdist = np.asarray(data["0:GSdist"])[:n]
+    GSdist = np.asarray(selected["GSdist"])[:n]
 
-    CommLOS = np.asarray(data["0:CommLOS"])[:n]
+    CommLOS = np.asarray(selected["CommLOS"])[:n]
 
-    initial_soc = float(data["0:iSOC"][0])
+    initial_soc = float(selected["iSOC"][0])
 
     # Fit B-spline control points to this trajectory window
 
     B = build_bspline_matrix(n, m)
 
-    if n == full_n and m == len(data["0:CP_P_comm"]):
+    if n == full_n and m == len(selected["CP_P_comm"]):
         # Retain the benchmark design exactly on its native grid.
-        CP_P_comm = np.asarray(data["0:CP_P_comm"]).copy()
-        CP_gamma = np.asarray(data["0:CP_gamma"]).copy()
-        CP_Isetpt = np.asarray(data["0:CP_Isetpt"]).copy()
+        CP_P_comm = np.asarray(selected["CP_P_comm"]).copy()
+        CP_gamma = np.asarray(selected["CP_gamma"]).copy()
+        CP_Isetpt = np.asarray(selected["CP_Isetpt"]).copy()
     else:
         CP_P_comm = np.linalg.lstsq(B, P_comm_target, rcond=None)[0]
 
@@ -201,7 +208,11 @@ def prepare_case(args):
 
     voltage_spline = VoltageSpline() if coupled_voltage else None
 
-    lookups = DesignLookups(data, n, voltage_spline) if design_physics else None
+    lookups = (
+        lookups_type(data, n, voltage_spline, case_index=args.case_index)
+        if design_physics
+        else None
+    )
     design_external = DesignPhysics(lookups) if design_physics else None
 
     if design_physics:
@@ -326,16 +337,22 @@ def prepare_case(args):
 
     print_feasibility("ORIGINAL BENCHMARK FEASIBILITY", original_metrics)
 
-    CP_P_comm_baseline, baseline_state, baseline_metrics = repair_baseline(
-        B,
-        CP_P_comm,
-        initial_soc,
-        dt,
-        lambda state: total_power(state["P_sol"], np.zeros(n), state["P_RW"]),
-        replay_controls,
-    )
+    if repair_initialization:
+        CP_P_comm_baseline, baseline_state, baseline_metrics = repair_baseline(
+            B,
+            CP_P_comm,
+            initial_soc,
+            dt,
+            lambda state: total_power(state["P_sol"], np.zeros(n), state["P_RW"]),
+            replay_controls,
+        )
 
-    if args.warm_start:
+    else:
+        CP_P_comm_baseline = CP_P_comm.copy()
+        baseline_state = replay_controls(CP_P_comm_baseline)
+        baseline_metrics = feasibility_metrics(baseline_state, initial_soc)
+
+    if args.warm_start or not repair_initialization:
         # These model guesses are replaced by the complete checkpoint below.
         CP_P_comm_start = CP_P_comm_baseline.copy()
     else:
@@ -360,7 +377,9 @@ def prepare_case(args):
     Data_baseline = baseline_state["Data"]
     Data_dot_baseline = baseline_state["Data_dot"]
 
-    print_heading("FEASIBLE BASELINE")
+    print_heading(
+        "FEASIBLE BASELINE" if repair_initialization else "UNREPAIRED REFERENCE"
+    )
 
     print_values(
         [
@@ -437,7 +456,11 @@ def prepare_case(args):
 
     Data_guess, Data_dot_guess = propagate_data_trapezoid(0.0, Dr_guess, dt)
 
-    print_heading("OPTIMIZATION INITIAL GUESS")
+    print_heading(
+        "OPTIMIZATION INITIAL GUESS"
+        if repair_initialization
+        else "REFERENCE INITIAL GUESS"
+    )
 
     print_values(
         [
@@ -492,6 +515,7 @@ def prepare_case(args):
     original = {"P_comm": original_P_comm, "SOC": original_SOC, "Data": original_Data}
 
     return CadreCase(
+        case_index=args.case_index,
         design_physics=design_physics,
         coupled_voltage=coupled_voltage,
         free_solar=free_solar,

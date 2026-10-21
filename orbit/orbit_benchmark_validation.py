@@ -65,17 +65,13 @@ def main():
     reference_rates = np.zeros_like(reference_states)
 
     for k in range(n):
-        reference_rates[k] = orbit_dynamics(
-            reference_states[k]
-        )
+        reference_rates[k] = orbit_dynamics(reference_states[k])
 
     # ------------------------------------------------------------
     # Validation
     # ------------------------------------------------------------
 
-    state_difference = (
-        reference_states - source_states
-    )
+    state_difference = reference_states - source_states
 
     position_difference = np.linalg.norm(
         state_difference[:, 0:3],
@@ -94,59 +90,39 @@ def main():
 
     print()
     print("Maximum individual state difference:")
-    print(
-        np.max(
-            np.abs(state_difference)
-        )
-    )
+    print(np.max(np.abs(state_difference)))
 
     print()
     print("Maximum position difference [km]:")
-    print(
-        np.max(position_difference)
-    )
+    print(np.max(position_difference))
 
     print()
     print("Mean position difference [km]:")
-    print(
-        np.mean(position_difference)
-    )
+    print(np.mean(position_difference))
 
     print()
     print("Final position difference [km]:")
-    print(
-        position_difference[-1]
-    )
+    print(position_difference[-1])
 
     print()
     print("Maximum velocity difference [km/s]:")
-    print(
-        np.max(velocity_difference)
-    )
+    print(np.max(velocity_difference))
 
     print()
     print("Mean velocity difference [km/s]:")
-    print(
-        np.mean(velocity_difference)
-    )
+    print(np.mean(velocity_difference))
 
     print()
     print("Final velocity difference [km/s]:")
-    print(
-        velocity_difference[-1]
-    )
+    print(velocity_difference[-1])
 
     print()
     print("Final CADRE state:")
-    print(
-        source_states[-1]
-    )
+    print(source_states[-1])
 
     print()
     print("Final Python RK4 state:")
-    print(
-        reference_states[-1]
-    )
+    print(reference_states[-1])
 
     # ------------------------------------------------------------
     # Trapezoid residual of the RK4 trajectory
@@ -158,12 +134,7 @@ def main():
     trapezoid_residual = (
         reference_states[1:]
         - reference_states[:-1]
-        - 0.5
-        * dt
-        * (
-            reference_rates[:-1]
-            + reference_rates[1:]
-        )
+        - 0.5 * dt * (reference_rates[:-1] + reference_rates[1:])
     )
 
     print()
@@ -173,11 +144,7 @@ def main():
 
     print()
     print("Maximum trapezoid residual:")
-    print(
-        np.max(
-            np.abs(trapezoid_residual)
-        )
-    )
+    print(np.max(np.abs(trapezoid_residual)))
 
 
 if __name__ == "__main__":

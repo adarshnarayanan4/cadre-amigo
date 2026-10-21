@@ -190,9 +190,7 @@ def main():
         interpolators,
     )
 
-    exposed_area_with_LOS = (
-        exposed_area * LOS_reference[np.newaxis, np.newaxis, :]
-    )
+    exposed_area_with_LOS = exposed_area * LOS_reference[np.newaxis, np.newaxis, :]
 
     print()
     print("Number of nodes:")

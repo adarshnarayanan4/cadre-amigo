@@ -16,14 +16,17 @@ def quadratic_transform(m):
     knots = knotopen(3, m)
     breaks = np.unique(knots)[1:-1]
     transform = np.zeros((m, m))
+
     for column in range(m):
         spline = BSpline(knots, np.eye(m)[column], 2)
         polynomial = PPoly.from_spline(spline)
         transform[:3, column] = [spline(0), spline(0, 1), spline(0, 2) / 2]
+
         for j, point in enumerate(breaks):
             left = np.searchsorted(polynomial.x, point, side="left") - 1
             right = np.searchsorted(polynomial.x, point, side="right") - 1
             transform[3 + j, column] = polynomial.c[0, right] - polynomial.c[0, left]
+
     return breaks, transform
 
 
@@ -41,16 +44,20 @@ class VoltageSpline:
         sizes = raw[:3].astype(int)
         cursor = 3
         axes = []
+
         for size in sizes:
             axes.append(raw[cursor : cursor + size])
             cursor += size
+
         values = raw[cursor:].reshape(tuple(sizes), order="F")
         self.mbi = ModernMBI(values, axes, [6, 6, 15], [3, 3, 3])
         self.maps = [
             BSpline(knotopen(3, m), cx, 2) for m, cx in zip(self.mbi.ms, self.mbi.Cx)
         ]
+
         for axis in (0, 2):
             coordinate = self.maps[axis]
+
             # Increasing controls ensure monotonicity inside the table. The
             # endpoint curvatures ensure its quadratic extension is monotone
             # too, so bounded physical inputs cannot select another root.
@@ -60,6 +67,7 @@ class VoltageSpline:
                 and coordinate(1, 2) >= -1e-8
             ):
                 raise ValueError("Voltage coordinate map is not globally monotone")
+
         self.breaks_T, self.transform_T = quadratic_transform(6)
         self.breaks_I, self.transform_I = quadratic_transform(15)
         self.map_T = self.transform_T @ self.mbi.Cx[0]
@@ -72,11 +80,14 @@ class VoltageSpline:
         lo, hi = coordinate(0), coordinate(1)
         clipped = np.clip(values, lo, hi)
         t = np.clip((clipped - lo) / (hi - lo), 0, 1)
+
         for _ in range(30):
             step = (coordinate(t) - clipped) / coordinate(t, 1)
             t = np.clip(t - step, 0, 1)
+
             if np.max(np.abs(coordinate(t) - clipped)) < 1e-12:
                 break
+
         return t
 
     def panel_coefficients(self, exposed_area, los):
@@ -142,14 +153,17 @@ def make_voltage_component(spline):
             tT, tI = self.inputs["tT"], self.inputs["tI"]
             hT = [1.0, tT, tT * tT]
             hI = [1.0, tI, tI * tI]
+
             for knot in spline.breaks_T:
                 delta = tT - float(knot)
                 positive = 0.5 * (delta + am.fabs(delta))
                 hT.append(positive * positive)
+
             for knot in spline.breaks_I:
                 delta = tI - float(knot)
                 positive = 0.5 * (delta + am.fabs(delta))
                 hI.append(positive * positive)
+
             temperature = sum(float(c) * h for c, h in zip(spline.map_T, hT))
             current = sum(float(c) * h for c, h in zip(spline.map_I, hI))
             coefficients = self.data["coefficients"]

@@ -4,7 +4,6 @@ import numpy as np
 
 from cadre_paths import cadre_path
 
-
 J_RW = 2.8e-5
 
 V = 4.0
@@ -52,9 +51,7 @@ def rk4_step(state, w_B, T_RW, h):
         T_RW,
     )
 
-    return state + h / 6.0 * (
-        a1 + 2.0 * b1 + 2.0 * c1 + d1
-    )
+    return state + h / 6.0 * (a1 + 2.0 * b1 + 2.0 * c1 + d1)
 
 
 def propagate_reaction_wheel(w_RW0, w_B, T_RW, h):
@@ -100,9 +97,7 @@ def propagate_reaction_wheel_trapezoid(w_RW0, w_B, T_RW, h):
                 T_RW[:, k + 1],
             )
 
-            state1_new = state0 + 0.5 * h * (
-                f0 + f1
-            )
+            state1_new = state0 + 0.5 * h * (f0 + f1)
 
             if np.max(np.abs(state1_new - state1)) < 1e-14:
                 state1 = state1_new
@@ -185,23 +180,14 @@ def main():
 
         max_dynamics_residual = max(
             max_dynamics_residual,
-            np.max(
-                np.abs(
-                    rate - w_RW_dot_trap[:, k]
-                )
-            ),
+            np.max(np.abs(rate - w_RW_dot_trap[:, k])),
         )
 
     for k in range(n - 1):
         residual = (
             w_RW_trap[:, k + 1]
             - w_RW_trap[:, k]
-            - 0.5
-            * h
-            * (
-                w_RW_dot_trap[:, k]
-                + w_RW_dot_trap[:, k + 1]
-            )
+            - 0.5 * h * (w_RW_dot_trap[:, k] + w_RW_dot_trap[:, k + 1])
         )
 
         max_trapezoid_residual = max(

@@ -61,49 +61,21 @@ class SunPositionECIBenchmark(am.Component):
         t = self.inputs["t"]
         r = self.inputs["r_e2s_I"]
 
-        T = (
-            LD
-            + t / 3600.0 / 24.0
-        )
+        T = LD + t / 3600.0 / 24.0
 
-        L = (
-            d2r * 280.460
-            + d2r * 0.9856474 * T
-        )
+        L = d2r * 280.460 + d2r * 0.9856474 * T
 
-        g = (
-            d2r * 357.528
-            + d2r * 0.9856003 * T
-        )
+        g = d2r * 357.528 + d2r * 0.9856003 * T
 
-        Lambda = (
-            L
-            + d2r
-            * 1.914666
-            * am.sin(g)
-            + d2r
-            * 0.01999464
-            * am.sin(2.0 * g)
-        )
+        Lambda = L + d2r * 1.914666 * am.sin(g) + d2r * 0.01999464 * am.sin(2.0 * g)
 
-        eps = (
-            d2r * 23.439
-            - d2r
-            * 3.56e-7
-            * T
-        )
+        eps = d2r * 23.439 - d2r * 3.56e-7 * T
 
         x = am.cos(Lambda)
 
-        y = (
-            am.sin(Lambda)
-            * am.cos(eps)
-        )
+        y = am.sin(Lambda) * am.cos(eps)
 
-        z = (
-            am.sin(Lambda)
-            * am.sin(eps)
-        )
+        z = am.sin(Lambda) * am.sin(eps)
 
         self.constraints["res"] = [
             r[0] - x,
@@ -122,11 +94,7 @@ class DummyObjective(am.Component):
     def compute(self):
         value = self.inputs["value"]
 
-        self.objective["obj"] = (
-            1.0e-12
-            * value
-            * value
-        )
+        self.objective["obj"] = 1.0e-12 * value * value
 
 
 def report_difference(
@@ -134,25 +102,14 @@ def report_difference(
     amigo_value,
     reference_value,
 ):
-    difference = np.abs(
-        amigo_value
-        - reference_value
-    )
+    difference = np.abs(amigo_value - reference_value)
 
     print()
-    print(
-        f"Maximum {name} difference:"
-    )
-    print(
-        np.max(difference)
-    )
+    print(f"Maximum {name} difference:")
+    print(np.max(difference))
 
-    print(
-        f"Mean {name} difference:"
-    )
-    print(
-        np.mean(difference)
-    )
+    print(f"Mean {name} difference:")
+    print(np.mean(difference))
 
 
 def classify_los(
@@ -166,9 +123,7 @@ def classify_los(
     eclipse = []
     transition = []
 
-    for i in range(
-        states.shape[0]
-    ):
+    for i in range(states.shape[0]):
         r_b = states[i, 0:3]
         r_s = r_e2s_I[i]
 
@@ -217,9 +172,7 @@ def main():
     # Load CADRE benchmark
     # --------------------------------------------------------
 
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(
         data_path,
@@ -246,7 +199,9 @@ def main():
         get_case_value(
             data,
             "LD",
-        ).reshape(-1)[0]
+        ).reshape(
+            -1
+        )[0]
     )
 
     n = orbit_source.shape[0]
@@ -254,9 +209,7 @@ def main():
     t1 = 0.0
     t2 = 43200.0
 
-    dt = (
-        t2 - t1
-    ) / (n - 1)
+    dt = (t2 - t1) / (n - 1)
 
     times = np.linspace(
         t1,
@@ -266,9 +219,7 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "CADRE SUN AMIGO BENCHMARK"
-    )
+    print("CADRE SUN AMIGO BENCHMARK")
     print("=" * 70)
 
     print()
@@ -287,39 +238,29 @@ def main():
     # Python reference
     # --------------------------------------------------------
 
-    r_e2s_I_reference = (
-        sun_position_eci(
-            times,
-            LD=LD,
-        )
+    r_e2s_I_reference = sun_position_eci(
+        times,
+        LD=LD,
     )
 
-    LOS_reference = (
-        sun_line_of_sight(
-            orbit_source,
-            r_e2s_I_reference,
-        )
+    LOS_reference = sun_line_of_sight(
+        orbit_source,
+        r_e2s_I_reference,
     )
 
-    r_e2s_B_reference = (
-        sun_position_body(
-            O_BI_source,
-            r_e2s_I_reference,
-        )
+    r_e2s_B_reference = sun_position_body(
+        O_BI_source,
+        r_e2s_I_reference,
     )
 
     (
         azimuth_reference,
         elevation_reference,
-    ) = sun_position_spherical(
-        r_e2s_B_reference
-    )
+    ) = sun_position_spherical(r_e2s_B_reference)
 
-    O_BI_flat = (
-        O_BI_source.reshape(
-            n,
-            9,
-        )
+    O_BI_flat = O_BI_source.reshape(
+        n,
+        9,
     )
 
     (
@@ -333,43 +274,29 @@ def main():
 
     print()
     print("Full sunlight nodes:")
-    print(
-        len(visible_indices)
-    )
+    print(len(visible_indices))
 
     print()
     print("Full eclipse nodes:")
-    print(
-        len(eclipse_indices)
-    )
+    print(len(eclipse_indices))
 
     print()
     print("Transition nodes:")
-    print(
-        len(transition_indices)
-    )
+    print(len(transition_indices))
 
     # --------------------------------------------------------
     # Components
     # --------------------------------------------------------
 
-    sun_eci = (
-        SunPositionECIBenchmark(
-            LD
-        )
-    )
+    sun_eci = SunPositionECIBenchmark(LD)
 
     sun_body = SunPositionBody()
 
-    sun_spherical = (
-        SunPositionSpherical()
-    )
+    sun_spherical = SunPositionSpherical()
 
     objective = DummyObjective()
 
-    model = am.Model(
-        "cadre_sun_benchmark"
-    )
+    model = am.Model("cadre_sun_benchmark")
 
     model.add_component(
         "sun_eci",
@@ -464,9 +391,7 @@ def main():
     # --------------------------------------------------------
 
     for i in range(9):
-        variable = (
-            f"sun_body.O_BI[:, {i}]"
-        )
+        variable = f"sun_body.O_BI[:, {i}]"
 
         model.set_meta(
             "value",
@@ -523,50 +448,34 @@ def main():
         model.set_meta(
             "value",
             "los_visible.LOS[:]",
-            LOS_reference[
-                visible_indices
-            ],
+            LOS_reference[visible_indices],
         )
 
     if len(eclipse_indices) > 0:
         model.set_meta(
             "value",
             "los_eclipse.LOS[:]",
-            LOS_reference[
-                eclipse_indices
-            ],
+            LOS_reference[eclipse_indices],
         )
 
     if len(transition_indices) > 0:
         model.set_meta(
             "value",
             "los_transition.LOS[:]",
-            LOS_reference[
-                transition_indices
-            ],
+            LOS_reference[transition_indices],
         )
 
-        transition_r_b = (
-            orbit_source[
-                transition_indices,
-                0:3,
-            ]
-        )
+        transition_r_b = orbit_source[
+            transition_indices,
+            0:3,
+        ]
 
-        transition_r_s = (
-            r_e2s_I_reference[
-                transition_indices
-            ]
-        )
+        transition_r_s = r_e2s_I_reference[transition_indices]
 
         for i in range(3):
-            rb_variable = (
-                f"los_transition.r_b[:, {i}]"
-            )
+            rb_variable = f"los_transition.r_b[:, {i}]"
 
-            rs_variable = (
-                f"los_transition.r_s[:, {i}]"
-            )
+            rs_variable = f"los_transition.r_s[:, {i}]"
 
             model.set_meta(
                 "value",
@@ -609,9 +518,7 @@ def main():
     # --------------------------------------------------------
 
     print()
-    print(
-        "Building AMIGO Sun benchmark..."
-    )
+    print("Building AMIGO Sun benchmark...")
 
     model.build_module()
 
@@ -619,9 +526,7 @@ def main():
 
     model.initialize()
 
-    print(
-        "Initialization successful."
-    )
+    print("Initialization successful.")
 
     x = model.create_vector()
 
@@ -639,18 +544,12 @@ def main():
     }
 
     print()
-    print(
-        "Solving AMIGO Sun benchmark..."
-    )
+    print("Solving AMIGO Sun benchmark...")
 
-    optimizer.optimize(
-        options
-    )
+    optimizer.optimize(options)
 
     print()
-    print(
-        "AMIGO solve complete."
-    )
+    print("AMIGO solve complete.")
 
     # --------------------------------------------------------
     # Extract results
@@ -670,40 +569,20 @@ def main():
         3,
     )
 
-    azimuth_amigo = np.asarray(
-        x[
-            "sun_spherical.azimuth[:]"
-        ]
-    )
+    azimuth_amigo = np.asarray(x["sun_spherical.azimuth[:]"])
 
-    elevation_amigo = np.asarray(
-        x[
-            "sun_spherical.elevation[:]"
-        ]
-    )
+    elevation_amigo = np.asarray(x["sun_spherical.elevation[:]"])
 
     LOS_amigo = np.zeros(n)
 
     if len(visible_indices) > 0:
-        LOS_amigo[
-            visible_indices
-        ] = x[
-            "los_visible.LOS[:]"
-        ]
+        LOS_amigo[visible_indices] = x["los_visible.LOS[:]"]
 
     if len(eclipse_indices) > 0:
-        LOS_amigo[
-            eclipse_indices
-        ] = x[
-            "los_eclipse.LOS[:]"
-        ]
+        LOS_amigo[eclipse_indices] = x["los_eclipse.LOS[:]"]
 
     if len(transition_indices) > 0:
-        LOS_amigo[
-            transition_indices
-        ] = x[
-            "los_transition.LOS[:]"
-        ]
+        LOS_amigo[transition_indices] = x["los_transition.LOS[:]"]
 
     # --------------------------------------------------------
     # AMIGO vs Python
@@ -711,9 +590,7 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "AMIGO VS PYTHON SUN"
-    )
+    print("AMIGO VS PYTHON SUN")
     print("=" * 70)
 
     report_difference(
@@ -781,9 +658,7 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "AMIGO VS ORIGINAL CADRE"
-    )
+    print("AMIGO VS ORIGINAL CADRE")
     print("=" * 70)
 
     report_difference(

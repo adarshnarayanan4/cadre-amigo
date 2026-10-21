@@ -63,13 +63,9 @@ class ParameterSplineKernel(am.Component):
             P_comm_value += N[j] * CP_P_comm[j]
             Gamma_value += N[j] * CP_gamma[j]
 
-        self.constraints["res_P_comm"] = (
-            P_comm - P_comm_value
-        )
+        self.constraints["res_P_comm"] = P_comm - P_comm_value
 
-        self.constraints["res_Gamma"] = (
-            Gamma - Gamma_value
-        )
+        self.constraints["res_Gamma"] = Gamma - Gamma_value
 
         res_Isetpt = 12 * [None]
 
@@ -121,17 +117,13 @@ def extract_Isetpt(x, n):
     Isetpt = np.zeros((12, n))
 
     for panel in range(12):
-        Isetpt[panel, :] = x[
-            f"values.Isetpt[:, {panel}]"
-        ]
+        Isetpt[panel, :] = x[f"values.Isetpt[:, {panel}]"]
 
     return Isetpt
 
 
 def main():
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(data_path, "rb") as f:
         data = pickle.load(
@@ -166,13 +158,11 @@ def main():
     print(m)
 
     # Python reference
-    P_comm_reference, gamma_reference, Isetpt_reference = (
-        bspline_parameters(
-            CP_P_comm,
-            CP_gamma,
-            CP_Isetpt,
-            n,
-        )
+    P_comm_reference, gamma_reference, Isetpt_reference = bspline_parameters(
+        CP_P_comm,
+        CP_gamma,
+        CP_Isetpt,
+        n,
     )
 
     # Sparse B-spline structure
@@ -188,43 +178,19 @@ def main():
 
     print()
     print("Maximum basis row-sum error:")
-    print(
-        np.max(
-            np.abs(
-                np.sum(weights, axis=1) - 1.0
-            )
-        )
-    )
+    print(np.max(np.abs(np.sum(weights, axis=1) - 1.0)))
 
     print()
     print("Python P_comm vs CADRE [W]:")
-    print(
-        np.max(
-            np.abs(
-                P_comm_reference - P_comm_source
-            )
-        )
-    )
+    print(np.max(np.abs(P_comm_reference - P_comm_source)))
 
     print()
     print("Python Gamma vs CADRE [rad]:")
-    print(
-        np.max(
-            np.abs(
-                gamma_reference - gamma_source
-            )
-        )
-    )
+    print(np.max(np.abs(gamma_reference - gamma_source)))
 
     print()
     print("Python Isetpt vs CADRE [A]:")
-    print(
-        np.max(
-            np.abs(
-                Isetpt_reference - Isetpt_source
-            )
-        )
-    )
+    print(np.max(np.abs(Isetpt_reference - Isetpt_source)))
 
     # Components
     control_points = ParameterControlPoints()
@@ -232,9 +198,7 @@ def main():
     kernel = ParameterSplineKernel()
 
     # Model
-    model = am.Model(
-        "cadre_parameters"
-    )
+    model = am.Model("cadre_parameters")
 
     model.add_component(
         "control_points",
@@ -273,14 +237,8 @@ def main():
                 local_index = 4 * panel + j
 
                 model.link(
-                    (
-                        "control_points."
-                        f"CP_Isetpt[{control_index}, {panel}]"
-                    ),
-                    (
-                        "kernel."
-                        f"CP_Isetpt[{i}, {local_index}]"
-                    ),
+                    ("control_points." f"CP_Isetpt[{control_index}, {panel}]"),
+                    ("kernel." f"CP_Isetpt[{i}, {local_index}]"),
                 )
 
     # Link spline outputs
@@ -405,21 +363,15 @@ def main():
     print()
     print("Solving AMIGO parameter model...")
 
-    opt.optimize(
-        opt_options
-    )
+    opt.optimize(opt_options)
 
     print()
     print("AMIGO solve complete.")
 
     # Extract AMIGO results
-    P_comm_amigo = np.array(
-        x["values.P_comm[:]"]
-    )
+    P_comm_amigo = np.array(x["values.P_comm[:]"])
 
-    gamma_amigo = np.array(
-        x["values.Gamma[:]"]
-    )
+    gamma_amigo = np.array(x["values.Gamma[:]"])
 
     Isetpt_amigo = extract_Isetpt(
         x,
@@ -433,33 +385,15 @@ def main():
 
     print()
     print("AMIGO vs Python P_comm difference [W]:")
-    print(
-        np.max(
-            np.abs(
-                P_comm_amigo - P_comm_reference
-            )
-        )
-    )
+    print(np.max(np.abs(P_comm_amigo - P_comm_reference)))
 
     print()
     print("AMIGO vs Python Gamma difference [rad]:")
-    print(
-        np.max(
-            np.abs(
-                gamma_amigo - gamma_reference
-            )
-        )
-    )
+    print(np.max(np.abs(gamma_amigo - gamma_reference)))
 
     print()
     print("AMIGO vs Python Isetpt difference [A]:")
-    print(
-        np.max(
-            np.abs(
-                Isetpt_amigo - Isetpt_reference
-            )
-        )
-    )
+    print(np.max(np.abs(Isetpt_amigo - Isetpt_reference)))
 
     print()
     print("=" * 70)
@@ -468,33 +402,15 @@ def main():
 
     print()
     print("Maximum P_comm difference [W]:")
-    print(
-        np.max(
-            np.abs(
-                P_comm_amigo - P_comm_source
-            )
-        )
-    )
+    print(np.max(np.abs(P_comm_amigo - P_comm_source)))
 
     print()
     print("Maximum Gamma difference [rad]:")
-    print(
-        np.max(
-            np.abs(
-                gamma_amigo - gamma_source
-            )
-        )
-    )
+    print(np.max(np.abs(gamma_amigo - gamma_source)))
 
     print()
     print("Maximum Isetpt difference [A]:")
-    print(
-        np.max(
-            np.abs(
-                Isetpt_amigo - Isetpt_source
-            )
-        )
-    )
+    print(np.max(np.abs(Isetpt_amigo - Isetpt_source)))
 
 
 if __name__ == "__main__":

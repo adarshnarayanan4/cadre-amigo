@@ -25,7 +25,6 @@ from solar.solar_reference import (
     solar_exposed_area,
 )
 
-
 m_f = 0.4
 m_b = 2.0
 
@@ -85,15 +84,9 @@ def propagate_temperature(T0, exposed_area, LOS, P_comm, cellInstd, dt):
         P_comm_k = P_comm[k]
 
         a = thermal_dynamics(state, area_k, LOS_k, P_comm_k, cellInstd)
-        b = thermal_dynamics(
-            state + dt / 2.0 * a, area_k, LOS_k, P_comm_k, cellInstd
-        )
-        c = thermal_dynamics(
-            state + dt / 2.0 * b, area_k, LOS_k, P_comm_k, cellInstd
-        )
-        d = thermal_dynamics(
-            state + dt * c, area_k, LOS_k, P_comm_k, cellInstd
-        )
+        b = thermal_dynamics(state + dt / 2.0 * a, area_k, LOS_k, P_comm_k, cellInstd)
+        c = thermal_dynamics(state + dt / 2.0 * b, area_k, LOS_k, P_comm_k, cellInstd)
+        d = thermal_dynamics(state + dt * c, area_k, LOS_k, P_comm_k, cellInstd)
 
         temperature[:, k + 1] = state + dt / 6.0 * (a + 2.0 * b + 2.0 * c + d)
 

@@ -52,9 +52,7 @@ def bspline_parameters(
 
 
 def main():
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(data_path, "rb") as f:
         data = pickle.load(
@@ -104,23 +102,11 @@ def main():
 
     print()
     print("Maximum P_comm difference [W]:")
-    print(
-        np.max(
-            np.abs(
-                P_comm - P_comm_source
-            )
-        )
-    )
+    print(np.max(np.abs(P_comm - P_comm_source)))
 
     print()
     print("Mean P_comm difference [W]:")
-    print(
-        np.mean(
-            np.abs(
-                P_comm - P_comm_source
-            )
-        )
-    )
+    print(np.mean(np.abs(P_comm - P_comm_source)))
 
     print()
     print("=" * 70)
@@ -129,23 +115,11 @@ def main():
 
     print()
     print("Maximum gamma difference [rad]:")
-    print(
-        np.max(
-            np.abs(
-                gamma - gamma_source
-            )
-        )
-    )
+    print(np.max(np.abs(gamma - gamma_source)))
 
     print()
     print("Mean gamma difference [rad]:")
-    print(
-        np.mean(
-            np.abs(
-                gamma - gamma_source
-            )
-        )
-    )
+    print(np.mean(np.abs(gamma - gamma_source)))
 
     print()
     print("=" * 70)
@@ -154,23 +128,11 @@ def main():
 
     print()
     print("Maximum Isetpt difference [A]:")
-    print(
-        np.max(
-            np.abs(
-                Isetpt - Isetpt_source
-            )
-        )
-    )
+    print(np.max(np.abs(Isetpt - Isetpt_source)))
 
     print()
     print("Mean Isetpt difference [A]:")
-    print(
-        np.mean(
-            np.abs(
-                Isetpt - Isetpt_source
-            )
-        )
-    )
+    print(np.mean(np.abs(Isetpt - Isetpt_source)))
 
     print()
     print("Source P_comm min / max [W]:")

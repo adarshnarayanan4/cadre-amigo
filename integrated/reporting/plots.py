@@ -45,12 +45,20 @@ def find_reference(results, summary):
         compare = summary.get("initial_soc_optimized")
         name = "pcomm_constrained"
 
+    case_index = summary.get("case_index", 0)
+
+    if case_index:
+        name += f"_case_{case_index}"
+
     reference = results.parent / name
 
     if not compare or not (reference / "summary.json").exists():
         return None
 
     previous = json.loads((reference / "summary.json").read_text())
+
+    if previous.get("case_index", 0) != case_index:
+        return None
 
     if not previous.get("validated") or any(
         previous[key] != summary[key] for key in ("nodes", "control_points", "dt_s")
@@ -151,14 +159,19 @@ def result_context(summary):
 def result_name(summary):
     if summary.get("roll_optimized") and summary.get("allocation_optimized"):
         return "Roll and surface-allocation optimization"
+
     if summary.get("roll_optimized"):
         return "Spacecraft roll optimization"
+
     if summary.get("allocation_optimized"):
         return "Surface-allocation optimization"
+
     if summary.get("design_physics_restored"):
         return "Fixed-design optimization reference"
+
     if summary.get("solar_currents_optimized"):
         return "Communication and solar-current optimization"
+
     return "Communication-power optimization"
 
 
@@ -188,11 +201,14 @@ def plot_trajectories(data, summary, output, reference=None):
 
     if reference:
         previous, old = reference
+
         if summary.get("validated"):
             comparison = comparison_metrics(summary, data, previous, old)
             comparison_path = output / "comparison.json"
+
             if not comparison_path.exists():
                 comparison_path.write_text(json.dumps(comparison, indent=2) + "\n")
+
         reference_label = (
             "Fixed-design optimum"
             if design
@@ -277,8 +293,10 @@ def plot_solar_currents(data, output, summary=None):
         3, 4, figsize=(15, 10), sharex=True, sharey=True, constrained_layout=True
     )
     candidate = "Optimized" if summary and summary.get("validated") else "Trial iterate"
+
     if summary and not summary.get("solar_currents_optimized"):
         candidate = "Prescribed currents"
+
     low = min(0, float(np.min(data["baseline_Isetpt"])), float(np.min(data["Isetpt"])))
     high = max(
         0.4, float(np.max(data["baseline_Isetpt"])), float(np.max(data["Isetpt"]))
@@ -302,6 +320,7 @@ def plot_solar_currents(data, output, summary=None):
 
     for axis in axes[-1]:
         axis.set_xlabel("Time [hours]")
+
     for axis in axes[:, 0]:
         axis.set_ylabel("Solar current [A]")
 
@@ -328,8 +347,10 @@ def plot_design_controls(data, summary, output):
         hours, np.rad2deg(data["baseline_gamma"]), color=GRAY, label="Benchmark roll"
     )
     label = "Optimized roll" if summary.get("validated") else "Trial roll"
+
     if not summary.get("roll_optimized"):
         label = "Fixed roll"
+
     axes[0].plot(hours, np.rad2deg(data["gamma"]), color=BLUE, label=label)
     axes[0].set(
         xlabel="Time [hours]",
@@ -367,8 +388,10 @@ def plot_design_controls(data, summary, output):
 def plot_convergence(history, summary, output):
     """Separate feasibility, stationarity, and complementarity diagnostics."""
     configure_style()
+
     if summary.get("warm_start"):
         history = [row for row in history if row["iteration"] > 0]
+
     iterations = np.array([row["iteration"] for row in history])
     fig, axes = plt.subplots(2, 2, figsize=(14, 10), constrained_layout=True)
     specifications = [
@@ -393,6 +416,7 @@ def plot_convergence(history, summary, output):
 
         if threshold is not None:
             axis.axhline(threshold, color=RED, linestyle="--", label=threshold_label)
+
         if not valid.any():
             axis.text(
                 0.5,
@@ -401,12 +425,15 @@ def plot_convergence(history, summary, output):
                 ha="center",
                 transform=axis.transAxes,
             )
+
         axis.set(title=title, xlabel="Optimizer iteration", ylabel="Residual")
         integer_ticks(axis)
 
     note = "KKT error uses AMIGO scaling; dual and complementarity panels show the recorded raw metrics."
+
     if summary.get("warm_start"):
         note += " Warm-start iteration 0 is omitted because it precedes checkpoint restoration."
+
     save_figure(
         fig,
         output,
@@ -426,12 +453,15 @@ def plot_saved_case(results, output):
 
     with np.load(results / "trajectories.npz") as data:
         plot_trajectories(data, summary, output, reference)
+
         if summary.get("solar_voltage_coupled"):
             plot_solar_currents(data, output, summary)
+
         if summary.get("design_physics_restored"):
             plot_design_controls(data, summary, output)
 
     history_path = results / "solver_history.json"
+
     if history_path.exists():
         plot_convergence(json.loads(history_path.read_text()), summary, output)
 
@@ -462,8 +492,10 @@ def main(argv=None):
 
     for results in cases:
         output = args.output or results
+
         if args.all_results and args.output:
             output = args.output / results.name
+
         plot_saved_case(results, output)
         print(f"Figures saved to {output.resolve()}", flush=True)
 

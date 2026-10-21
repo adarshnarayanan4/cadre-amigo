@@ -21,14 +21,9 @@ def ks_function(values, rho=50.0):
 
     maximum = np.max(values)
 
-    exponents = np.exp(
-        rho * (values - maximum)
-    )
+    exponents = np.exp(rho * (values - maximum))
 
-    return (
-        maximum
-        + np.log(np.sum(exponents)) / rho
-    )
+    return maximum + np.log(np.sum(exponents)) / rho
 
 
 def battery_constraints(
@@ -76,24 +71,14 @@ def report_difference(
     reference,
     source,
 ):
-    difference = np.abs(
-        reference - source
-    )
+    difference = np.abs(reference - source)
 
     print()
-    print(
-        f"Maximum {name} difference:"
-    )
-    print(
-        np.max(difference)
-    )
+    print(f"Maximum {name} difference:")
+    print(np.max(difference))
 
-    print(
-        f"Mean {name} difference:"
-    )
-    print(
-        np.mean(difference)
-    )
+    print(f"Mean {name} difference:")
+    print(np.mean(difference))
 
 
 def main():
@@ -101,9 +86,7 @@ def main():
     # Load CADRE benchmark
     # --------------------------------------------------------
 
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(
         data_path,
@@ -122,7 +105,9 @@ def main():
         get_case_value(
             data,
             "iSOC",
-        ).reshape(-1)[0]
+        ).reshape(
+            -1
+        )[0]
     )
 
     P_bat = get_case_value(
@@ -141,9 +126,7 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "CADRE BATTERY BENCHMARK VALIDATION"
-    )
+    print("CADRE BATTERY BENCHMARK VALIDATION")
     print("=" * 70)
 
     print()
@@ -159,18 +142,14 @@ def main():
     print(initial_soc)
 
     print()
-    print(
-        "Battery power min / max [W]:"
-    )
+    print("Battery power min / max [W]:")
     print(
         np.min(P_bat),
         np.max(P_bat),
     )
 
     print()
-    print(
-        "Body temperature min / max [K]:"
-    )
+    print("Body temperature min / max [K]:")
     print(
         np.min(temperature[4]),
         np.max(temperature[4]),
@@ -223,9 +202,7 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "PYTHON RK4 BATTERY VS ORIGINAL CADRE"
-    )
+    print("PYTHON RK4 BATTERY VS ORIGINAL CADRE")
     print("=" * 70)
 
     report_difference(
@@ -241,31 +218,16 @@ def main():
     )
 
     print()
-    print(
-        "Original CADRE final SOC:"
-    )
-    print(
-        SOC_source[-1]
-    )
+    print("Original CADRE final SOC:")
+    print(SOC_source[-1])
 
     print()
-    print(
-        "Python RK4 final SOC:"
-    )
-    print(
-        SOC_reference[-1]
-    )
+    print("Python RK4 final SOC:")
+    print(SOC_reference[-1])
 
     print()
-    print(
-        "Final SOC difference:"
-    )
-    print(
-        abs(
-            SOC_reference[-1]
-            - SOC_source[-1]
-        )
-    )
+    print("Final SOC difference:")
+    print(abs(SOC_reference[-1] - SOC_source[-1]))
 
     # --------------------------------------------------------
     # Battery constraints
@@ -275,35 +237,41 @@ def main():
         get_case_value(
             data,
             "ConCh",
-        ).reshape(-1)[0]
+        ).reshape(
+            -1
+        )[0]
     )
 
     ConDs_source = float(
         get_case_value(
             data,
             "ConDs",
-        ).reshape(-1)[0]
+        ).reshape(
+            -1
+        )[0]
     )
 
     ConS0_source = float(
         get_case_value(
             data,
             "ConS0",
-        ).reshape(-1)[0]
+        ).reshape(
+            -1
+        )[0]
     )
 
     ConS1_source = float(
         get_case_value(
             data,
             "ConS1",
-        ).reshape(-1)[0]
+        ).reshape(
+            -1
+        )[0]
     )
 
     print()
     print("=" * 70)
-    print(
-        "BATTERY CONSTRAINT VALIDATION"
-    )
+    print("BATTERY CONSTRAINT VALIDATION")
     print("=" * 70)
 
     print()
@@ -318,10 +286,7 @@ def main():
     )
     print(
         "Difference =",
-        abs(
-            ConCh_reference
-            - ConCh_source
-        ),
+        abs(ConCh_reference - ConCh_source),
     )
 
     print()
@@ -336,10 +301,7 @@ def main():
     )
     print(
         "Difference =",
-        abs(
-            ConDs_reference
-            - ConDs_source
-        ),
+        abs(ConDs_reference - ConDs_source),
     )
 
     print()
@@ -354,10 +316,7 @@ def main():
     )
     print(
         "Difference =",
-        abs(
-            ConS0_reference
-            - ConS0_source
-        ),
+        abs(ConS0_reference - ConS0_source),
     )
 
     print()
@@ -372,10 +331,7 @@ def main():
     )
     print(
         "Difference =",
-        abs(
-            ConS1_reference
-            - ConS1_source
-        ),
+        abs(ConS1_reference - ConS1_source),
     )
 
     # --------------------------------------------------------
@@ -384,9 +340,7 @@ def main():
 
     print()
     print("=" * 70)
-    print(
-        "BATTERY SANITY CHECKS"
-    )
+    print("BATTERY SANITY CHECKS")
     print("=" * 70)
 
     print()
@@ -397,9 +351,7 @@ def main():
     )
 
     print()
-    print(
-        "Battery current minimum / maximum [A]:"
-    )
+    print("Battery current minimum / maximum [A]:")
     print(
         np.min(I_reference),
         np.max(I_reference),

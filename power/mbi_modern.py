@@ -49,9 +49,7 @@ def basis(k, t, d):
             n = i0 + j
 
             if d[n + offset - 1] != d[n - 1]:
-                B[j - 1] = (
-                    (t - d[n - 1]) / (d[n + offset - 1] - d[n - 1]) * B[j - 1]
-                )
+                B[j - 1] = (t - d[n - 1]) / (d[n + offset - 1] - d[n - 1]) * B[j - 1]
             else:
                 B[j - 1] = 0.0
 
@@ -61,9 +59,7 @@ def basis(k, t, d):
         n = i0 + j2
 
         if d[n + offset - 1] != d[n - 1]:
-            B[j2 - 1] = (
-                (t - d[n - 1]) / (d[n + offset - 1] - d[n - 1]) * B[j2 - 1]
-            )
+            B[j2 - 1] = (t - d[n - 1]) / (d[n + offset - 1] - d[n - 1]) * B[j2 - 1]
         else:
             B[j2 - 1] = 0.0
 
@@ -262,11 +258,7 @@ class ModernMBI:
                     j = i01 + b
                     k = i02 + c
 
-                    index = (
-                        i
-                        + self.ms[0] * j
-                        + self.ms[0] * self.ms[1] * k
-                    )
+                    index = i + self.ms[0] * j + self.ms[0] * self.ms[1] * k
 
                     weight = B0[a] * B1[b] * B2[c]
 

@@ -15,10 +15,12 @@ def load_checkpoint(optimizer, args, checkpoint_signature):
     """Restore a compatible point and retain saved barrier/bound multipliers."""
     warm_bound_duals = None
     warm_same_problem = False
+    checkpoint_signature = {"case_index": 0, **checkpoint_signature}
 
     if args.warm_start:
         with np.load(args.warm_start, allow_pickle=False) as saved:
-            saved_signature = json.loads(str(saved["signature"]))
+            # Older checkpoints were produced only for case 0.
+            saved_signature = {"case_index": 0, **json.loads(str(saved["signature"]))}
             warm_same_problem = saved_signature == checkpoint_signature
             differences = {
                 key

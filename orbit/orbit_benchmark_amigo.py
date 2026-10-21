@@ -25,9 +25,7 @@ def propagate_trapezoid(initial_state, dt, n):
     for k in range(n - 1):
         current_state = states[k]
 
-        current_rate = orbit_dynamics(
-            current_state
-        )
+        current_rate = orbit_dynamics(current_state)
 
         # RK4 gives a very good initial guess
         next_guess = rk4_step(
@@ -36,20 +34,9 @@ def propagate_trapezoid(initial_state, dt, n):
         )
 
         def residual(next_state):
-            next_rate = orbit_dynamics(
-                next_state
-            )
+            next_rate = orbit_dynamics(next_state)
 
-            return (
-                next_state
-                - current_state
-                - 0.5
-                * dt
-                * (
-                    current_rate
-                    + next_rate
-                )
-            )
+            return next_state - current_state - 0.5 * dt * (current_rate + next_rate)
 
         solution = root(
             residual,
@@ -59,19 +46,14 @@ def propagate_trapezoid(initial_state, dt, n):
 
         if not solution.success:
             if np.max(np.abs(solution.fun)) > 1e-9:
-                raise RuntimeError(
-                    "Trapezoid solve failed "
-                    f"at interval {k}"
-                )
+                raise RuntimeError("Trapezoid solve failed " f"at interval {k}")
 
         states[k + 1] = solution.x
 
     rates = np.zeros_like(states)
 
     for k in range(n):
-        rates[k] = orbit_dynamics(
-            states[k]
-        )
+        rates[k] = orbit_dynamics(states[k])
 
     return states, rates
 
@@ -81,20 +63,9 @@ def maximum_trapezoid_residual(
     rates,
     dt,
 ):
-    residual = (
-        states[1:]
-        - states[:-1]
-        - 0.5
-        * dt
-        * (
-            rates[:-1]
-            + rates[1:]
-        )
-    )
+    residual = states[1:] - states[:-1] - 0.5 * dt * (rates[:-1] + rates[1:])
 
-    return np.max(
-        np.abs(residual)
-    )
+    return np.max(np.abs(residual))
 
 
 def build_model(
@@ -108,13 +79,9 @@ def build_model(
 
     orbit = OrbitDynamics()
     trap = TrapezoidRule(dt)
-    initial = InitialConditions(
-        initial_state
-    )
+    initial = InitialConditions(initial_state)
 
-    model = am.Model(
-        "cadre_orbit_benchmark"
-    )
+    model = am.Model("cadre_orbit_benchmark")
 
     model.add_component(
         "orbit",
@@ -182,9 +149,7 @@ def build_model(
         )
 
     print()
-    print(
-        "Building AMIGO orbit benchmark..."
-    )
+    print("Building AMIGO orbit benchmark...")
 
     model.build_module()
 
@@ -192,17 +157,13 @@ def build_model(
 
     model.initialize()
 
-    print(
-        "Initialization successful."
-    )
+    print("Initialization successful.")
 
     return model
 
 
 def main():
-    data_path = cadre_path(
-        "test/data1346.pkl"
-    )
+    data_path = cadre_path("test/data1346.pkl")
 
     with open(
         data_path,
@@ -224,19 +185,13 @@ def main():
     t1 = 0.0
     t2 = 43200.0
 
-    dt = (
-        t2 - t1
-    ) / (n - 1)
+    dt = (t2 - t1) / (n - 1)
 
-    initial_state = (
-        source_states[0].copy()
-    )
+    initial_state = source_states[0].copy()
 
     print()
     print("=" * 70)
-    print(
-        "CADRE ORBIT AMIGO BENCHMARK"
-    )
+    print("CADRE ORBIT AMIGO BENCHMARK")
     print("=" * 70)
 
     print()
@@ -251,18 +206,14 @@ def main():
     # Original CADRE-style RK4 trajectory
     # --------------------------------------------------------
 
-    rk4_states = np.zeros_like(
-        source_states
-    )
+    rk4_states = np.zeros_like(source_states)
 
     rk4_states[0] = initial_state
 
     for k in range(n - 1):
-        rk4_states[k + 1] = (
-            rk4_step(
-                rk4_states[k],
-                dt,
-            )
+        rk4_states[k + 1] = rk4_step(
+            rk4_states[k],
+            dt,
         )
 
     # --------------------------------------------------------
@@ -270,9 +221,7 @@ def main():
     # --------------------------------------------------------
 
     print()
-    print(
-        "Building Python trapezoid reference..."
-    )
+    print("Building Python trapezoid reference...")
 
     (
         trapezoid_states,
@@ -283,73 +232,46 @@ def main():
         n,
     )
 
-    trap_residual = (
-        maximum_trapezoid_residual(
-            trapezoid_states,
-            trapezoid_rates,
-            dt,
-        )
+    trap_residual = maximum_trapezoid_residual(
+        trapezoid_states,
+        trapezoid_rates,
+        dt,
     )
 
     print()
     print("=" * 70)
-    print(
-        "PYTHON TRAPEZOID PRECHECK"
-    )
+    print("PYTHON TRAPEZOID PRECHECK")
     print("=" * 70)
 
     print()
-    print(
-        "Maximum trapezoid residual:"
-    )
+    print("Maximum trapezoid residual:")
     print(trap_residual)
 
     # --------------------------------------------------------
     # RK4 vs trapezoid
     # --------------------------------------------------------
 
-    position_difference = (
-        np.linalg.norm(
-            trapezoid_states[:, 0:3]
-            - rk4_states[:, 0:3],
-            axis=1,
-        )
+    position_difference = np.linalg.norm(
+        trapezoid_states[:, 0:3] - rk4_states[:, 0:3],
+        axis=1,
     )
 
-    velocity_difference = (
-        np.linalg.norm(
-            trapezoid_states[:, 3:6]
-            - rk4_states[:, 3:6],
-            axis=1,
-        )
+    velocity_difference = np.linalg.norm(
+        trapezoid_states[:, 3:6] - rk4_states[:, 3:6],
+        axis=1,
     )
 
     print()
-    print(
-        "RK4 vs trapezoid maximum "
-        "position difference [km]:"
-    )
-    print(
-        np.max(position_difference)
-    )
+    print("RK4 vs trapezoid maximum " "position difference [km]:")
+    print(np.max(position_difference))
 
     print()
-    print(
-        "RK4 vs trapezoid final "
-        "position difference [km]:"
-    )
-    print(
-        position_difference[-1]
-    )
+    print("RK4 vs trapezoid final " "position difference [km]:")
+    print(position_difference[-1])
 
     print()
-    print(
-        "RK4 vs trapezoid maximum "
-        "velocity difference [km/s]:"
-    )
-    print(
-        np.max(velocity_difference)
-    )
+    print("RK4 vs trapezoid maximum " "velocity difference [km/s]:")
+    print(np.max(velocity_difference))
 
     # --------------------------------------------------------
     # Build AMIGO
@@ -378,182 +300,103 @@ def main():
     }
 
     print()
-    print(
-        "Solving AMIGO orbit benchmark..."
-    )
+    print("Solving AMIGO orbit benchmark...")
 
-    optimizer.optimize(
-        options
-    )
+    optimizer.optimize(options)
 
     print()
-    print(
-        "AMIGO solve complete."
-    )
+    print("AMIGO solve complete.")
 
     # --------------------------------------------------------
     # Extract AMIGO trajectory
     # --------------------------------------------------------
 
-    amigo_states = np.zeros(
-        (n, 6)
-    )
+    amigo_states = np.zeros((n, 6))
 
-    amigo_rates = np.zeros(
-        (n, 6)
-    )
+    amigo_rates = np.zeros((n, 6))
 
     for i in range(6):
-        amigo_states[:, i] = (
-            x[f"orbit.q[:, {i}]"]
-        )
+        amigo_states[:, i] = x[f"orbit.q[:, {i}]"]
 
-        amigo_rates[:, i] = (
-            x[f"orbit.qdot[:, {i}]"]
-        )
+        amigo_rates[:, i] = x[f"orbit.qdot[:, {i}]"]
 
     # --------------------------------------------------------
     # AMIGO vs Python trapezoid
     # --------------------------------------------------------
 
-    amigo_position_difference = (
-        np.linalg.norm(
-            amigo_states[:, 0:3]
-            - trapezoid_states[:, 0:3],
-            axis=1,
-        )
+    amigo_position_difference = np.linalg.norm(
+        amigo_states[:, 0:3] - trapezoid_states[:, 0:3],
+        axis=1,
     )
 
-    amigo_velocity_difference = (
-        np.linalg.norm(
-            amigo_states[:, 3:6]
-            - trapezoid_states[:, 3:6],
-            axis=1,
-        )
+    amigo_velocity_difference = np.linalg.norm(
+        amigo_states[:, 3:6] - trapezoid_states[:, 3:6],
+        axis=1,
     )
 
-    amigo_rate_difference = (
-        np.max(
-            np.abs(
-                amigo_rates
-                - trapezoid_rates
-            )
-        )
-    )
+    amigo_rate_difference = np.max(np.abs(amigo_rates - trapezoid_rates))
 
-    amigo_trap_residual = (
-        maximum_trapezoid_residual(
-            amigo_states,
-            amigo_rates,
-            dt,
-        )
+    amigo_trap_residual = maximum_trapezoid_residual(
+        amigo_states,
+        amigo_rates,
+        dt,
     )
 
     print()
     print("=" * 70)
-    print(
-        "AMIGO VS PYTHON TRAPEZOID"
-    )
+    print("AMIGO VS PYTHON TRAPEZOID")
     print("=" * 70)
 
     print()
-    print(
-        "Maximum position difference [km]:"
-    )
-    print(
-        np.max(
-            amigo_position_difference
-        )
-    )
+    print("Maximum position difference [km]:")
+    print(np.max(amigo_position_difference))
 
     print()
-    print(
-        "Maximum velocity difference [km/s]:"
-    )
-    print(
-        np.max(
-            amigo_velocity_difference
-        )
-    )
+    print("Maximum velocity difference [km/s]:")
+    print(np.max(amigo_velocity_difference))
 
     print()
-    print(
-        "Maximum state-rate difference:"
-    )
-    print(
-        amigo_rate_difference
-    )
+    print("Maximum state-rate difference:")
+    print(amigo_rate_difference)
 
     print()
-    print(
-        "AMIGO trapezoid residual:"
-    )
-    print(
-        amigo_trap_residual
-    )
+    print("AMIGO trapezoid residual:")
+    print(amigo_trap_residual)
 
     # --------------------------------------------------------
     # AMIGO vs original CADRE
     # --------------------------------------------------------
 
-    cadre_position_difference = (
-        np.linalg.norm(
-            amigo_states[:, 0:3]
-            - source_states[:, 0:3],
-            axis=1,
-        )
+    cadre_position_difference = np.linalg.norm(
+        amigo_states[:, 0:3] - source_states[:, 0:3],
+        axis=1,
     )
 
-    cadre_velocity_difference = (
-        np.linalg.norm(
-            amigo_states[:, 3:6]
-            - source_states[:, 3:6],
-            axis=1,
-        )
+    cadre_velocity_difference = np.linalg.norm(
+        amigo_states[:, 3:6] - source_states[:, 3:6],
+        axis=1,
     )
 
     print()
     print("=" * 70)
-    print(
-        "AMIGO VS ORIGINAL CADRE"
-    )
+    print("AMIGO VS ORIGINAL CADRE")
     print("=" * 70)
 
     print()
-    print(
-        "Maximum position difference [km]:"
-    )
-    print(
-        np.max(
-            cadre_position_difference
-        )
-    )
+    print("Maximum position difference [km]:")
+    print(np.max(cadre_position_difference))
 
     print()
-    print(
-        "Final position difference [km]:"
-    )
-    print(
-        cadre_position_difference[-1]
-    )
+    print("Final position difference [km]:")
+    print(cadre_position_difference[-1])
 
     print()
-    print(
-        "Maximum velocity difference [km/s]:"
-    )
-    print(
-        np.max(
-            cadre_velocity_difference
-        )
-    )
+    print("Maximum velocity difference [km/s]:")
+    print(np.max(cadre_velocity_difference))
 
     print()
-    print(
-        "Final velocity difference [km/s]:"
-    )
-    print(
-        cadre_velocity_difference[-1]
-    )
+    print("Final velocity difference [km/s]:")
+    print(cadre_velocity_difference[-1])
 
 
 if __name__ == "__main__":

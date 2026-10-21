@@ -59,18 +59,14 @@ class ModernMBI2D:
         BTB = B.T @ B
         BTP = B.T @ P_flat
 
-        print(
-            "Solving 2-D MBI spline coefficients..."
-        )
+        print("Solving 2-D MBI spline coefficients...")
 
         self.C = spla.spsolve(
             BTB,
             BTP,
         )
 
-        print(
-            "2-D MBI spline ready."
-        )
+        print("2-D MBI spline ready.")
 
     def evaluate_point(self, x):
         t0 = inverse_map_value(
@@ -110,16 +106,9 @@ class ModernMBI2D:
                 i = i00 + a
                 j = i01 + b
 
-                index = (
-                    i
-                    + self.ms[0] * j
-                )
+                index = i + self.ms[0] * j
 
-                value += (
-                    B0[a]
-                    * B1[b]
-                    * self.C[index]
-                )
+                value += B0[a] * B1[b] * self.C[index]
 
         return value
 
@@ -129,15 +118,9 @@ class ModernMBI2D:
             dtype=float,
         )
 
-        result = np.zeros(
-            x.shape[0]
-        )
+        result = np.zeros(x.shape[0])
 
         for i in range(x.shape[0]):
-            result[i] = (
-                self.evaluate_point(
-                    x[i, :]
-                )
-            )
+            result[i] = self.evaluate_point(x[i, :])
 
         return result

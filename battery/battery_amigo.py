@@ -11,7 +11,6 @@ from battery.battery_reference import (
     soc_rate,
 )
 
-
 sigma = 1e-10
 eta = 0.99
 Cp = 2900.0 * 0.001 * 3600.0

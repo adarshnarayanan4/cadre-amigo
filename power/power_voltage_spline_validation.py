@@ -35,6 +35,7 @@ def main():
     model = am.Model("cadre_optimize_pcomm")
     model.add_component("v", size, make_voltage_component(spline))
     model.set_data("v.coefficients", transformed.reshape(size, 90))
+
     for name, values in [
         ("temperature", source_T),
         ("current", source_I),
@@ -43,6 +44,7 @@ def main():
         ("voltage", voltage),
     ]:
         model.set_meta("value", f"v.{name}[:]", values)
+
     model._built = True  # Existing compiled class; never rewrite the live model.
     model.initialize(order_type=am.OrderingType.NATURAL)
     x = model.get_initial_point()
@@ -50,8 +52,10 @@ def main():
     model.eval_gradient(x, g, alpha=0)
     constraints = ["temperature_map", "current_map", "voltage_res"]
     value_error = max(float(np.max(np.abs(g[f"v.{name}[:]"]))) for name in constraints)
+
     for name in constraints:
         x[f"v.{name}[:]"] = rng.normal(size=size)
+
     model.eval_gradient(x, g, alpha=0)
 
     # Reference residuals and finite differences in every local primal variable.
@@ -67,6 +71,7 @@ def main():
 
     step = 1e-6
     gradient_error = 0.0
+
     for name in ["temperature", "current", "tT", "tI", "voltage"]:
         for node in range(size):
             key = f"v.{name}[{node}]"
@@ -83,6 +88,7 @@ def main():
             gradient_error = max(
                 gradient_error, abs(fd - float(g[key])) / max(1, abs(fd))
             )
+
     hessian = model.create_matrix()
     model.eval_hessian(x, hessian, alpha=0)
     rows, cols, _, rowp, column = hessian.get_nonzero_structure()
@@ -92,8 +98,10 @@ def main():
         copy=True,
     )
     direction = np.zeros(rows)
+
     for name in ["temperature", "current", "tT", "tI", "voltage"]:
         direction[model.get_indices(f"v.{name}[:]")] = rng.normal(size=size)
+
     original = x.get_vector().get_array().copy()
     x.get_vector().get_array()[:] = original + step * direction
     model.eval_gradient(x, g, alpha=0)

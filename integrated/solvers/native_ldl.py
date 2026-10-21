@@ -18,7 +18,7 @@ def temporal_kkt_ordering(model, nodes):
 
     for name, group in model.comp.items():
         # Spline-kernel aliases supply the actual last use of each control.
-        if name == "control_points":
+        if name.split(".")[-1] == "control_points":
             continue
 
         count = int(group.size)

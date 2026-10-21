@@ -50,6 +50,14 @@ def main():
         np.testing.assert_array_equal(duals[0], lower_duals)
         np.testing.assert_array_equal(duals[1], upper_duals)
 
+        # An old checkpoint without a case field belongs to case 0 only.
+        try:
+            load_checkpoint(optimizer, args, dict(signature, case_index=1))
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("A case-0 checkpoint was accepted for case 1")
+
         args.initial_barrier = 2e-5
         load_checkpoint(optimizer, args, signature)
 
@@ -91,6 +99,7 @@ def main():
 
     result = {
         "compatible_restore": True,
+        "cross_case_restore_rejected": True,
         "explicit_barrier_preserved": True,
         "design_release_supported": True,
         "incompatible_checkpoints_rejected": rejected,

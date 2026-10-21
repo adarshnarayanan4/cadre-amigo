@@ -13,7 +13,6 @@ from reaction_wheel.reaction_wheel_reference import (
     propagate_reaction_wheel_trapezoid,
 )
 
-
 V = 4.0
 a = 4.9e-4
 b = 4.5e2
@@ -66,23 +65,11 @@ class ReactionWheelDynamics(am.Component):
 
         wx = 3 * [None]
 
-        wx[0] = (
-            -T_RW[0] / J_RW
-            + w_B[2] * w_RW[1]
-            - w_B[1] * w_RW[2]
-        )
+        wx[0] = -T_RW[0] / J_RW + w_B[2] * w_RW[1] - w_B[1] * w_RW[2]
 
-        wx[1] = (
-            -T_RW[1] / J_RW
-            - w_B[2] * w_RW[0]
-            + w_B[0] * w_RW[2]
-        )
+        wx[1] = -T_RW[1] / J_RW - w_B[2] * w_RW[0] + w_B[0] * w_RW[2]
 
-        wx[2] = (
-            -T_RW[2] / J_RW
-            + w_B[1] * w_RW[0]
-            - w_B[0] * w_RW[1]
-        )
+        wx[2] = -T_RW[2] / J_RW + w_B[1] * w_RW[0] - w_B[0] * w_RW[1]
 
         res = 3 * [None]
 
@@ -118,11 +105,7 @@ class TrapezoidRule(am.Component):
         res = 3 * [None]
 
         for i in range(3):
-            res[i] = (
-                w1[i]
-                - w0[i]
-                - 0.5 * dt * (wdot0[i] + wdot1[i])
-            )
+            res[i] = w1[i] - w0[i] - 0.5 * dt * (wdot0[i] + wdot1[i])
 
         self.constraints["res"] = res
 
@@ -153,13 +136,8 @@ class InitialConditions(am.Component):
             w_RW[2] - w2,
         ]
 
-        self.objective["obj"] = (
-            1.0e-12
-            * (
-                w_RW[0] * w_RW[0]
-                + w_RW[1] * w_RW[1]
-                + w_RW[2] * w_RW[2]
-            )
+        self.objective["obj"] = 1.0e-12 * (
+            w_RW[0] * w_RW[0] + w_RW[1] * w_RW[1] + w_RW[2] * w_RW[2]
         )
 
 
@@ -191,11 +169,7 @@ class ReactionWheelPower(am.Component):
         res = 3 * [None]
 
         for i in range(3):
-            power = (
-                V
-                * (a * w_RW[i] + b * T_RW[i]) ** 2
-                + V * I0
-            )
+            power = V * (a * w_RW[i] + b * T_RW[i]) ** 2 + V * I0
 
             res[i] = P_RW[i] - power
 
@@ -268,13 +242,11 @@ def main():
     )
 
     # Python trapezoid reference
-    w_RW_trap, w_RW_dot_trap = (
-        propagate_reaction_wheel_trapezoid(
-            w_RW0,
-            w_B,
-            T_RW_reference,
-            dt,
-        )
+    w_RW_trap, w_RW_dot_trap = propagate_reaction_wheel_trapezoid(
+        w_RW0,
+        w_B,
+        T_RW_reference,
+        dt,
     )
 
     P_RW_trap = reaction_wheel_power(
@@ -299,11 +271,7 @@ def main():
 
         max_dynamics_residual = max(
             max_dynamics_residual,
-            np.max(
-                np.abs(
-                    rate - w_RW_dot_trap[:, k]
-                )
-            ),
+            np.max(np.abs(rate - w_RW_dot_trap[:, k])),
         )
 
     # Trapezoid residual
@@ -313,12 +281,7 @@ def main():
         residual = (
             w_RW_trap[:, k + 1]
             - w_RW_trap[:, k]
-            - 0.5
-            * dt
-            * (
-                w_RW_dot_trap[:, k]
-                + w_RW_dot_trap[:, k + 1]
-            )
+            - 0.5 * dt * (w_RW_dot_trap[:, k] + w_RW_dot_trap[:, k + 1])
         )
 
         max_trapezoid_residual = max(
@@ -548,29 +511,13 @@ def main():
     ).T
 
     # Differences
-    torque_difference = np.max(
-        np.abs(
-            T_RW_amigo - T_RW_reference
-        )
-    )
+    torque_difference = np.max(np.abs(T_RW_amigo - T_RW_reference))
 
-    wheel_speed_difference = np.max(
-        np.abs(
-            w_RW_amigo - w_RW_trap
-        )
-    )
+    wheel_speed_difference = np.max(np.abs(w_RW_amigo - w_RW_trap))
 
-    wheel_rate_difference = np.max(
-        np.abs(
-            w_RW_dot_amigo - w_RW_dot_trap
-        )
-    )
+    wheel_rate_difference = np.max(np.abs(w_RW_dot_amigo - w_RW_dot_trap))
 
-    power_difference = np.max(
-        np.abs(
-            P_RW_amigo - P_RW_trap
-        )
-    )
+    power_difference = np.max(np.abs(P_RW_amigo - P_RW_trap))
 
     # AMIGO dynamics residual
     max_amigo_dynamics_residual = 0.0
@@ -584,11 +531,7 @@ def main():
 
         max_amigo_dynamics_residual = max(
             max_amigo_dynamics_residual,
-            np.max(
-                np.abs(
-                    rate - w_RW_dot_amigo[:, k]
-                )
-            ),
+            np.max(np.abs(rate - w_RW_dot_amigo[:, k])),
         )
 
     # AMIGO trapezoid residual
@@ -598,12 +541,7 @@ def main():
         residual = (
             w_RW_amigo[:, k + 1]
             - w_RW_amigo[:, k]
-            - 0.5
-            * dt
-            * (
-                w_RW_dot_amigo[:, k]
-                + w_RW_dot_amigo[:, k + 1]
-            )
+            - 0.5 * dt * (w_RW_dot_amigo[:, k] + w_RW_dot_amigo[:, k + 1])
         )
 
         max_amigo_trapezoid_residual = max(
@@ -647,43 +585,19 @@ def main():
 
     print()
     print("Maximum wheel-speed difference [1/s]:")
-    print(
-        np.max(
-            np.abs(
-                w_RW_amigo - w_RW_source
-            )
-        )
-    )
+    print(np.max(np.abs(w_RW_amigo - w_RW_source)))
 
     print()
     print("Maximum power difference [W]:")
-    print(
-        np.max(
-            np.abs(
-                P_RW_amigo - P_RW_source
-            )
-        )
-    )
+    print(np.max(np.abs(P_RW_amigo - P_RW_source)))
 
     print()
     print("Python RK4 vs CADRE wheel-speed difference [1/s]:")
-    print(
-        np.max(
-            np.abs(
-                w_RW_rk4 - w_RW_source
-            )
-        )
-    )
+    print(np.max(np.abs(w_RW_rk4 - w_RW_source)))
 
     print()
     print("Python RK4 vs CADRE power difference [W]:")
-    print(
-        np.max(
-            np.abs(
-                P_RW_rk4 - P_RW_source
-            )
-        )
-    )
+    print(np.max(np.abs(P_RW_rk4 - P_RW_source)))
 
     print()
     print("AMIGO wheel-speed min / max [1/s]:")
