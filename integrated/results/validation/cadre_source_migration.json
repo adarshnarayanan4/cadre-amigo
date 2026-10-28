@@ -1,0 +1,158 @@
+{
+  "assets": {
+    "test/data1346.pkl": {
+      "identical_bytes": false,
+      "legacy_sha256": "b1c76b4daf98686e815973b84813a935b4ec0fe278373e1a22bdfa0c90061ce2",
+      "openmdao_sha256": "bafd7902ea1b4b9aae3e2680d02ecf0a738c3b4bde6d0216b9e536b291288ac1"
+    },
+    "data/Power/curve.dat": {
+      "identical_bytes": true,
+      "legacy_sha256": "264bacb41f808b0b0640179799ff2362213bd5aeb0a8163dd458761469761dcb",
+      "openmdao_sha256": "264bacb41f808b0b0640179799ff2362213bd5aeb0a8163dd458761469761dcb"
+    },
+    "data/Comm/Gain.txt": {
+      "identical_bytes": true,
+      "legacy_sha256": "1fa1c8f0a8bd58de96fa6309aedc3abe408a3794f5ef89a5bafab55262761100",
+      "openmdao_sha256": "1fa1c8f0a8bd58de96fa6309aedc3abe408a3794f5ef89a5bafab55262761100"
+    },
+    "data/Solar/Area10.txt": {
+      "identical_bytes": true,
+      "legacy_sha256": "7746b4bdf65dce50d69f8debe11316329329cb9e3724b3936e493b57b1c51e1a",
+      "openmdao_sha256": "7746b4bdf65dce50d69f8debe11316329329cb9e3724b3936e493b57b1c51e1a"
+    },
+    "data/Solar/Area_all.txt": {
+      "identical_bytes": true,
+      "legacy_sha256": "1e18ffff56e3ded4df56c80c561279a10a34cfbb0b264d28b54cca0deddb7ca9",
+      "openmdao_sha256": "1e18ffff56e3ded4df56c80c561279a10a34cfbb0b264d28b54cca0deddb7ca9"
+    },
+    "data/Launch/launch1.dat": {
+      "identical_bytes": true,
+      "legacy_sha256": "a5a9548a9c711a763100fe15646a205accdd75fbbf7bd3a46fd811967cfb8d74",
+      "openmdao_sha256": "a5a9548a9c711a763100fe15646a205accdd75fbbf7bd3a46fd811967cfb8d74"
+    }
+  },
+  "benchmark": {
+    "legacy_keys": 337,
+    "openmdao_keys": 337,
+    "only_legacy": [],
+    "only_openmdao": [],
+    "changed_fields": []
+  },
+  "orbit": {
+    "identical_methods": [
+      "Orbit_Dynamics.df_dx",
+      "Orbit_Dynamics.f_dot"
+    ],
+    "changed_methods": [
+      "Orbit_Dynamics.__init__",
+      "Orbit_Dynamics.df_dy",
+      "Orbit_Initial.compute"
+    ]
+  },
+  "attitude": {
+    "identical_methods": [],
+    "changed_methods": [
+      "Attitude_Angular.__init__",
+      "Attitude_AngularRates.__init__",
+      "Attitude_Attitude.__init__",
+      "Attitude_Roll.__init__",
+      "Attitude_RotationMtx.__init__",
+      "Attitude_RotationMtxRates.__init__",
+      "Attitude_Sideslip.__init__",
+      "Attitude_Torque.__init__"
+    ]
+  },
+  "sun": {
+    "identical_methods": [],
+    "changed_methods": [
+      "Sun_LOS.__init__",
+      "Sun_PositionBody.__init__",
+      "Sun_PositionECI.__init__",
+      "Sun_PositionSpherical.__init__"
+    ]
+  },
+  "solar": {
+    "identical_methods": [],
+    "changed_methods": [
+      "Solar_ExposedArea.__init__",
+      "Solar_ExposedArea.setx"
+    ]
+  },
+  "thermal_temperature": {
+    "identical_methods": [],
+    "changed_methods": [
+      "ThermalTemperature.__init__",
+      "ThermalTemperature.df_dx",
+      "ThermalTemperature.df_dy",
+      "ThermalTemperature.f_dot"
+    ]
+  },
+  "power": {
+    "identical_methods": [],
+    "changed_methods": [
+      "Power_CellVoltage.__init__",
+      "Power_CellVoltage.setx",
+      "Power_SolarPower.__init__",
+      "Power_Total.__init__"
+    ]
+  },
+  "battery": {
+    "identical_methods": [],
+    "changed_methods": [
+      "BatteryConstraints.__init__",
+      "BatteryPower.__init__",
+      "BatterySOC.__init__",
+      "BatterySOC.df_dx",
+      "BatterySOC.df_dy",
+      "BatterySOC.f_dot"
+    ]
+  },
+  "reactionwheel": {
+    "identical_methods": [
+      "ReactionWheel_Dynamics.df_dy",
+      "ReactionWheel_Dynamics.f_dot"
+    ],
+    "changed_methods": [
+      "ReactionWheel_Dynamics.__init__",
+      "ReactionWheel_Dynamics.df_dx",
+      "ReactionWheel_Motor.__init__",
+      "ReactionWheel_Power.__init__",
+      "ReactionWheel_Torque.__init__"
+    ]
+  },
+  "comm": {
+    "identical_methods": [
+      "Comm_DataDownloaded.df_dx",
+      "Comm_DataDownloaded.df_dy",
+      "Comm_DataDownloaded.f_dot"
+    ],
+    "changed_methods": [
+      "Comm_AntRotation.__init__",
+      "Comm_AntRotationMtx.__init__",
+      "Comm_BitRate.__init__",
+      "Comm_DataDownloaded.__init__",
+      "Comm_Distance.__init__",
+      "Comm_EarthsSpin.__init__",
+      "Comm_EarthsSpinMtx.__init__",
+      "Comm_GSposECI.__init__",
+      "Comm_GSposEarth.__init__",
+      "Comm_GainPattern.__init__",
+      "Comm_LOS.__init__",
+      "Comm_VectorAnt.__init__",
+      "Comm_VectorBody.__init__",
+      "Comm_VectorECI.__init__",
+      "Comm_VectorSpherical.__init__"
+    ]
+  },
+  "parameters": {
+    "identical_methods": [],
+    "changed_methods": [
+      "BsplineParameters.__init__"
+    ]
+  },
+  "legacy_repository": "https://github.com/OpenMDAO-Plugins/CADRE",
+  "legacy_revision": "a09cecb6e9977b6c50a8a62c59799fcacfa033c4",
+  "requested_repository": "https://github.com/OpenMDAO/CADRE",
+  "requested_revision": "05f008489e34a123637b213419fd980162ccd303",
+  "scope": "Data comparison and parsed method comparison; forward numerical checks are in cadre_source_validation.json"
+}

@@ -1,0 +1,100 @@
+{
+  "active_box_subproblems": {
+    "exhaustive_qp_comparisons": 20,
+    "largest_iterations": 7,
+    "large_cancellation_recovered_by_refactorization": true
+  },
+  "active_box_kkt_solve": {
+    "relative_linear_residual": 4.610547680820254e-12,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "spectral_active_box_kkt_solve": {
+    "relative_linear_residual": 1.5447168686248587e-11,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "spectral_modes": {
+    "positive_modes_preserved": true,
+    "negative_modes_corrected": true
+  },
+  "spectral_indefinite_solve": {
+    "relative_linear_residual": 4.522201288821657e-16,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "spectral_bound_aware_solve": {
+    "relative_linear_residual": 2.1604489239618293e-12,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "spectral_coupled_curvature": {
+    "shared_coupling_curvature_checked": true,
+    "consistent_design_shift": true,
+    "rounding_curvature_uses_small_shift": true,
+    "stronger_safeguard_refactors_same_kkt_system": true,
+    "positive_private_curvature_preserved": false
+  },
+  "positive_curvature": {
+    "relative_linear_residual": 6.9572327520333195e-16,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "indefinite_curvature": {
+    "relative_linear_residual": 4.1743396512199915e-16,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "multiplier_initialization": {
+    "relative_linear_residual": 2.2611006444108286e-16,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "design_step_limit": {
+    "relative_linear_residual": 1.3158425117392184e-15,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "design_step_limit_indefinite": {
+    "relative_linear_residual": 4.1120078491850575e-16,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "coupled_curvature": {
+    "shared_coupling_curvature_checked": true,
+    "consistent_design_shift": true,
+    "rounding_curvature_uses_small_shift": true,
+    "stronger_safeguard_refactors_same_kkt_system": true,
+    "positive_private_curvature_preserved": false
+  },
+  "original_recovery": {
+    "accurate_descent_step_recovered": true,
+    "negative_curvature_step_rejected": true
+  },
+  "selective_coupled_curvature": {
+    "shared_coupling_curvature_checked": true,
+    "consistent_design_shift": true,
+    "rounding_curvature_uses_small_shift": true,
+    "stronger_safeguard_refactors_same_kkt_system": true,
+    "positive_private_curvature_preserved": true
+  },
+  "selective_original_recovery": {
+    "accurate_descent_step_recovered": true,
+    "negative_curvature_step_rejected": true
+  },
+  "selective_parallel_solve": {
+    "relative_linear_residual": 7.652956027236651e-16,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "bound_aware_solve": {
+    "relative_linear_residual": 7.902456684563844e-13,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "bound_aware_indefinite_solve": {
+    "relative_linear_residual": 7.343717058016578e-12,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  }
+}

@@ -13,13 +13,6 @@ reference functions in this repository. Generating them does not run AMIGO.
 | Design controls | [B-spline weights and schedules](figures/parameters.png) |
 | Integrated optimization | [Saved cases and figures](../integrated/results/README.md) |
 
-All figures use [the shared style](style.py): a short title,
-labeled panels, units on every quantitative axis, legends outside the data,
-and a footer for conventions or important results. Time histories use hours.
-Multi-panel current plots share their scales and legend. Heatmaps label every
-panel and cell location, with the color scale shown alongside them.
-Optimization figures also identify validation status.
-
 Gray curves are saved CADRE outputs; dashed blue curves are Python
 reconstructions. Gold comparison curves show the effect of switching from RK4
 to trapezoidal integration. Error panels show differences that are too small to
@@ -40,7 +33,10 @@ pixi run --manifest-path ~/git/amigo/pixi.toml python -m visualizations \
   --problem orbit thermal battery --output /tmp/cadre-figures
 ```
 
-Set `CADRE_ROOT` if the external CADRE checkout is not at `../CADRE`.
+Use [OpenMDAO/CADRE](https://github.com/OpenMDAO/CADRE) at `../CADRE-OpenMDAO`
+relative to the repository root, or set `CADRE_ROOT` to that checkout. The old
+OpenMDAO-Plugins `src/CADRE` layout is rejected. See the
+[source audit](../integrated/docs/cadre_source.md).
 Figures are saved without opening windows. `figures/measurements.json` records
 the measured reference differences for the selected problems; generating a
 selection replaces that file with measurements for the selection.
@@ -159,5 +155,5 @@ the same cubic B-spline mapping.
 Source: [spline basis and parameter reconstruction](../parameters/parameters_reference.py).
 
 For optimization results, see the
-[integrated model guide](../integrated/README.md) and its saved trajectory and
+[joint optimization guide](../integrated/docs/joint_optimization.md) and its saved trajectory and
 convergence plots.

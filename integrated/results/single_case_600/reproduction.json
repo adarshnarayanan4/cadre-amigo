@@ -1,0 +1,33 @@
+{
+  "title": "Single Case 600 node optimization",
+  "command": [
+    "python",
+    "-m",
+    "integrated.cadre_joint",
+    "--optimize",
+    "--cases",
+    "0",
+    "--nodes",
+    "600",
+    "--control-points",
+    "120",
+    "--time-grid",
+    "full",
+    "--objective-scale",
+    "1",
+    "--initial-barrier",
+    "0.1",
+    "--initial-bound-push",
+    "1e-4",
+    "--full-space-trials",
+    "--max-iterations",
+    "300",
+    "--output",
+    "/tmp/cadre-case0-full"
+  ],
+  "fresh_run": true,
+  "amigo_revision": "af83ffb2024816ea5fe93f969e40ef819c15acad",
+  "reference_revision": "05f008489e34a123637b213419fd980162ccd303",
+  "timing_scope": "Solver phase only; excludes initial repairs, preparation, compilation, and independent replay. Runtime depends on hardware and concurrent work.",
+  "checkpoint_files": "Local only, ignored by Git. The published command does not need them."
+}

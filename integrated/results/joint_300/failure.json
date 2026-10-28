@@ -1,0 +1,4 @@
+{
+  "error_type": "RuntimeError",
+  "message": "Joint optimization failed: Solver convergence. Diagnostics saved to /Users/adarshnarayanan/git/cadre-amigo/integrated/results/joint_300"
+}

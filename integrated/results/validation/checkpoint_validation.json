@@ -1,5 +1,9 @@
 {
   "compatible_restore": true,
+  "joint_restore_verified": true,
+  "joint_signature_mismatches_rejected": 4,
+  "nonfinite_checkpoint_rejected": true,
+  "cross_case_restore_rejected": true,
   "explicit_barrier_preserved": true,
   "design_release_supported": true,
   "incompatible_checkpoints_rejected": 4

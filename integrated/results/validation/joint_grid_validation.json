@@ -1,0 +1,24 @@
+{
+  "active_box_step_option": true,
+  "bounded_control_transfer_and_window_checks": true,
+  "control_refitting_repairs_start": true,
+  "primal_barrier_repairs_cold_start": true,
+  "primal_barrier_restores_periodicity": true,
+  "parallel_case_configuration": true,
+  "cold_battery_repair_option": true,
+  "source_data_unchanged": true,
+  "controls_unchanged": true,
+  "duration_hours": 12,
+  "coarse_nodes": 150,
+  "contact_nodes": {
+    "0": 4,
+    "1": 8,
+    "2": 4,
+    "3": 5,
+    "4": 3,
+    "5": 6
+  },
+  "optimization_defaults_to_full_window": true,
+  "build_only_prefix_compatibility": true,
+  "invalid_commands_rejected": true
+}

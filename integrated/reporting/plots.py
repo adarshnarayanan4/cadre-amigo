@@ -469,7 +469,10 @@ def plot_saved_case(results, output):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "results", type=Path, nargs="?", default=Path("integrated/results/pcomm_solar")
+        "results",
+        type=Path,
+        nargs="?",
+        default=Path("integrated/results/pcomm_design_reference"),
     )
     parser.add_argument(
         "--output", type=Path, help="Save figures separately from the source result"

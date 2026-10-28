@@ -15,19 +15,23 @@ from integrated.model.design import SurfaceAllocation
 from integrated.model.shared_design import DesignAngles, SharedDesignPhysics
 from integrated.optimization.options import parse_args
 from integrated.reference.case import prepare_case
+from integrated.reference.benchmark import load_benchmark, resample_benchmark
 from integrated.reference.shared_angles import SharedAngleLookups
 
 
 class TotalDownloadedData(am.Component):
-    def __init__(self, count):
+    def __init__(self, count, scale=1.0):
         super().__init__()
         self.count = count
         self.name = f"TotalDownloadedData{count}"
+        self.add_constant("data_scale", value=float(scale))
         self.add_input("Data", shape=(count,))
         self.add_objective("obj")
 
     def compute(self):
-        self.objective["obj"] = -sum(self.inputs["Data"][i] for i in range(self.count))
+        self.objective["obj"] = -self.constants["data_scale"] * sum(
+            self.inputs["Data"][i] for i in range(self.count)
+        )
 
 
 @dataclass
@@ -35,6 +39,7 @@ class JointCadreModel:
     model: object
     cases: list
     physics: list
+    objective_scale: float = 1.0
 
     @property
     def design_variable_count(self):
@@ -103,11 +108,16 @@ def build_directory(directory):
         sys.path.remove(str(directory))
 
 
-def prepare_joint_cases(indices, nodes=1500, controls=300):
+def prepare_joint_cases(
+    indices, nodes=1500, controls=300, *, full_duration=False, repair=False
+):
     if not indices or len(set(indices)) != len(indices):
         raise ValueError("Choose distinct benchmark cases")
 
     cases, options = [], []
+    data = load_benchmark()
+    if full_duration:
+        data = resample_benchmark(data, nodes)
 
     for index in indices:
         args = parse_args(
@@ -122,9 +132,34 @@ def prepare_joint_cases(indices, nodes=1500, controls=300):
                 "--optimize-allocation",
             ]
         )
-        case = prepare_case(
-            args, repair_initialization=False, lookups_type=SharedAngleLookups
-        )
+        try:
+            case = prepare_case(
+                args,
+                repair_initialization=repair,
+                lookups_type=SharedAngleLookups,
+                data_override=data,
+                bounded_controls=True,
+                current_margin=1e-5,
+                maximum_power_start=repair,
+                allow_unrepaired_baseline=True,
+            )
+        except RuntimeError as error:
+            if not repair or "repair" not in str(error).lower():
+                raise
+            print(
+                f"Case {index}: power-only seed repair unavailable; using an unrepaired reference. {error}",
+                flush=True,
+            )
+            case = prepare_case(
+                args,
+                repair_initialization=False,
+                lookups_type=SharedAngleLookups,
+                data_override=data,
+                bounded_controls=True,
+                current_margin=1e-5,
+                maximum_power_start=False,
+                allow_unrepaired_baseline=True,
+            )
         case.design_external = SharedDesignPhysics(case.lookups)
         cases.append(case)
         options.append(args)
@@ -132,7 +167,7 @@ def prepare_joint_cases(indices, nodes=1500, controls=300):
     return cases, options
 
 
-def assemble_joint_model(cases, options):
+def assemble_joint_model(cases, options, objective_scale=1.0):
     if not cases or len(cases) != len(options):
         raise ValueError("Supply one option set for each case")
 
@@ -155,7 +190,9 @@ def assemble_joint_model(cases, options):
     model = am.Model("cadre_joint")
     model.add_component("shared_surface", 1, SurfaceAllocation())
     model.add_component("shared_angles", 1, DesignAngles())
-    model.add_component("objective", 1, TotalDownloadedData(len(cases)))
+    model.add_component(
+        "objective", 1, TotalDownloadedData(len(cases), objective_scale)
+    )
     shared = cases[0]
 
     for name, value, lower, upper in [
@@ -208,4 +245,4 @@ def assemble_joint_model(cases, options):
         case.design_external.bind(model, prefix + ".")
         physics.append(case.design_external)
 
-    return JointCadreModel(model, cases, physics)
+    return JointCadreModel(model, cases, physics, objective_scale)

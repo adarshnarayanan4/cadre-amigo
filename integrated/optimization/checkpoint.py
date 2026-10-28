@@ -11,6 +11,21 @@ from integrated.reporting.console import print_heading, print_status
 from integrated.solvers.evaluator import ConsistentEvaluator
 
 
+def project_into_bounds(values, lower, upper, push):
+    """Project finite bounds using the same relative margin on cold and warm starts."""
+    width = upper - lower
+    lower_target = np.full(values.shape, -np.inf)
+    upper_target = np.full(values.shape, np.inf)
+    finite_lower, finite_upper = np.isfinite(lower), np.isfinite(upper)
+    lower_target[finite_lower] = lower[finite_lower] + push * np.minimum(
+        np.maximum(1, np.abs(lower[finite_lower])), width[finite_lower]
+    )
+    upper_target[finite_upper] = upper[finite_upper] - push * np.minimum(
+        np.maximum(1, np.abs(upper[finite_upper])), width[finite_upper]
+    )
+    return np.clip(values, lower_target, upper_target)
+
+
 def load_checkpoint(optimizer, args, checkpoint_signature):
     """Restore a compatible point and retain saved barrier/bound multipliers."""
     warm_bound_duals = None
@@ -46,15 +61,28 @@ def load_checkpoint(optimizer, args, checkpoint_signature):
 
             if saved["solution"].shape != initial.get_array().shape:
                 raise ValueError("Warm-start vector shape does not match this model")
+            if not np.all(np.isfinite(saved["solution"])):
+                raise ValueError("Warm-start solution contains nonfinite values")
 
             initial.get_array()[:] = saved["solution"]
             initial.copy_host_to_device()
 
             if warm_same_problem and "zl" in saved and "zu" in saved:
                 warm_bound_duals = (saved["zl"].copy(), saved["zu"].copy())
+                if any(
+                    not np.all(np.isfinite(values)) or np.any(values < 0)
+                    for values in warm_bound_duals
+                ):
+                    raise ValueError(
+                        "Warm-start bound multipliers must be finite and nonnegative"
+                    )
 
             if args.initial_barrier is None and "barrier_param" in saved:
                 args.initial_barrier = float(saved["barrier_param"])
+                if not np.isfinite(args.initial_barrier) or args.initial_barrier <= 0:
+                    raise ValueError(
+                        "Warm-start barrier parameter must be positive and finite"
+                    )
 
         print_heading("WARM-START CHECKPOINT")
         print(f"  {args.warm_start}\n", flush=True)
@@ -126,27 +154,9 @@ class CheckpointManager:
 
                 upper = optimizer.upper.get_array()[indices]
 
-                width = upper - lower
-                push = args.warm_start_push
-
-                values = point.get_array()[indices]
-
-                finite_lower, finite_upper = np.isfinite(lower), np.isfinite(upper)
-                lower_target = np.full(values.shape, -np.inf)
-                upper_target = np.full(values.shape, np.inf)
-
-                lower_target[finite_lower] = lower[finite_lower] + np.minimum(
-                    push * np.maximum(1, np.abs(lower[finite_lower])),
-                    push * width[finite_lower],
+                point.get_array()[indices] = project_into_bounds(
+                    point.get_array()[indices], lower, upper, args.warm_start_push
                 )
-
-                upper_target[finite_upper] = upper[finite_upper] - np.minimum(
-                    push * np.maximum(1, np.abs(upper[finite_upper])),
-                    push * width[finite_upper],
-                )
-
-                values = np.clip(values, lower_target, upper_target)
-                point.get_array()[indices] = values
                 point.copy_host_to_device()
 
             point.copy_device_to_host()

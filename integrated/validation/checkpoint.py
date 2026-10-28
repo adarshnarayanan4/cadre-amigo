@@ -97,8 +97,54 @@ def main():
 
         assert rejected == 4
 
+        joint_signature = {
+            "formulation": "joint-cadre-v1",
+            "cases": [0, 1, 2, 3, 4, 5],
+            "nodes": 150,
+            "controls": 30,
+            "time_grid": "full",
+            "model_source_sha256": "tested-model",
+            "cadre_source": {"revision": "tested-reference"},
+        }
+        np.savez(
+            checkpoint,
+            signature=json.dumps(joint_signature),
+            solution=solution,
+            zl=lower_duals,
+            zu=upper_duals,
+            barrier_param=1e-7,
+        )
+        same, duals = load_checkpoint(optimizer, args, joint_signature)
+        assert same and duals is not None
+        joint_rejected = 0
+        for invalid in (
+            dict(joint_signature, cases=[1, 0, 2, 3, 4, 5]),
+            dict(joint_signature, time_grid="prefix"),
+            dict(joint_signature, model_source_sha256="changed-model"),
+            dict(joint_signature, cadre_source={"revision": "other-reference"}),
+        ):
+            try:
+                load_checkpoint(optimizer, args, invalid)
+            except ValueError:
+                joint_rejected += 1
+        assert joint_rejected == 4
+        np.savez(
+            checkpoint,
+            signature=json.dumps(joint_signature),
+            solution=np.full(4, np.nan),
+        )
+        try:
+            load_checkpoint(optimizer, args, joint_signature)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Nonfinite checkpoint was accepted")
+
     result = {
         "compatible_restore": True,
+        "joint_restore_verified": True,
+        "joint_signature_mismatches_rejected": joint_rejected,
+        "nonfinite_checkpoint_rejected": True,
         "cross_case_restore_rejected": True,
         "explicit_barrier_preserved": True,
         "design_release_supported": True,

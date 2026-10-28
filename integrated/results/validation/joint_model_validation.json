@@ -1,4 +1,11 @@
 {
+  "cadre_source": {
+    "repository": "https://github.com/OpenMDAO/CADRE",
+    "reference_revision": "05f008489e34a123637b213419fd980162ccd303",
+    "checkout_revision": "05f008489e34a123637b213419fd980162ccd303",
+    "reference_files_verified": true,
+    "benchmark_sha256": "bafd7902ea1b4b9aae3e2680d02ecf0a738c3b4bde6d0216b9e536b291288ac1"
+  },
   "cases": [
     0,
     1,
@@ -8,6 +15,7 @@
     5
   ],
   "design_variables": 428,
+  "objective_scale": 0.001,
   "shared_design_variables": 86,
   "shared_aliases_verified": true,
   "design_and_battery_bounds_verified": true,
@@ -17,5 +25,13 @@
   "independent_initial_replay_max_error": 2.4442670110147446e-12,
   "assembled_hessian_direction_relative_error": 3.8252864178026795e-13,
   "assembled_hessian_asymmetry": 1.1102230246251565e-16,
+  "joint_kkt_relative_residual": 4.839819091025429e-14,
+  "selective_joint_kkt_relative_residual": 9.212743363456467e-14,
+  "state_penalty_kkt_relative_residual": 9.212616252487785e-14,
+  "spectral_kkt_relative_residual": 2.0456090136665866e-14,
+  "active_box_kkt_relative_residual": 1.2738276408655674e-10,
+  "active_box_largest_set": 318,
+  "cached_bound_response_relative_error": 2.1527918336872176e-15,
+  "parallel_case_workers_checked": 2,
   "optimization_run": false
 }

@@ -4,6 +4,7 @@ import json
 
 import numpy as np
 
+from cadre_paths import source_provenance
 from battery.battery_reference import battery_current, propagate_soc_trapezoid
 from communication.communication_amigo import propagate_data_trapezoid
 from communication.communication_data_validation import communication_bit_rate
@@ -237,6 +238,7 @@ def validate_and_save_results(case, args, result):
     )
 
     summary = {
+        "cadre_source": source_provenance(),
         "case_index": case.case_index,
         "validated": validated,
         "converged": bool(opt_data.get("converged", False)),

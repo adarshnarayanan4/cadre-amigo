@@ -28,7 +28,15 @@ def feasibility_metrics(state, initial_soc):
 
 
 def repair_baseline(
-    basis, target_cp, initial_soc, dt, fixed_power, replay, *, interior=False
+    basis,
+    target_cp,
+    initial_soc,
+    dt,
+    fixed_power,
+    replay,
+    *,
+    interior=False,
+    allow_partial=False,
 ):
     """Find a nearby feasible schedule by successive frozen-voltage LPs.
 
@@ -52,6 +60,8 @@ def repair_baseline(
     distance_rhs = np.concatenate([target_cp, -target_cp])
 
     print_repair_header(interior)
+    best = None
+    best_error = np.inf
 
     for iteration in range(30):
         state = replay(cp)
@@ -96,12 +106,18 @@ def repair_baseline(
         )
 
         if not result.success:
+            if allow_partial and best is not None:
+                return best
             raise RuntimeError(f"Feasible-baseline repair failed: {result.message}")
 
         cp = result.x[:m]
         state = replay(cp)
 
         metrics = feasibility_metrics(state, initial_soc)
+        error = max(abs(metrics["periodicity_error"]), metrics["inequality_violation"])
+        if error < best_error:
+            best_error = error
+            best = (cp.copy(), state, metrics)
 
         print_repair_iteration(iteration + 1, metrics)
 
@@ -111,4 +127,10 @@ def repair_baseline(
         ):
             return cp, state, metrics
 
+    if allow_partial and best is not None:
+        print(
+            f"Retaining the best initialization repair; residual {best_error:.3e}. This is not a validated baseline.",
+            flush=True,
+        )
+        return best
     raise RuntimeError("Feasible-baseline repair did not converge to SOC periodicity")

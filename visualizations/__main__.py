@@ -4,7 +4,9 @@ import argparse
 import json
 from pathlib import Path
 
-from visualizations.common import configure_style, load_case
+from cadre_paths import source_provenance
+from visualizations.common import load_case
+from visualizations.style import configure_style
 from visualizations.dynamics import orbit, attitude, reaction_wheel
 from visualizations.environment import sun, solar, thermal
 from visualizations.operations import power, battery, communication, parameters
@@ -40,6 +42,7 @@ def main(argv=None):
     case = load_case()
     args.output.mkdir(parents=True, exist_ok=True)
     measurements = {
+        "cadre_source": source_provenance(),
         "source": "Original CADRE test/data1346.pkl, case 0",
         "nodes": case.n,
         "duration_hours": float(case.hours[-1]),

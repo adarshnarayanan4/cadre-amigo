@@ -1,4 +1,4 @@
-"""Compile a small joint model and check assembly; never optimize or factor KKT."""
+"""Check joint assembly, derivatives, and a consistent KKT solve without optimizing."""
 
 import argparse
 import json
@@ -8,12 +8,15 @@ import amigo as am
 import numpy as np
 from scipy.sparse import csr_matrix
 
+from cadre_paths import source_provenance
 from integrated.model.joint import (
     assemble_joint_model,
     build_directory,
     prepare_joint_cases,
 )
 from integrated.solvers.native_ldl import temporal_kkt_ordering
+from integrated.solvers.joint import BoxStepBounds, JointKKTSolver, joint_partitions
+from integrated.validation.helpers import Matrix, Vector
 
 
 def check_joint(joint):
@@ -88,11 +91,13 @@ def check_joint(joint):
     values[duals] = 0
     model.problem.update(vector)
     objective = model.problem.lagrangian(1.0, vector)
-    expected = -len(joint.cases) * (len(joint.cases) + 1) / 2
+    expected = -len(joint.cases) * (len(joint.cases) + 1) / 2 * joint.objective_scale
     assert abs(objective - expected) < 1e-12, (objective, expected)
     model.eval_gradient(state, gradient)
     np.testing.assert_allclose(
-        gradient.get_vector().get_array()[final_data], -1, atol=1e-12
+        gradient.get_vector().get_array()[final_data],
+        -joint.objective_scale,
+        atol=1e-12,
     )
     assert len(set(periodicity)) == len(joint.cases)
     np.testing.assert_allclose(
@@ -153,9 +158,105 @@ def check_joint(joint):
     assert np.all(np.isfinite(hessian.data))
     assert error < 2e-6, error
     assert asymmetry < 1e-8, asymmetry
+    partitions, shared_design = joint_partitions(joint)
+    solver = JointKKTSolver(
+        partitions,
+        shared_design,
+        model.problem.get_primal_indices(),
+        duals,
+        joint.hessian_correction,
+    )
+    diagonal = np.zeros(n)
+    diagonal[model.problem.get_primal_indices()] = 0.7
+    solver.factor(Matrix(native), Vector(diagonal))
+    # Use a consistent perturbation of this physical KKT system. Arbitrary
+    # equality rows at a short contact-free window can require 1e13-sized
+    # multipliers even with a direct pivoted solve.
+    known_step = rng.normal(size=n)
+    rhs = solver.target @ known_step
+    solution = Vector(np.zeros(n))
+    solver.solve(Vector(rhs), solution)
+    selective = JointKKTSolver(
+        partitions,
+        shared_design,
+        model.problem.get_primal_indices(),
+        duals,
+        joint.hessian_correction,
+        selective_curvature=True,
+        case_workers=2,
+    )
+    selective.factor(Matrix(native), Vector(diagonal))
+    selective_rhs = selective.target @ known_step
+    selective.solve(Vector(selective_rhs), solution)
+    state_penalty = np.zeros(n)
+    state_penalty[shared_design] = 0.2
+    for case in joint.cases:
+        for name, weight in [("battery.SOC[:]", 100), ("battery.I_bat[:]", 0.5)]:
+            ids = model.get_indices(f"case{case.case_index}.{name}")
+            state_penalty[ids[len(ids) // 2]] = weight
+    selective.refactor_limited_blocks(state_penalty)
+    selective.record_step_shift(1.0, state_penalty)
+    selective_rhs = selective.target @ known_step
+    selective.solve(Vector(selective_rhs), solution)
+    state_penalty_residual = float(
+        np.linalg.norm(selective.target @ solution.get_array() - selective_rhs, np.inf)
+        / max(1, np.linalg.norm(selective_rhs, np.inf))
+    )
+    assert state_penalty_residual < 1e-7
+    spectral = JointKKTSolver(
+        partitions,
+        shared_design,
+        model.problem.get_primal_indices(),
+        duals,
+        joint.hessian_correction,
+        spectral_curvature=True,
+    )
+    spectral.factor(Matrix(native), Vector(diagonal))
+    spectral_rhs = spectral.target @ known_step
+    spectral.solve(Vector(spectral_rhs), solution)
+    primal = np.asarray(model.problem.get_primal_indices())
+    bounded = primal[np.isfinite(lower[primal]) | np.isfinite(upper[primal])]
+    independent = np.concatenate(
+        [part.controls for part in partitions] + [shared_design]
+    )
+    box = JointKKTSolver(
+        partitions,
+        shared_design,
+        primal,
+        duals,
+        joint.hessian_correction,
+        spectral_curvature=True,
+        box_qp=True,
+        limited_indices=independent,
+        step_limits=0.1 * (upper[independent] - lower[independent]),
+        step_bounds=BoxStepBounds(
+            bounded,
+            lower[bounded],
+            upper[bounded],
+            0.1 * (upper[bounded] - lower[bounded]),
+            lambda: values,
+        ),
+    )
+    box.factor(Matrix(native), Vector(diagonal))
+    response_error = 0.0
+    for position in np.linspace(0, len(bounded) - 1, 12, dtype=int):
+        probe = np.zeros(n)
+        probe[bounded[position]] = 1
+        original_response = box._solve(probe)[bounded]
+        cached_response = box.bound_inverse_response(position)
+        difference = np.max(abs(original_response - cached_response)) / max(
+            1, np.max(abs(original_response))
+        )
+        response_error = max(response_error, float(difference))
+    assert response_error < 1e-7
+    box_rhs = rng.normal(size=n)
+    box_rhs[duals] = 0
+    box.solve(Vector(box_rhs), solution)
     return {
+        "cadre_source": source_provenance(),
         "cases": [case.case_index for case in joint.cases],
         "design_variables": joint.design_variable_count,
+        "objective_scale": joint.objective_scale,
         "shared_design_variables": 86,
         "shared_aliases_verified": True,
         "design_and_battery_bounds_verified": True,
@@ -165,6 +266,14 @@ def check_joint(joint):
         "independent_initial_replay_max_error": float(replay_error),
         "assembled_hessian_direction_relative_error": float(error),
         "assembled_hessian_asymmetry": float(asymmetry),
+        "joint_kkt_relative_residual": solver.max_linear_residual,
+        "selective_joint_kkt_relative_residual": selective.max_linear_residual,
+        "state_penalty_kkt_relative_residual": state_penalty_residual,
+        "spectral_kkt_relative_residual": spectral.max_linear_residual,
+        "active_box_kkt_relative_residual": box.max_linear_residual,
+        "active_box_largest_set": box.largest_active_set,
+        "cached_bound_response_relative_error": response_error,
+        "parallel_case_workers_checked": selective.case_workers,
         "optimization_run": False,
     }
 
@@ -186,7 +295,7 @@ def main(argv=None):
     )
     args = parser.parse_args(argv)
     cases, options = prepare_joint_cases(list(range(6)), nodes=8, controls=4)
-    joint = assemble_joint_model(cases, options)
+    joint = assemble_joint_model(cases, options, objective_scale=1e-3)
 
     if args.reuse_build:
         with build_directory(args.build_dir):

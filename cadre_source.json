@@ -1,0 +1,29 @@
+{
+  "repository": "https://github.com/OpenMDAO/CADRE",
+  "revision": "05f008489e34a123637b213419fd980162ccd303",
+  "sha256": {
+    "CADRE/CADRE_group.py": "4331132b404f166bac3fe9854056dca45cb51d0620f58bcbffdda98f1e091c91",
+    "CADRE/CADRE_mdp.py": "ea5d21a427be7dfeb10fb7fc5f0b70c03f0f257842174adea3b64ab3c4abb4f3",
+    "CADRE/__init__.py": "f9c1cee683873ee042965e0da1ed5f2158db30884afddd6068925c3e56d296de",
+    "CADRE/attitude.py": "5f66ed4e653c97ad04dad7f644a235aabf4099e206aebd178476e07d62516d5b",
+    "CADRE/battery.py": "0e44916143743e90971fe4aad3a5ada3acb1382ae8783eb03959e38cc21c0cdc",
+    "CADRE/comm.py": "fa4101f47c7558f24e962c7a3472e9a000004d4bb73d69c50d247bf341c5c228",
+    "CADRE/explicit.py": "76234003324d8ecc62e7d92a4e257e6260873d11e74cac04cece32a599daca4e",
+    "CADRE/kinematics.py": "99bb7566182bb5156d6e9fd5a4328ca61a6deadf6eba526a6aa44bd551896d7d",
+    "CADRE/orbit.py": "973d146b03820ff38c9cf0010bc303496448e49fc123d5dadff3a774b8b2e06d",
+    "CADRE/parameters.py": "b4098f5e61f45f54af4a4d7283d855cf5c8bad2fe256c65233468f51b9761dca",
+    "CADRE/power.py": "79de4a274ca0a1fd8c63d9451758c213ec62b6e976ec11de0c5e6d9ec9bc5961",
+    "CADRE/reactionwheel.py": "b411e667e067b9927b4f588dea802485da0198c56c472cbdf0cd2f131187d990",
+    "CADRE/rk4.py": "d9c380309311e7b507131570e0c9cecbe2ba4414fafb6f868bb4d0fc29eb1525",
+    "CADRE/solar.py": "72ab20e0b01609fad83def0455a266c1ba6441b672134ac90e26de02e39b8a5d",
+    "CADRE/sun.py": "236cc97a58548ca722dfae3ac03913953523cf58ebc4a53392398fbcb79392a6",
+    "CADRE/thermal_temperature.py": "01063f48e02ca0856f1878fa2fc81892c72397abff9a9f318d2e40358631d055",
+    "examples/mdp.py": "356bdad9ca1f8687ba01608e0aa790157562a41c06b74ede9c7ee44da650d694",
+    "CADRE/test/data1346.pkl": "bafd7902ea1b4b9aae3e2680d02ecf0a738c3b4bde6d0216b9e536b291288ac1",
+    "CADRE/data/Power/curve.dat": "264bacb41f808b0b0640179799ff2362213bd5aeb0a8163dd458761469761dcb",
+    "CADRE/data/Comm/Gain.txt": "1fa1c8f0a8bd58de96fa6309aedc3abe408a3794f5ef89a5bafab55262761100",
+    "CADRE/data/Solar/Area10.txt": "7746b4bdf65dce50d69f8debe11316329329cb9e3724b3936e493b57b1c51e1a",
+    "CADRE/data/Solar/Area_all.txt": "1e18ffff56e3ded4df56c80c561279a10a34cfbb0b264d28b54cca0deddb7ca9",
+    "CADRE/data/Launch/launch1.dat": "a5a9548a9c711a763100fe15646a205accdd75fbbf7bd3a46fd811967cfb8d74"
+  }
+}

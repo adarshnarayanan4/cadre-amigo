@@ -1,0 +1,7 @@
+{
+  "bounded_solar_controls": true,
+  "zero_eclipse_seed_current": true,
+  "positive_daylight_power": true,
+  "small_interior_currents_preserved": true,
+  "failed_power_seed_uses_reference_currents": true
+}

@@ -1,4 +1,11 @@
 {
+  "cadre_source": {
+    "repository": "https://github.com/OpenMDAO/CADRE",
+    "reference_revision": "05f008489e34a123637b213419fd980162ccd303",
+    "checkout_revision": "05f008489e34a123637b213419fd980162ccd303",
+    "reference_files_verified": true,
+    "benchmark_sha256": "bafd7902ea1b4b9aae3e2680d02ecf0a738c3b4bde6d0216b9e536b291288ac1"
+  },
   "0": {
     "jacobian_relative_error": 1.5170152861254061e-10,
     "hessian_relative_error": 5.081332261057241e-10,

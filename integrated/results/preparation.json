@@ -1,6 +1,13 @@
 {
   "scope": "Input and reference checks only; no baseline repair, compilation, KKT factorization, or optimization",
-  "source_sha256": "b1c76b4daf98686e815973b84813a935b4ec0fe278373e1a22bdfa0c90061ce2",
+  "cadre_source": {
+    "repository": "https://github.com/OpenMDAO/CADRE",
+    "reference_revision": "05f008489e34a123637b213419fd980162ccd303",
+    "checkout_revision": "05f008489e34a123637b213419fd980162ccd303",
+    "reference_files_verified": true,
+    "benchmark_sha256": "bafd7902ea1b4b9aae3e2680d02ecf0a738c3b4bde6d0216b9e536b291288ac1"
+  },
+  "source_sha256": "bafd7902ea1b4b9aae3e2680d02ecf0a738c3b4bde6d0216b9e536b291288ac1",
   "environment": {
     "python": "3.13.15",
     "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
@@ -138,11 +145,13 @@
     }
   ],
   "joint_model_implemented": true,
+  "joint_optimizer_implemented": true,
   "joint_optimization_validated": false,
   "planned_joint_design_variables": 25292,
   "remaining_model_work": [
+    "Coarse-grid convergence, including bounded SOC periodicity restoration",
     "Server-scale compilation and numerical profiling",
-    "Joint optimizer/checkpoint/reporting driver integration",
+    "Full-resolution joint solver profiling",
     "Full-resolution optimization convergence and independent validation"
   ]
 }

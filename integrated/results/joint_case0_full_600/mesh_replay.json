@@ -1,0 +1,29 @@
+{
+  "cadre_source": {
+    "repository": "https://github.com/OpenMDAO/CADRE",
+    "reference_revision": "05f008489e34a123637b213419fd980162ccd303",
+    "checkout_revision": "05f008489e34a123637b213419fd980162ccd303",
+    "reference_files_verified": true,
+    "benchmark_sha256": "bafd7902ea1b4b9aae3e2680d02ecf0a738c3b4bde6d0216b9e536b291288ac1"
+  },
+  "case_index": 0,
+  "coarse_nodes": 600,
+  "replay_nodes": 1500,
+  "controls_per_profile": 120,
+  "duration_hours": 12.0,
+  "fine_optimization_run": false,
+  "controls_held_fixed": true,
+  "finite_replay": true,
+  "coarse_downloaded_data": 4605.758184217643,
+  "replay_downloaded_data": 4622.610149620297,
+  "downloaded_data_difference_percent": 0.36588906166199475,
+  "battery_feasibility": {
+    "SOC_min": 0.1996810924155632,
+    "SOC_max": 1.0006170911578938,
+    "current_min_A": -10.086122898648064,
+    "current_max_A": 0.8670310413381329,
+    "periodicity_error": 0.0001954995519082292,
+    "inequality_violation": 0.086122898648064
+  },
+  "replay_battery_feasible": false
+}

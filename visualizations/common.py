@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from cadre_paths import cadre_path
-from visualizations.style import BLUE, TEAL, GOLD, GRAY, configure_style, save_figure
+from visualizations.style import BLUE, TEAL, GOLD, GRAY, save_figure
 
 AXIS_COLORS = [BLUE, TEAL, GOLD]
 

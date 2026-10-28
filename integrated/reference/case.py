@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.optimize import lsq_linear
 
 from battery.battery_reference import battery_current, propagate_soc_trapezoid, soc_rate
 from integrated.reference.benchmark import load_benchmark, select_case
@@ -92,7 +93,16 @@ def extract_vector(x, variable_name, n, width):
     return values
 
 
-def prepare_case(args, repair_initialization=True, lookups_type=DesignLookups):
+def prepare_case(
+    args,
+    repair_initialization=True,
+    lookups_type=DesignLookups,
+    data_override=None,
+    bounded_controls=False,
+    current_margin=0.005,
+    maximum_power_start=False,
+    allow_unrepaired_baseline=False,
+):
     """Prepare a case; disable repair for assembly checks without any LP solves.
 
     Unrepaired initialization can be infeasible and permits contact-free short
@@ -106,7 +116,7 @@ def prepare_case(args, repair_initialization=True, lookups_type=DesignLookups):
 
     start_geometry = tT_guess = tI_guess = None
 
-    data = load_benchmark()
+    data = load_benchmark() if data_override is None else data_override
     selected = select_case(data, args.case_index)
 
     # Preserve the original time resolution and use a contiguous prefix.
@@ -137,7 +147,7 @@ def prepare_case(args, repair_initialization=True, lookups_type=DesignLookups):
 
     print_values(
         [
-            ("Original CADRE nodes", f"{full_n:,}"),
+            ("Original CADRE nodes", f"{int(data.get('source_time_nodes', full_n)):,}"),
             ("Benchmark case", args.case_index),
             ("Optimization nodes", f"{n:,}"),
             ("Time intervals", f"{num_intervals:,}"),
@@ -184,11 +194,23 @@ def prepare_case(args, repair_initialization=True, lookups_type=DesignLookups):
         CP_gamma = np.asarray(selected["CP_gamma"]).copy()
         CP_Isetpt = np.asarray(selected["CP_Isetpt"]).copy()
     else:
-        CP_P_comm = np.linalg.lstsq(B, P_comm_target, rcond=None)[0]
-
-        CP_gamma = np.linalg.lstsq(B, gamma_target, rcond=None)[0]
-
-        CP_Isetpt = np.linalg.lstsq(B, Isetpt_target.T, rcond=None)[0].T
+        if bounded_controls:
+            CP_P_comm = lsq_linear(B, P_comm_target, bounds=(0, 25)).x
+            CP_gamma = lsq_linear(B, gamma_target, bounds=(0, np.pi / 2)).x
+            # Small current errors during eclipse cause large power losses.
+            weights = np.where(LOS < 0.01, 30.0, 1.0)
+            CP_Isetpt = np.array(
+                [
+                    lsq_linear(
+                        B * weights[:, None], target * weights, bounds=(0, 0.4)
+                    ).x
+                    for target in Isetpt_target
+                ]
+            )
+        else:
+            CP_P_comm = np.linalg.lstsq(B, P_comm_target, rcond=None)[0]
+            CP_gamma = np.linalg.lstsq(B, gamma_target, rcond=None)[0]
+            CP_Isetpt = np.linalg.lstsq(B, Isetpt_target.T, rcond=None)[0].T
 
     print_values(
         [
@@ -263,8 +285,20 @@ def prepare_case(args, repair_initialization=True, lookups_type=DesignLookups):
             temperature_baseline, Isetpt_baseline, exposed_area, LOS
         )
 
+    current_seed = CP_Isetpt
+    if maximum_power_start and free_solar:
+        from integrated.reference.initialization import maximum_power_controls
+
+        seed_temperature, _ = propagate_temperature_trapezoid(
+            T0, area_start, LOS, P_comm_baseline, cellInstd_start, dt
+        )
+        current_seed = maximum_power_controls(
+            B, seed_temperature, area_start, LOS, voltage_spline
+        )
     CP_Isetpt_start = (
-        np.clip(CP_Isetpt, 0.005, 0.395) if free_solar else CP_Isetpt.copy()
+        np.clip(current_seed, current_margin, 0.4 - current_margin)
+        if free_solar
+        else CP_Isetpt.copy()
     )
     Isetpt_start = CP_Isetpt_start @ B.T
 
@@ -337,24 +371,36 @@ def prepare_case(args, repair_initialization=True, lookups_type=DesignLookups):
 
     print_feasibility("ORIGINAL BENCHMARK FEASIBILITY", original_metrics)
 
+    CP_P_comm_baseline = CP_P_comm.copy()
+    baseline_state = replay_controls(CP_P_comm_baseline)
+    baseline_metrics = feasibility_metrics(baseline_state, initial_soc)
     if repair_initialization:
-        CP_P_comm_baseline, baseline_state, baseline_metrics = repair_baseline(
-            B,
-            CP_P_comm,
-            initial_soc,
-            dt,
-            lambda state: total_power(state["P_sol"], np.zeros(n), state["P_RW"]),
-            replay_controls,
-        )
-
-    else:
-        CP_P_comm_baseline = CP_P_comm.copy()
-        baseline_state = replay_controls(CP_P_comm_baseline)
-        baseline_metrics = feasibility_metrics(baseline_state, initial_soc)
+        try:
+            CP_P_comm_baseline, baseline_state, baseline_metrics = repair_baseline(
+                B,
+                CP_P_comm,
+                initial_soc,
+                dt,
+                lambda state: total_power(state["P_sol"], np.zeros(n), state["P_RW"]),
+                replay_controls,
+                allow_partial=allow_unrepaired_baseline,
+            )
+        except RuntimeError:
+            if not allow_unrepaired_baseline:
+                raise
+            print(
+                "Reference baseline could not be repaired; it will not be used for a feasible improvement claim.",
+                flush=True,
+            )
 
     if args.warm_start or not repair_initialization:
         # These model guesses are replaced by the complete checkpoint below.
         CP_P_comm_start = CP_P_comm_baseline.copy()
+        if not repair_initialization:
+            # A coarse least-squares fit can overshoot the control bounds.
+            # Replay an interior power schedule instead of letting AMIGO clip
+            # the controls after the coupled trajectories have been formed.
+            CP_P_comm_start = np.clip(CP_P_comm_start, 0.02, 24.5)
     else:
         CP_P_comm_start, _, _ = repair_baseline(
             B,
@@ -364,6 +410,7 @@ def prepare_case(args, repair_initialization=True, lookups_type=DesignLookups):
             lambda state: total_power(state["P_sol"], np.zeros(n), state["P_RW"]),
             lambda cp: replay_controls(cp, Isetpt_start, gamma_start, cellInstd_start),
             interior=True,
+            allow_partial=allow_unrepaired_baseline,
         )
 
     P_sol_baseline = baseline_state["P_sol"]
@@ -377,9 +424,11 @@ def prepare_case(args, repair_initialization=True, lookups_type=DesignLookups):
     Data_baseline = baseline_state["Data"]
     Data_dot_baseline = baseline_state["Data_dot"]
 
-    print_heading(
-        "FEASIBLE BASELINE" if repair_initialization else "UNREPAIRED REFERENCE"
+    baseline_feasible = (
+        baseline_metrics["inequality_violation"] < 1e-7
+        and abs(baseline_metrics["periodicity_error"]) < 1e-7
     )
+    print_heading("FEASIBLE BASELINE" if baseline_feasible else "UNREPAIRED REFERENCE")
 
     print_values(
         [
@@ -389,21 +438,8 @@ def prepare_case(args, repair_initialization=True, lookups_type=DesignLookups):
         ]
     )
 
-    # Interior optimization starting point
-
-    #
-    # Some original CADRE CP_P_comm values are exactly zero.
-    #
-    # AMIGO uses an interior-point optimizer, so variables directly
-    # on a bound are pushed slightly inside the bound automatically.
-    #
-    # If we used the original zero-valued CPs while keeping all the
-    # state guesses from the original trajectory, that interior push
-    # would immediately make the coupled equality constraints
-    # inconsistent.
-    #
-    # Instead, create a slightly interior control-point guess first
-    # and regenerate ALL coupled state guesses from that point.
+    # Replay interior controls so the state guesses satisfy the same equations.
+    # Pushing zero power controls inside their bounds changes the trajectory.
 
     CP_P_comm_guess = CP_P_comm_start.copy()
 
@@ -411,23 +447,15 @@ def prepare_case(args, repair_initialization=True, lookups_type=DesignLookups):
         CP_P_comm_guess, CP_gamma_start, CP_Isetpt_start, n
     )
 
-    # Thermal initial guess
-
     temperature_guess, temperature_dot_guess = propagate_temperature_trapezoid(
         T0, area_start, LOS, P_comm_guess, cellInstd_start, dt
     )
-
-    # Reaction wheels
-    #
-    # Use the prescribed or roll-dependent starting attitude.
 
     T_RW_guess = reaction_wheel_torque(T_tot_start)
     w_RW_guess, w_RW_dot_guess = propagate_reaction_wheel_trapezoid(
         w_RW0, w_B_start, T_RW_guess, dt
     )
     P_RW_guess = reaction_wheel_power(w_RW_guess, T_RW_guess)
-
-    # Power initial guess
 
     if design_physics:
         V_sol_guess = voltage_spline.reference_panels(
@@ -444,13 +472,9 @@ def prepare_case(args, repair_initialization=True, lookups_type=DesignLookups):
 
     P_bat_guess = total_power(P_sol_guess, P_comm_guess, P_RW_guess)
 
-    # Battery initial guess
-
     SOC_guess = propagate_soc_trapezoid(initial_soc, P_bat_guess, temperature_guess, dt)
 
     SOCdot_guess = calculate_battery_rates(SOC_guess, P_bat_guess, temperature_guess[4])
-
-    # Communications initial guess
 
     Dr_guess = communication_bit_rate(P_comm_guess, gain_start, GSdist, CommLOS)
 

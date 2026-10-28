@@ -1,148 +1,100 @@
 # CADRE-AMIGO
 
-I'm reproducing the OpenMDAO CADRE CubeSat model in Python and AMIGO. I started
-with the individual subsystems, checked them against the original CADRE code,
-and then connected them into a single-case optimization.
+A port of the [OpenMDAO/CADRE](https://github.com/OpenMDAO/CADRE) CubeSat model
+to AMIGO, with subsystem comparisons and coupled spacecraft optimization.
 
-The coupled model now optimizes communication power, solar currents, and initial
-battery state of charge over a 12-hour window. Full-size roll/allocation
-convergence remains unfinished. A joint six-case model with shared fin and
-antenna angles is also implemented and has passed reduced-model checks.
+## Setup
 
-## Running the code
-
-The scripts need a local CADRE checkout and a Python environment with AMIGO,
-NumPy, SciPy, and Matplotlib. Set `CADRE_ROOT` to the checkout containing
-`src/CADRE`. If it is at `../CADRE`, the default path already works.
-
-Run commands from this repository's root. I use the Pixi environment from my
-AMIGO checkout:
+Keep the reference checkout beside this repository:
 
 ```sh
-# Optimize communication power, solar currents, and initial SOC.
-pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.cadre_optimize_pcomm
-
-# Use the restored design-physics formulation with fixed roll and allocation.
-pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.cadre_optimize_pcomm --design-physics
-
-# Plot a saved result without solving it again.
-pixi run --manifest-path ~/git/amigo/pixi.toml python -m integrated.plot_pcomm_results
-
-# Generate the subsystem figures.
-pixi run --manifest-path ~/git/amigo/pixi.toml python -m visualizations
+git clone https://github.com/OpenMDAO/CADRE.git ../CADRE-OpenMDAO
+git -C ../CADRE-OpenMDAO checkout 05f008489e34a123637b213419fd980162ccd303
 ```
 
-Change the manifest path if AMIGO is installed somewhere else. Compiling a model
-also requires CMake and a C++ compiler on `PATH`.
+Set `CADRE_ROOT` if it is elsewhere. Use AMIGO's Pixi environment, with CMake
+and a C++ compiler available. Change the manifest path below if needed.
+The [source notes](integrated/docs/cadre_source.md) explain the pinned revision
+and the move from the earlier OpenMDAO-Plugins checkout.
 
-## Validated integrated result
+## Run
 
-The full 12-hour fixed-design case uses 1,500 time nodes and 3,901 design variables.
-It optimizes communication power, 12 solar-current profiles, and initial SOC.
-Roll and surface allocation are fixed.
-
-| Measurement | Result |
-| --- | --- |
-| Downloaded data | 5,264.536 CADRE units |
-| Feasible comparison baseline | 5,058.245 CADRE units |
-| Improvement | 4.0783% |
-| Solver iterations | 58 |
-| Solver time | 776.73 seconds |
-| Final KKT error | 1.00e-9 |
-
-The run satisfies battery-current and SOC bounds, returns to its starting SOC,
-and passes an independent trajectory replay. Solver time excludes preparation,
-compilation, and replay. This is one case with fixed geometry, so it should not
-be treated as a runtime comparison with the original six-case CADRE study.
-
-See the [result and figures](integrated/docs/meeting_result.md),
-[saved summary](integrated/results/pcomm_design_reference/summary.json), and
-[integrated model README](integrated/README.md).
-
-## Plots
-
-The [subsystem figure gallery](visualizations/README.md) covers orbit, attitude,
-sunlight, panel exposure, temperature, power, battery SOC, reaction wheels,
-communication, and spline controls. It uses the original CADRE benchmark and
-the Python reference functions. Existing interactive plots are still in the
-subsystem scripts.
-
-![Orbit geometry, altitude, and Python reference difference](visualizations/figures/orbit.png)
-
-Figures are currently stored together in `visualizations/figures/`. The gallery
-explains the inputs and comparisons in each one. To generate a smaller selection:
+From this repository's root:
 
 ```sh
-pixi run --manifest-path ~/git/amigo/pixi.toml python -m visualizations \
-  --problem orbit thermal battery --output /tmp/cadre-figures
+# Optimize one case: communication power, solar currents, and initial SOC.
+pixi run --manifest-path ../amigo/pixi.toml python -m integrated.cadre_optimize_pcomm
+
+# Replot the saved prescribed-geometry result without optimizing.
+pixi run --manifest-path ../amigo/pixi.toml python -m integrated.plot_pcomm_results
+
+# Generate subsystem figures from the reference calculations.
+pixi run --manifest-path ../amigo/pixi.toml python -m visualizations
 ```
 
-## Code layout
+Single-case options include `--case-index 0` through `5`, `--design-physics`,
+`--optimize-roll`, and `--optimize-allocation`. Use `--help` for all options.
+The default uses 1,500 nodes and 300 spline controls over 12 hours. Reducing
+single-case nodes shortens the window; the joint runner instead supports a
+reduced grid spanning all 12 hours.
 
-| Folder | Contents |
+The [joint optimization guide](integrated/docs/joint_optimization.md) covers
+shared geometry, solver options, checkpoints, and mesh checks. For a Linux
+machine, see [server setup](integrated/docs/server_preparation.md).
+
+## Results
+
+[Run the Single Case 600 node optimization](integrated/docs/single_case_600.md).
+
+The all-variable single case has converged at **600 nodes and 120 controls**
+over 12 hours, with 1,767 design variables. Downloaded data is 4,605.910122
+CADRE units and NLP error is 1.000e-9. The fresh run took 126 iterations and
+39 minutes 27 seconds of solver time. Native equations, independent replay,
+battery bounds, and SOC periodicity pass.
+
+A separate validated 1,500-node case with prescribed roll and allocation
+has 3,901 design variables and downloads 5,264.536 units. These are different
+optimization problems; their data values are not a matched comparison.
+
+The six-case optimization and the 1,500-node all-variable optimization have
+not converged. The coarse single-case design violates battery limits when
+replayed on the fine grid; a repaired fine-grid start is saved separately.
+Our formulation uses trapezoidal dynamics and battery bounds at each node;
+upstream CADRE uses RK4 and KS-aggregated constraints.
+
+See the [saved results](integrated/results/README.md) for validation status and
+the [meeting notes](integrated/docs/meeting_result.md) for figures and timings.
+
+## Code
+
+| Location | Contents |
 | --- | --- |
-| `orbit/` | Orbital dynamics, RK4 reference, AMIGO collocation, and grid convergence |
-| `attitude/` | Orientation, angular rates, acceleration, and torque |
-| `sun/` | Sun direction and eclipse calculations |
-| `solar/` | Panel exposure and the recreated solar MBI lookup |
-| `thermal/` | Four fin temperatures and one body temperature |
-| `power/` | Solar voltage, solar power, and net battery power |
-| `battery/` | Voltage, current, SOC propagation, and constraint checks |
-| `reaction_wheel/` | Wheel dynamics and electrical consumption |
-| `communication/` | Antenna gain, bitrate, and accumulated downloaded data |
-| `parameters/` | B-spline controls and time-dependent inputs |
-| `integrated/` | Coupled model, optimization, solver adapters, checks, and saved results |
-| `visualizations/` | Figure-generation code, explanations, and saved plots |
+| `orbit/`, `attitude/`, `sun/`, `solar/` | Motion, orientation, sunlight, and exposure |
+| `thermal/`, `power/`, `battery/`, `reaction_wheel/`, `communication/` | Subsystem equations and reference checks |
+| `parameters/` | Spline controls |
+| `integrated/model/` | Coupled components, bounds, and shared designs |
+| `integrated/reference/` | Benchmark inputs, lookup models, repair, and replay |
+| `integrated/optimization/`, `integrated/solvers/` | Optimizer setup, checkpoints, and solver adapters |
+| `integrated/reporting/` | Terminal output, saved results, and plots |
+| `integrated/validation/` | Numerical checks |
+| `visualizations/` | [Subsystem figure gallery](visualizations/README.md) and plotting code |
 
-Inside `integrated/`, the code is grouped into `model/`, `reference/`,
-`optimization/`, `solvers/`, `reporting/`, `benchmarks/`, and `validation/`.
-The main optimization and plotting commands remain at the top level.
+The entry points are `integrated.cadre_optimize_pcomm` for one case and
+`integrated.cadre_joint` for shared-design optimization. The coupled fixed-input
+benchmark is `integrated.cadre_benchmark_amigo`.
 
-## How I check the models
+## Checks and formatting
 
-For each subsystem, I compare a Python reference with the original CADRE output,
-then compare the AMIGO model with that reference. I keep RK4 and trapezoidal
-comparisons separate because differences between integration schemes are not
-the same as errors in the equations.
+```sh
+pixi run --manifest-path ../amigo/pixi.toml python -m integrated.prepare_cadre --check-lookups
+pixi run --manifest-path ../amigo/pixi.toml python -m integrated.validation.block_solver
+pixi run --manifest-path ../amigo/pixi.toml python -m integrated.validation.evaluator
+pixi run --manifest-path ../amigo/pixi.toml python -m integrated.validation.checkpoint
+```
 
-The solar and voltage lookups use recreated MBI splines. Their remaining
-reference differences are recorded in the validation scripts and
-[figure measurements](visualizations/figures/measurements.json).
+Joint checks are listed in the [joint guide](integrated/docs/joint_optimization.md#reports-and-numerical-checks).
+Saved reports are in `integrated/results/validation/`. Source comparisons and
+integration-error checks are kept separate.
 
-The integrated solver, evaluator, checkpoint, and derivative checks are in
-`integrated/validation/`. Their saved reports are in
-`integrated/results/validation/`. Commands and tolerances are listed in the
-[integrated README](integrated/README.md#validation).
-
-## Remaining work
-
-All six source cases can now be selected individually, with isolated output
-directories and case-aware checkpoint checks. Input replay and lookup derivative
-checks passed across the six cases. Run `python -m integrated.prepare_cadre
---check-lookups` to write a preparation report without compiling or optimizing.
-
-A shorter 600-node case with free roll and surface allocation has passed
-validation. The full 1,500-node, 4,285-variable version still needs to converge
-and pass independent replay.
-
-The joint model now has six case blocks, one shared allocation, shared fin and
-antenna angles, and a summed data objective. Analytic shared-angle derivatives,
-compiled small-model assembly, and independent initial replay have passed checks.
-At the original resolution it has 25,292 design variables. No joint optimization
-has been run; the joint command currently prepares or compiles the model only.
-
-The [roll/allocation status note](integrated/docs/roll_allocation_status.md)
-records the current solver setup and restart command.
-The [server preparation notes](integrated/docs/server_preparation.md) describe
-the joint model commands and remaining server/optimization work.
-
-## Code style
-
-Use blank lines to separate setup, calculations, and reporting. Keep short
-equations on one line and use descriptive names for intermediate derivatives.
-CADRE variable names stay the same so they can be checked against the source.
-Comments should explain a convention, unit, or numerical choice rather than
-repeat the next line of code.
-
-Format Python files from the repository root with `python -m black .`.
-The formatter settings are in `pyproject.toml`; Black is only needed for editing.
+Format with `python -m black .`. Use blank lines between calculations, preserve
+CADRE variable names, and explain units or numerical choices in comments.

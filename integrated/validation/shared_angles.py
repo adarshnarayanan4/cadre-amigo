@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 from scipy.sparse import csr_matrix
 
+from cadre_paths import source_provenance
 from communication.communication_reference import (
     antenna_rotation,
     quaternion_rotation_matrix,
@@ -117,7 +118,7 @@ def main():
         )
         for k, v in data.items()
     }
-    report = {}
+    report = {"cadre_source": source_provenance()}
 
     for index in range(6):
         report[str(index)] = check_case(data, index)

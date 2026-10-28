@@ -11,7 +11,7 @@ import sys
 
 import numpy as np
 
-from cadre_paths import cadre_path
+from cadre_paths import cadre_path, source_provenance
 from integrated.reference.benchmark import load_benchmark, select_case
 from integrated.reporting.console import print_heading, print_values
 from parameters.parameters_reference import build_bspline_matrix
@@ -188,18 +188,21 @@ def main(argv=None):
 
     report = {
         "scope": "Input and reference checks only; no baseline repair, compilation, KKT factorization, or optimization",
+        "cadre_source": source_provenance(),
         "source_sha256": hashlib.sha256(
             cadre_path("test/data1346.pkl").read_bytes()
         ).hexdigest(),
         "environment": environment(),
         "cases": reports,
         "joint_model_implemented": True,
+        "joint_optimizer_implemented": True,
         "joint_optimization_validated": False,
         "planned_joint_design_variables": len(cases) * (14 * args.control_points + 1)
         + 86,
         "remaining_model_work": [
+            "Coarse-grid convergence, including bounded SOC periodicity restoration",
             "Server-scale compilation and numerical profiling",
-            "Joint optimizer/checkpoint/reporting driver integration",
+            "Full-resolution joint solver profiling",
             "Full-resolution optimization convergence and independent validation",
         ],
     }
