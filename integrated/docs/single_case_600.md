@@ -1,20 +1,18 @@
 # Single Case 600 node optimization
 
-This is a fresh all-variable solve of case 0 over 12 hours, with 600 time nodes,
-120 spline controls per profile, and 1,767 design variables. Communication power,
-12 solar-current profiles, roll, initial SOC, surface allocation, fin angle, and
-antenna angle are free.
+This run optimizes one 12-hour case using 600 time points and 120 controls per
+profile. It changes communication power, solar currents, roll, starting battery
+charge, surface allocation, fin angle, and antenna angle.
 
-The recorded run converged in **126 iterations and 2,366.77 solver seconds
-(39 minutes 27 seconds)**. Preparation, initial repairs, compilation, and replay
-are additional. Iteration counts and runtimes can differ on another machine.
-Downloaded data is 4,605.910122 CADRE units, NLP error is 1.000e-9, and all
-independent validation checks passed.
+It converged in **126 iterations and 39 minutes 27 seconds** of solver time.
+Setup and model compilation take extra time. All checks passed, including
+battery limits and a separate calculation of the final result. Your runtime
+and iteration count may differ.
 
-## First-time setup
+## Set up once
 
-Requires Git and Pixi. Keep the three repositories beside one another. From a
-parent directory such as `~/git`, clone repositories you do not already have:
+You need Git and Pixi. Keep the project, AMIGO, and CADRE folders next to each
+other. From a folder such as `~/git`, download any you do not already have:
 
 ```sh
 git clone https://github.com/adarshnarayanan4/cadre-amigo.git
@@ -22,7 +20,7 @@ git clone https://github.com/smdogroup/amigo.git
 git clone https://github.com/OpenMDAO/CADRE.git CADRE-OpenMDAO
 ```
 
-For a new AMIGO checkout, use the tested revision and its installation tasks:
+For a new installation, use the AMIGO and CADRE versions used for this run:
 
 ```sh
 cd amigo
@@ -33,14 +31,13 @@ cd ../cadre-amigo
 git -C ../CADRE-OpenMDAO checkout 05f008489e34a123637b213419fd980162ccd303
 ```
 
-If the repositories and AMIGO environment already exist, update `cadre-amigo`
-and check the reference revision before running. Set `CADRE_ROOT` only if the
-reference checkout is elsewhere. Do not reuse a Mac build on Linux; this command
-compiles a new model for the local machine.
+If everything is already installed, update `cadre-amigo` with `git pull` and
+check that CADRE is on the version above. See [setup notes](server_preparation.md)
+if your folders are in different locations.
 
-## Run
+## Run the optimization
 
-From the `cadre-amigo` directory:
+From the `cadre-amigo` folder:
 
 ```sh
 pixi run --manifest-path ../amigo/pixi.toml python -m integrated.cadre_joint \
@@ -52,24 +49,23 @@ pixi run --manifest-path ../amigo/pixi.toml python -m integrated.cadre_joint \
   --output /tmp/cadre-case0-full
 ```
 
-Choose a new output directory if that path contains a result you want to keep.
-The command starts fresh and does not need a checkpoint. Let initialization
-repairs and compilation finish before the iteration table starts. The limit is
-300 iterations; the recorded run needed 126. The table objective includes
-barrier terms, so use the final replayed data total for comparisons.
+This starts a new run. It does not need a saved checkpoint. Wait for the starting
+point repairs and model compilation before the iteration table appears.
+The run can take up to 300 iterations; the saved run took 126.
+Use a different output folder if you want to keep an earlier result.
 
-## Check the result
+## Find the results
 
-Read `/tmp/cadre-case0-full/summary.json`. Successful completion has
-`validated: true`, `converged: true`, and every `validation_checks` entry true.
-The folder also contains trajectories, convergence history, and plots.
+Open `/tmp/cadre-case0-full/summary.json`. A successful run has `validated: true`,
+`converged: true`, and all entries under `validation_checks` set to `true`.
+Plots and the iteration history are in the same folder. Copy the folder out of
+`/tmp` if you want to keep it permanently.
 
-The [published summary](../results/single_case_600/summary.json),
+The saved run downloaded **4,605.910122 CADRE data units**, with a final solver
+error of **1.000e-9**. You can view its [summary](../results/single_case_600/summary.json),
 [trajectory plot](../results/single_case_600/case_0.png), and
-[convergence plot](../results/single_case_600/convergence.png) preserve the
-measured run. `reproduction.json` records its command and dependency revisions.
-Local checkpoints and compiled builds are excluded from Git.
+[convergence plot](../results/single_case_600/convergence.png).
 
-This is a single-case, reduced-grid result. Full six-case convergence and
-fine-grid optimality remain unfinished. Our formulation uses trapezoidal
-dynamics and nodewise battery bounds; upstream CADRE uses RK4 and KS aggregation.
+This is one case on a smaller grid. The full six-case optimization is still
+unfinished. Our time integration and battery constraints also differ from
+upstream CADRE; see the [model notes](cadre_source.md).
