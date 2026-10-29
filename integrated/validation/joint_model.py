@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import amigo as am
 import numpy as np
@@ -15,7 +16,13 @@ from integrated.model.joint import (
     prepare_joint_cases,
 )
 from integrated.solvers.native_ldl import temporal_kkt_ordering
-from integrated.solvers.joint import BoxStepBounds, JointKKTSolver, joint_partitions
+from integrated.optimization.driver import CadreOptimizer
+from integrated.solvers.joint import (
+    BoxStepBounds,
+    JointKKTSolver,
+    StepBoundIterationLimit,
+    joint_partitions,
+)
 from integrated.validation.helpers import Matrix, Vector
 
 
@@ -252,6 +259,101 @@ def check_joint(joint):
     box_rhs = rng.normal(size=n)
     box_rhs[duals] = 0
     box.solve(Vector(box_rhs), solution)
+    box_residual = box.max_linear_residual
+    box.factor(Matrix(native), Vector(diagonal))
+    with patch(
+        "integrated.solvers.joint.active_box_constraints",
+        side_effect=StepBoundIterationLimit(1),
+    ):
+        box.solve(Vector(box_rhs), solution)
+    assert box.box_qp_fallbacks == 1
+    assert box.design_step_ratio(solution.get_array()) <= 1 + 1e-6
+    fallback_residual = float(
+        np.linalg.norm(box.target @ solution.get_array() - box_rhs, np.inf)
+        / max(1, np.linalg.norm(box_rhs, np.inf))
+    )
+    assert fallback_residual < 1e-7
+    controlled = JointKKTSolver(
+        partitions,
+        shared_design,
+        primal,
+        duals,
+        joint.hessian_correction,
+        limited_indices=independent,
+        step_limits=0.1 * (upper[independent] - lower[independent]),
+        step_bounds=BoxStepBounds(
+            bounded,
+            lower[bounded],
+            upper[bounded],
+            0.1 * (upper[bounded] - lower[bounded]),
+            lambda: values,
+            symmetric=True,
+        ),
+    )
+    controlled.factor(Matrix(native), Vector(diagonal))
+    feasible_direction = known_step.copy()
+    feasible_direction[primal] *= 1e-4
+    negative, positive = controlled.step_bounds.limits()
+    feasible_direction[bounded] = (
+        0.01 * np.minimum(negative, positive) * np.tanh(known_step[bounded])
+    )
+    feasible_direction[design] = 0
+    control_rhs = controlled.target @ feasible_direction
+    control_rhs[independent] += 100 * rng.normal(size=len(independent))
+    assert np.max(abs(control_rhs[duals])) > 0
+    controlled.solve(Vector(control_rhs), solution)
+    control_residual = float(
+        np.linalg.norm(controlled.target @ solution.get_array() - control_rhs, np.inf)
+        / max(1, np.linalg.norm(control_rhs, np.inf))
+    )
+    assert control_residual < 1e-7
+    assert controlled.design_step_ratio(solution.get_array()) <= 1 + 1e-6
+    backend = CadreOptimizer(model, model.create_vector()).optimizer
+    current = backend.create_opt_vector(vector)
+    for dual, bounds, sign in [
+        (current.get_zl(), lower, 1),
+        (current.get_zu(), upper, -1),
+    ]:
+        dual.zero()
+        finite = np.isfinite(bounds[primal])
+        gaps = sign * (values[primal[finite]] - bounds[primal[finite]])
+        dual.get_array()[finite] = 1 / gaps
+        dual.copy_host_to_device()
+
+    def check_positive_dual_step(direction):
+        native_direction = model.problem.create_vector()
+        native_direction.get_array()[:] = direction
+        native_direction.copy_host_to_device()
+        full_step = backend.create_opt_vector()
+        for barrier in [1.0, 0.1, 1e-6]:
+            backend.compute_update(barrier, current, native_direction, full_step)
+            alpha_primal, _, alpha_dual, _ = backend.compute_max_step(
+                0.995, current, full_step
+            )
+            assert alpha_primal >= 0.5 and alpha_dual >= 0.5
+
+    check_positive_dual_step(solution.get_array())
+    controlled.box_qp = True
+    controlled.factor(Matrix(native), Vector(diagonal))
+    controlled.solve(Vector(control_rhs), solution)
+    full_space_box_residual = float(
+        np.linalg.norm(controlled.target @ solution.get_array() - control_rhs, np.inf)
+        / max(1, np.linalg.norm(control_rhs, np.inf))
+    )
+    assert full_space_box_residual < 1e-7
+    assert controlled.design_step_ratio(solution.get_array()) <= 1 + 1e-6
+    check_positive_dual_step(solution.get_array())
+    controlled.box_qp = False
+    controlled.spectral_curvature = controlled.selective_curvature = True
+    controlled.factor(Matrix(native), Vector(diagonal))
+    controlled.solve(Vector(control_rhs), solution)
+    spectral_control_residual = float(
+        np.linalg.norm(controlled.target @ solution.get_array() - control_rhs, np.inf)
+        / max(1, np.linalg.norm(control_rhs, np.inf))
+    )
+    assert spectral_control_residual < 1e-7
+    assert controlled.design_step_ratio(solution.get_array()) <= 1 + 1e-6
+    check_positive_dual_step(solution.get_array())
     return {
         "cadre_source": source_provenance(),
         "cases": [case.case_index for case in joint.cases],
@@ -270,7 +372,16 @@ def check_joint(joint):
         "selective_joint_kkt_relative_residual": selective.max_linear_residual,
         "state_penalty_kkt_relative_residual": state_penalty_residual,
         "spectral_kkt_relative_residual": spectral.max_linear_residual,
-        "active_box_kkt_relative_residual": box.max_linear_residual,
+        "active_box_kkt_relative_residual": box_residual,
+        "active_box_fallback_kkt_relative_residual": fallback_residual,
+        "active_box_fallback_step_bounds_passed": True,
+        "full_space_control_bound_kkt_residual": control_residual,
+        "full_space_control_bounds_with_equality_defects": True,
+        "half_dual_step_positive_with_symmetric_limits": True,
+        "full_space_active_box_kkt_residual": full_space_box_residual,
+        "full_space_active_box_half_dual_step_positive": True,
+        "full_space_spectral_control_bound_kkt_residual": spectral_control_residual,
+        "full_space_spectral_half_dual_step_positive": True,
         "active_box_largest_set": box.largest_active_set,
         "cached_bound_response_relative_error": response_error,
         "parallel_case_workers_checked": selective.case_workers,

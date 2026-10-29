@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
 from collections.abc import Callable
+from time import perf_counter
 
 from amigo.algorithm.solvers.linear_solver import LinearSolver
 import numpy as np
@@ -87,6 +88,7 @@ class BoxStepBounds:
     max_step: np.ndarray
     point_provider: Callable[[], np.ndarray]
     fraction: float = 0.8
+    symmetric: bool = False
 
     def limits(self):
         values = np.asarray(self.point_provider())[self.indices]
@@ -96,6 +98,8 @@ class BoxStepBounds:
         positive = self.fraction * (self.upper - values)
         if np.any(negative <= 0) or np.any(positive <= 0):
             raise FloatingPointError("Step bounds require a strictly interior point")
+        if self.symmetric:
+            negative = positive = np.minimum(negative, positive)
         return np.minimum(self.max_step, negative), np.minimum(self.max_step, positive)
 
 
@@ -134,17 +138,51 @@ def remove_active_factor(factor, index):
     return upper[:-1].T.copy(order="F")
 
 
-def active_box_constraints(unconstrained, lower, upper, response, max_iterations=2000):
+class StepBoundIterationLimit(FloatingPointError):
+    """The active-bound subproblem did not finish within its iteration budget."""
+
+    def __init__(self, iterations, diagnostic=None):
+        super().__init__(f"Active step-bound solve exceeded {iterations} iterations")
+        self.iterations = iterations
+        self.diagnostic = diagnostic
+
+
+def active_box_constraints(
+    unconstrained,
+    lower,
+    upper,
+    response,
+    max_iterations=2000,
+    *,
+    feasible_start=None,
+    progress=None,
+):
     """Solve the convex step subproblem through a small active-bound system.
 
     ``response(i)`` returns column i of the inverse quadratic form, restricted
     to bounded variables. No inverse containing all design variables is formed.
+    ``feasible_start`` must satisfy the box and any affine state equations;
+    zero is suitable only when those equations are homogeneous.
     """
-    current = np.zeros_like(unconstrained)
+    current = (
+        np.zeros_like(unconstrained)
+        if feasible_start is None
+        else np.asarray(feasible_start).copy()
+    )
+    if (
+        current.shape != unconstrained.shape
+        or not np.all(np.isfinite(current))
+        or np.any(current < lower)
+        or np.any(current > upper)
+    ):
+        raise ValueError("Active-bound solve requires a feasible starting step")
     active, targets, columns = [], [], {}
     storage = np.empty((len(current), 64), order="F")
     factor = None
+    events = []
     for iteration in range(max_iterations):
+        if progress is not None and iteration and iteration % 250 == 0:
+            progress(iteration, len(active))
         if active:
             inverse = storage[:, : len(active)]
             scale = 1 / np.sqrt([columns[index][index] for index in active])
@@ -209,6 +247,7 @@ def active_box_constraints(unconstrained, lower, upper, response, max_iterations
             factor = append_active_factor(factor, cross)
             active.append(blocking)
             targets.append(target)
+            events.append((1, blocking, len(active), int(np.sign(target))))
             continue
 
         current = candidate.copy()
@@ -216,6 +255,9 @@ def active_box_constraints(unconstrained, lower, upper, response, max_iterations
         tolerance = 1e-10 * max(1.0, np.max(abs(work), initial=0))
         if len(active) and np.min(work) < -tolerance:
             release = int(np.argmin(work))
+            events.append(
+                (-1, active[release], len(active), int(np.sign(targets[release])))
+            )
             factor = remove_active_factor(factor, release)
             storage[:, release : len(active) - 1] = storage[
                 :, release + 1 : len(active)
@@ -228,7 +270,18 @@ def active_box_constraints(unconstrained, lower, upper, response, max_iterations
             multipliers,
             iteration + 1,
         )
-    raise FloatingPointError("Active step-bound solve exceeded its iteration limit")
+    diagnostic = {
+        "unconstrained": unconstrained,
+        "lower": lower,
+        "upper": upper,
+        "feasible_start": (
+            np.zeros_like(unconstrained) if feasible_start is None else feasible_start
+        ),
+        "events": np.asarray(events, dtype=int).reshape(-1, 4),
+        "iteration_limit": max_iterations,
+        **{f"response_{index}": column for index, column in columns.items()},
+    }
+    raise StepBoundIterationLimit(max_iterations, diagnostic)
 
 
 class CaseFactor:
@@ -405,6 +458,7 @@ class JointKKTSolver(LinearSolver):
         if box_qp and step_bounds is None:
             raise ValueError("Box step subproblems require explicit step bounds")
         self.box_qp_iterations = 0
+        self.box_qp_fallbacks = 0
         self.largest_active_set = 0
         self.factor_count = 0
         self.max_linear_residual = 0.0
@@ -760,7 +814,30 @@ class JointKKTSolver(LinearSolver):
         """Add enough design curvature to respect the requested step limits."""
         self.limit_checked = True
         if self.box_qp:
-            self.limit_box_quadratic_step(step)
+            try:
+                self.limit_box_quadratic_step(step, values)
+            except StepBoundIterationLimit as error:
+                directory = getattr(self, "diagnostic_directory", None)
+                if directory is not None and error.diagnostic is not None:
+                    path = directory / "step_bounds_diagnostic.npz"
+                    if not path.exists():
+                        try:
+                            self.save_step_bound_diagnostic(path, error.diagnostic)
+                        except OSError as write_error:
+                            print_status(
+                                "STEP-BOUND DIAGNOSTIC NOT SAVED",
+                                [("Reason", str(write_error))],
+                            )
+                self.box_qp_iterations += error.iterations
+                self.box_qp_fallbacks += 1
+                print_status(
+                    "STEP-BOUND REGULARIZATION FALLBACK",
+                    [
+                        ("Reason", str(error)),
+                        ("Fallback count", self.box_qp_fallbacks),
+                    ],
+                )
+                self.limit_bound_aware_step(step, values)
             return
         if self.step_bounds is not None:
             self.limit_bound_aware_step(step, values)
@@ -798,6 +875,56 @@ class JointKKTSolver(LinearSolver):
         self.refactor_limited_blocks(correction)
         self.record_step_shift(upper, correction)
 
+    def save_step_bound_diagnostic(self, path, diagnostic):
+        """Save the reduced inverse so a stalled QP needs no model rebuild."""
+        data = {
+            key: value
+            for key, value in diagnostic.items()
+            if not key.startswith("response_")
+        }
+        keys = [key for key in diagnostic if key.startswith("response_")]
+        sampled = [
+            keys[i]
+            for i in np.linspace(0, len(keys) - 1, min(12, len(keys)), dtype=int)
+        ]
+        data.update(
+            response_indices=np.array(
+                [int(key.removeprefix("response_")) for key in sampled]
+            ),
+            response_values=(
+                np.column_stack([diagnostic[key] for key in sampled])
+                if sampled
+                else np.empty((len(diagnostic["lower"]), 0))
+            ),
+            bound_indices=self.step_bounds.indices,
+            scaling=self.scaling,
+            owner=self.owner,
+            shared=self.shared,
+            shared_factor=self.shared_factor[0],
+            shared_lower=self.shared_factor[1],
+            shared_scale=self.shared_scale,
+            shared_bound_positions=self.shared_bound_positions,
+            case_count=len(self.cases),
+        )
+        for i, case in enumerate(self.cases):
+            for name in (
+                "controls",
+                "bound_core",
+                "bound_response",
+                "cross",
+                "scale",
+                "control_bound_positions",
+                "core_bound_positions",
+            ):
+                data[f"case_{i}_{name}"] = getattr(case, name)
+            data[f"case_{i}_private_factor"] = case.private_factor[0]
+            data[f"case_{i}_private_lower"] = case.private_factor[1]
+            data[f"case_{i}_fixed_indices"] = case.core[case.factor.fixed]
+            data[f"case_{i}_fixed_diagonal"] = case.factor.fixed_diagonal
+        temporary = path.with_name(path.stem + ".tmp.npz")
+        np.savez_compressed(temporary, **data)
+        temporary.replace(path)
+
     def record_step_shift(self, shift, correction):
         self.step_shift = shift
         self.target.setdiag(self.target.diagonal() + correction)
@@ -806,7 +933,7 @@ class JointKKTSolver(LinearSolver):
         self.regularization_max = float(np.max(self.regularization_diagonal))
         self.limited_steps += 1
 
-    def limit_box_quadratic_step(self, step):
+    def limit_box_quadratic_step(self, step, values):
         """Limit only active directions, retaining feasible tangential movement."""
         negative, positive = self.step_bounds.limits()
         self.negative_step_bounds, self.positive_step_bounds = negative, positive
@@ -814,18 +941,64 @@ class JointKKTSolver(LinearSolver):
             return
         bounded = self.step_bounds.indices
 
+        # With nonzero equality defects, zero is outside the affine space of
+        # Newton steps. Solve the state equations with all independent design
+        # steps held at zero to start the active set in that affine space.
+        particular = np.zeros_like(step)
+        for case in self.cases:
+            particular[case.core] = self.scaling[case.core] * case.factor.solve(
+                self.scaling[case.core] * values[case.core]
+            )
+        error = np.max(abs((self.target @ particular - values)[self.constraints]))
+        if not np.isfinite(error) or error > 1e-7 * max(
+            1, np.max(abs(values[self.constraints]))
+        ):
+            raise FloatingPointError("Inaccurate equality-consistent starting step")
+        lower, upper = -0.98 * negative, 0.98 * positive
+        initial = particular[bounded]
+        if np.any(initial < lower) or np.any(initial > upper):
+            # This particular solution need not fit the box even when another
+            # feasible step exists. Use the checked diagonal method in that case.
+            self.box_qp_fallbacks += 1
+            print_status(
+                "STEP-BOUND REGULARIZATION FALLBACK",
+                [("Reason", "Equality-consistent starting step exceeds step bounds")],
+            )
+            self.limit_bound_aware_step(step, values)
+            return
+
+        # A fixed 2,000-change budget can truncate legitimate working sets on
+        # large joint models. Keep a guard while allowing the budget to scale.
+        self.box_qp_iteration_budget = max(2000, 2 * len(self.limited_indices))
+        started = perf_counter()
+
+        def report_progress(iteration, active_count):
+            elapsed = perf_counter() - started
+            print(
+                f"  Step-bound solve: {iteration:,} changes, "
+                f"{active_count:,} active bounds, {elapsed:.1f} s",
+                flush=True,
+            )
+
         active, targets, multipliers, iterations = active_box_constraints(
             step[bounded],
-            -0.98 * negative,
-            0.98 * positive,
+            lower,
+            upper,
             self.bound_inverse_response,
+            max_iterations=self.box_qp_iteration_budget,
+            feasible_start=initial,
+            progress=report_progress,
         )
         self.box_qp_iterations += iterations
         self.largest_active_set = max(self.largest_active_set, len(active))
         if self.factor_count <= 2:
             print_status(
                 "BOUND-CONSTRAINED NEWTON STEP",
-                [("Active bounds", len(active)), ("QP iterations", iterations)],
+                [
+                    ("Active bounds", len(active)),
+                    ("QP iterations", iterations),
+                    ("QP iteration budget", self.box_qp_iteration_budget),
+                ],
             )
         correction = np.zeros(len(step))
         correction[bounded[active]] = np.maximum(multipliers / targets, 0)

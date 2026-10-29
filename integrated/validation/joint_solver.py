@@ -1,8 +1,11 @@
 """Check joint KKT solves, curvature correction, and case partition failures."""
 
+import argparse
 import json
 from itertools import product
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -13,8 +16,9 @@ from integrated.solvers.joint import (
     JointKKTSolver,
     positive_spectral_factor,
     active_box_constraints,
+    StepBoundIterationLimit,
 )
-from integrated.validation.helpers import Matrix, Vector
+from integrated.validation.helpers import Matrix, Vector, saved_bound_response
 
 
 def check_system(
@@ -26,6 +30,10 @@ def check_system(
     bound_aware=False,
     spectral=False,
     box_qp=False,
+    force_box_fallback=False,
+    control_bounds_only=False,
+    nonzero_constraint_rhs=False,
+    symmetric_bounds=False,
 ):
     rng = np.random.default_rng(216)
     size, shared = 35, np.array([33, 34])
@@ -58,12 +66,14 @@ def check_system(
         limits = np.full(len(limited), 0.1)
         point = np.zeros(size)
         point[primal] = np.resize([0.01, 0.99, 0.5], len(primal))
+        bounded = limited if control_bounds_only else np.asarray(primal)
         bounds = BoxStepBounds(
-            np.asarray(primal),
-            np.zeros(len(primal)),
-            np.ones(len(primal)),
-            np.full(len(primal), 0.1),
+            bounded,
+            np.zeros(len(bounded)),
+            np.ones(len(bounded)),
+            np.full(len(bounded), 0.1),
             lambda: point,
+            symmetric=control_bounds_only or symmetric_bounds,
         )
     solver = JointKKTSolver(
         partitions,
@@ -93,11 +103,22 @@ def check_system(
             )
     original_target = solver.target.toarray()
     rhs = rng.normal(size=size) * (100 if limit_design or bound_aware else 1)
-    if bound_aware:
+    if bound_aware and not nonzero_constraint_rhs:
         # A replayed trajectory has homogeneous linearized state equations.
         rhs[constraints] = 0
+    elif bound_aware and symmetric_bounds:
+        # Keep a nonzero equality defect small enough for bounded state steps.
+        rhs[constraints] *= 1e-5
     solution = Vector(np.zeros(size))
-    solver.solve(Vector(rhs), solution)
+    if force_box_fallback:
+        with patch(
+            "integrated.solvers.joint.active_box_constraints",
+            side_effect=StepBoundIterationLimit(1),
+        ):
+            solver.solve(Vector(rhs), solution)
+        assert solver.box_qp_fallbacks == 1
+    else:
+        solver.solve(Vector(rhs), solution)
     expected = np.linalg.solve(solver.target.toarray(), rhs)
     np.testing.assert_allclose(solution.get_array(), expected, rtol=1e-8, atol=1e-8)
     eigenvalues = np.linalg.eigvalsh(solver.target.toarray())
@@ -121,7 +142,10 @@ def check_system(
         if bound_aware:
             assert solver.design_step_ratio(solution.get_array()) <= 1 + 1e-8
             states = np.setdiff1d(primal, limited)
-            assert np.max(np.diag(correction)[states]) > 0
+            if control_bounds_only:
+                np.testing.assert_allclose(np.diag(correction)[states], 0, atol=1e-12)
+            else:
+                assert np.max(np.diag(correction)[states]) > 0
         # A second RHS must use the same regularized matrix and state equations.
         rhs = rng.normal(size=size)
         solver.solve(Vector(rhs), solution)
@@ -152,6 +176,7 @@ def check_system(
         raise AssertionError("Uncovered case rows were accepted")
     return {
         "relative_linear_residual": solver.max_linear_residual,
+        "box_qp_fallbacks": solver.box_qp_fallbacks,
         "negative_eigenvalues": int(np.count_nonzero(eigenvalues < 0)),
         "expected_negative_eigenvalues": len(constraints),
     }
@@ -260,6 +285,12 @@ def check_box_subproblems():
         )
         largest_iterations = max(largest_iterations, iterations)
     assert largest_iterations > 5  # At least one case releases an active bound.
+    try:
+        active_box_constraints(free, lower, upper, lambda index: inverse[:, index], 0)
+    except StepBoundIterationLimit as error:
+        assert error.iterations == 0
+    else:
+        raise AssertionError("An unfinished QP was accepted")
     hessian = np.array([[1e-6, 1e-4], [1e-4, 1.0]])
     rhs = np.array([1e4, 1.0])
     inverse = np.linalg.inv(hessian)
@@ -273,10 +304,81 @@ def check_box_subproblems():
     correction[active] = np.maximum(multipliers / targets, 0)
     recovered = np.linalg.solve(hessian + np.diag(correction), rhs)
     np.testing.assert_allclose(recovered, [1e-9, 0.5], rtol=1e-6, atol=1e-12)
+    # Coupled states can have dependent inverse responses and a nonzero affine
+    # offset. Starting at zero would select incompatible active bounds here.
+    inverse = np.ones((2, 2))
+    free = np.array([2.0, 2.2])
+    active, _, multipliers, _ = active_box_constraints(
+        free,
+        np.full(2, -0.5),
+        np.array([0.3, 0.4]),
+        lambda index: inverse[:, index],
+        feasible_start=np.array([-0.1, 0.1]),
+    )
+    np.testing.assert_allclose(free - inverse[:, active] @ multipliers, [0.2, 0.4])
+
+    size = 251
+    identity = np.eye(size)
+    reports = []
+    active, targets, multipliers, _ = active_box_constraints(
+        np.full(size, 2.0),
+        np.full(size, -1.0),
+        np.full(size, 1.0),
+        lambda index: identity[:, index],
+        progress=lambda iteration, count: reports.append((iteration, count)),
+    )
+    assert reports == [(250, 250)]
+    np.testing.assert_allclose(2.0 - identity[:, active] @ multipliers, 1.0)
     return {
+        "active_set_progress_reports": True,
         "exhaustive_qp_comparisons": 20,
         "largest_iterations": largest_iterations,
         "large_cancellation_recovered_by_refactorization": True,
+        "dependent_bounds_with_affine_offset": True,
+    }
+
+
+def check_affine_start_fallback():
+    # x - u = 0.02 has a bounded feasible step, but setting u = 0 puts x
+    # outside its step bounds. The active set must defer to diagonal damping.
+    matrix = np.array(
+        [
+            [1.0, 1.0, 0.0, 0.0],
+            [1.0, 0.0, -1.0, 0.0],
+            [0.0, -1.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+    bounded = np.array([0, 2, 3])
+    point = np.array([0.01, 0.0, 0.5, 0.5])
+    solver = JointKKTSolver(
+        [CasePartition(np.array([0, 1, 2]), np.array([2]))],
+        np.array([3]),
+        bounded,
+        np.array([1]),
+        lambda shape: csr_matrix(shape),
+        limited_indices=np.array([2, 3]),
+        step_limits=0.1,
+        box_qp=True,
+        step_bounds=BoxStepBounds(
+            bounded,
+            np.zeros(3),
+            np.ones(3),
+            np.full(3, 0.1),
+            lambda: point,
+            symmetric=True,
+        ),
+    )
+    solver.factor(Matrix(matrix), Vector(np.zeros(4)))
+    rhs = np.array([0.0, 0.02, 0.0, 0.0])
+    solution = Vector(np.zeros(4))
+    solver.solve(Vector(rhs), solution)
+    assert solver.box_qp_fallbacks == 1 and solver.box_qp_iterations == 0
+    assert solver.design_step_ratio(solution.get_array()) <= 1 + 1e-6
+    np.testing.assert_allclose(solver.target @ solution.get_array(), rhs, atol=1e-12)
+    return {
+        "fallbacks": solver.box_qp_fallbacks,
+        "equations_and_step_bounds_passed": True,
     }
 
 
@@ -307,17 +409,177 @@ def check_original_recovery(selective=False):
     }
 
 
+def check_step_capture():
+    """Round-trip the inverse used by a truncated QP and finish its replay."""
+    original = active_box_constraints
+
+    def limited(*args, **kwargs):
+        kwargs["max_iterations"] = 1
+        return original(*args, **kwargs)
+
+    with TemporaryDirectory(prefix="cadre-step-bounds-") as directory:
+        folder = Path(directory)
+        with (
+            patch.object(JointKKTSolver, "diagnostic_directory", folder, create=True),
+            patch(
+                "integrated.solvers.joint.active_box_constraints", side_effect=limited
+            ),
+        ):
+            check_system(bound_aware=True, box_qp=True)
+        with np.load(
+            folder / "step_bounds_diagnostic.npz", allow_pickle=False
+        ) as saved:
+            response = saved_bound_response(saved)
+            maximum_error = 0.0
+            for column, index in enumerate(saved["response_indices"]):
+                expected = saved["response_values"][:, column]
+                error = np.max(abs(response(int(index)) - expected))
+                maximum_error = max(maximum_error, float(error))
+            free, lower, upper, initial = [
+                saved[name]
+                for name in ("unconstrained", "lower", "upper", "feasible_start")
+            ]
+        assert maximum_error < 1e-12, maximum_error
+        active, _, multipliers, iterations = original(
+            free, lower, upper, response, feasible_start=initial
+        )
+        step = free - np.column_stack([response(int(i)) for i in active]) @ multipliers
+        assert np.all(step >= lower - 1e-8) and np.all(step <= upper + 1e-8)
+        assert iterations > 1 and not list(folder.glob("*.tmp.npz"))
+        # Diagnostic storage must not prevent the checked fallback from running.
+        (folder / "step_bounds_diagnostic.npz").unlink()
+        with (
+            patch.object(JointKKTSolver, "diagnostic_directory", folder, create=True),
+            patch(
+                "integrated.solvers.joint.active_box_constraints", side_effect=limited
+            ),
+            patch(
+                "integrated.solvers.joint.np.savez_compressed",
+                side_effect=OSError("disk full"),
+            ),
+            patch("integrated.solvers.joint.print_status"),
+        ):
+            fallback = check_system(bound_aware=True, box_qp=True)
+        assert fallback["box_qp_fallbacks"] >= 1
+    return {
+        "inverse_roundtrip_error": maximum_error,
+        "replayed_qp_iterations": iterations,
+        "fallback_survives_diagnostic_write_failure": True,
+    }
+
+
+def replay_step_bounds(path, max_iterations):
+    """Replay a captured QP only; this does not run or validate an optimization."""
+    with np.load(path, allow_pickle=False) as saved:
+        response = saved_bound_response(saved)
+        response_error = 0.0
+        for column, index in enumerate(saved["response_indices"]):
+            expected = saved["response_values"][:, column]
+            error = np.max(abs(response(int(index)) - expected)) / max(
+                1, np.max(abs(expected))
+            )
+            response_error = max(response_error, float(error))
+        assert response_error < 1e-12, response_error
+        free, lower, upper, initial = [
+            saved[name]
+            for name in ("unconstrained", "lower", "upper", "feasible_start")
+        ]
+    try:
+        active, targets, multipliers, iterations = active_box_constraints(
+            free,
+            lower,
+            upper,
+            response,
+            max_iterations=max_iterations,
+            feasible_start=initial,
+        )
+        work = multipliers * targets
+        assert np.min(work, initial=0) >= -1e-8 * max(1, np.max(abs(work), initial=0))
+        result = {
+            "converged_subproblem": True,
+            "active_bounds": len(active),
+            "iterations": iterations,
+        }
+    except StepBoundIterationLimit as error:
+        result = {"converged_subproblem": False, "iterations": error.iterations}
+    print(
+        json.dumps(
+            {
+                "optimization_run": False,
+                "cached_response_error": response_error,
+                **result,
+            },
+            indent=2,
+        )
+    )
+    return 0 if result["converged_subproblem"] else 1
+
+
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--replay",
+        type=Path,
+        help="Replay a captured step-bound subproblem without building CADRE",
+    )
+    parser.add_argument("--max-qp-iterations", type=int, default=2000)
+    args = parser.parse_args()
+    if args.max_qp_iterations < 1:
+        parser.error("--max-qp-iterations must be positive")
+    if args.replay:
+        return replay_step_bounds(args.replay, args.max_qp_iterations)
     report = {
+        "step_capture_and_replay": check_step_capture(),
+        "affine_start_outside_box_fallback": check_affine_start_fallback(),
         "active_box_subproblems": check_box_subproblems(),
+        "full_space_control_bounds": check_system(
+            bound_aware=True, control_bounds_only=True, nonzero_constraint_rhs=True
+        ),
+        "spectral_full_space_control_bounds": check_system(
+            indefinite=True,
+            bound_aware=True,
+            control_bounds_only=True,
+            nonzero_constraint_rhs=True,
+            spectral=True,
+        ),
         "active_box_kkt_solve": check_system(bound_aware=True, box_qp=True),
+        "full_space_active_box_kkt_solve": check_system(
+            bound_aware=True,
+            box_qp=True,
+            symmetric_bounds=True,
+            nonzero_constraint_rhs=True,
+        ),
+        "full_space_active_box_fallback": check_system(
+            bound_aware=True,
+            box_qp=True,
+            symmetric_bounds=True,
+            nonzero_constraint_rhs=True,
+            force_box_fallback=True,
+        ),
         "spectral_active_box_kkt_solve": check_system(
             indefinite=True, bound_aware=True, spectral=True, box_qp=True
+        ),
+        "active_box_fallback": check_system(
+            bound_aware=True, box_qp=True, force_box_fallback=True
+        ),
+        "spectral_active_box_fallback": check_system(
+            indefinite=True,
+            bound_aware=True,
+            spectral=True,
+            box_qp=True,
+            force_box_fallback=True,
         ),
         "spectral_modes": check_spectral_modes(),
         "spectral_indefinite_solve": check_system(indefinite=True, spectral=True),
         "spectral_bound_aware_solve": check_system(
             indefinite=True, bound_aware=True, spectral=True
+        ),
+        "spectral_symmetric_bounds_with_equality_defects": check_system(
+            indefinite=True,
+            bound_aware=True,
+            spectral=True,
+            symmetric_bounds=True,
+            nonzero_constraint_rhs=True,
         ),
         "spectral_coupled_curvature": check_coupled_curvature(spectral=True),
         "positive_curvature": check_system(),
@@ -346,4 +608,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -117,9 +117,11 @@ def make_joint_solver(joint, optimizer, args, point_provider):
     initial_soc = model.get_indices(
         [f"case{case.case_index}.battery_ic.initial_soc[:]" for case in joint.cases]
     )
+    limit_controls = getattr(args, "limit_control_steps", False)
+    bounded_steps = args.primal_barrier or limit_controls
     limited = (
         np.concatenate([part.controls for part in partitions] + [shared])
-        if args.primal_barrier
+        if bounded_steps
         else np.r_[roll, initial_soc, shared]
     )
     lower, upper = model.get_lower().get_vector(), model.get_upper().get_vector()
@@ -128,7 +130,7 @@ def make_joint_solver(joint, optimizer, args, point_provider):
     lo, hi = lower.get_array(), upper.get_array()
     limits = 0.1 * (hi[limited] - lo[limited])
     bounds = None
-    if args.primal_barrier:
+    if bounded_steps:
         limits[np.isin(limited, roll)] = np.minimum(
             limits[np.isin(limited, roll)], 0.05
         )
@@ -138,7 +140,12 @@ def make_joint_solver(joint, optimizer, args, point_provider):
             max_step[np.isin(bounded, roll)], 0.05
         )
         bounds = BoxStepBounds(
-            bounded, lo[bounded], hi[bounded], max_step, point_provider
+            bounded,
+            lo[bounded],
+            hi[bounded],
+            max_step,
+            point_provider,
+            symmetric=limit_controls,
         )
     solver = JointKKTSolver(
         partitions,
@@ -155,6 +162,7 @@ def make_joint_solver(joint, optimizer, args, point_provider):
         step_bounds=bounds,
     )
     solver.design_step_fraction = 0.1
+    solver.diagnostic_directory = args.output
     return solver
 
 
@@ -200,6 +208,7 @@ def optimize_joint(joint, args, signature):
             projector,
             periodicity_tolerance=1e-12 if args.primal_barrier else 1e-9,
             full_power=args.box_qp,
+            relative_power=args.relative_power_repair,
         )
         if args.restore_periodicity
         else None
@@ -351,6 +360,12 @@ def optimize_joint(joint, args, signature):
     history = optimizer.optimize(options)
     solver.initial_battery_restorations = (
         start_restorer.case_solves if start_restorer is not None else 0
+    )
+    solver.initial_battery_repair_time_s = (
+        start_restorer.elapsed_time_s if start_restorer is not None else 0.0
+    )
+    solver.projected_battery_repair_time_s = (
+        restorer.elapsed_time_s if restorer is not None else 0.0
     )
     solver.trajectory_projections = (
         projector.evaluations if projector is not None else 0
@@ -537,6 +552,22 @@ def initialize_adjoints(joint, optimizer, state):
         + matrix[periodicity][:, state_indices].T @ prices
         - rhs
     )
+    # Large periodicity prices can lose digits when their state responses are
+    # added to the original adjoints. Refine the combined equation directly.
+    scale = max(1, np.max(abs(rhs)))
+    for _ in range(8):
+        if np.max(abs(equation_error)) / scale <= 1e-6:
+            break
+        correction = factor.solve(-equation_error, trans="T")
+        candidate = multipliers + correction
+        candidate_error = (
+            jacobian.T @ candidate
+            + matrix[periodicity][:, state_indices].T @ prices
+            - rhs
+        )
+        if np.max(abs(candidate_error)) >= np.max(abs(equation_error)):
+            break
+        multipliers, equation_error = candidate, candidate_error
     error = float(np.max(abs(equation_error)) / max(1, np.max(abs(rhs))))
     if not np.isfinite(error) or error > 1e-6:
         raise FloatingPointError(f"Inaccurate periodicity adjoint seed: {error:.3e}")

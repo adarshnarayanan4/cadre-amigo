@@ -1,0 +1,20 @@
+{
+  "optimization_run": false,
+  "nodes_per_case": 600,
+  "controls_per_profile": 120,
+  "cases": 6,
+  "captured_problem_sha256": "0c1c751e46c13a6bbd994a7ed24f7557de0cf6e9ff66494f52c265b0190b7900",
+  "original_iteration_budget": 2000,
+  "original_additions": 1937,
+  "original_releases": 63,
+  "original_final_active_bounds": 1874,
+  "original_repeated_working_sets": 0,
+  "replayed_subproblem_converged": true,
+  "replayed_iterations": 2331,
+  "replayed_active_bounds": 1656,
+  "cached_response_relative_error": 0.0,
+  "bookkeeping_maximum_box_violation": 7.884234931587741e-10,
+  "minimum_multiplier_work": 0.0,
+  "complete_native_newton_step_checked_by_replay": false,
+  "new_joint_budget_rule": "max(2000, 2 * independent_reduced_design_count)"
+}

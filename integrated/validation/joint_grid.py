@@ -120,8 +120,19 @@ def main():
         == "prefix"
     )
     for invalid in [
+        ["--limit-control-steps"],
+        ["--optimize", "--limit-control-steps"],
+        [
+            "--optimize",
+            "--full-space-trials",
+            "--limit-control-steps",
+            "--linear-solver",
+            "native",
+        ],
         ["--spectral-curvature"],
         ["--optimize", "--box-qp"],
+        ["--optimize", "--full-space-trials", "--box-qp"],
+        ["--optimize", "--full-space-trials", "--limit-control-steps", "--box-qp"],
         ["--optimize", "--spectral-curvature", "--linear-solver", "native"],
         ["--optimize", "--refit-controls"],
         ["--case-workers", "0"],
@@ -149,6 +160,9 @@ def main():
             else:
                 raise AssertionError(f"Invalid command was accepted: {invalid}")
     report = {
+        "full_space_control_step_option": parse_args(
+            ["--optimize", "--full-space-trials", "--limit-control-steps"]
+        ).limit_control_steps,
         "active_box_step_option": parse_args(
             ["--optimize", "--primal-barrier", "--box-qp", "--spectral-curvature"]
         ).box_qp,

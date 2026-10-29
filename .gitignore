@@ -11,7 +11,9 @@ cadre_*.h
 # Transient optimization state; retain saved summaries and trajectories.
 integrated/results/**/*.log
 integrated/results/**/checkpoint*.npz
+!integrated/results/joint_300/checkpoint_central.npz
 integrated/results/**/best_checkpoint*.npz
 integrated/results/**/restart*.npz
 integrated/results/**/diagnostic_snapshot.npz
+integrated/results/**/step_bounds_diagnostic*.npz
 integrated/results/**/build/

@@ -1,0 +1,241 @@
+{
+  "validated_initialization": true,
+  "feasibility_validated": true,
+  "validated": false,
+  "optimization_run": false,
+  "optimization_converged": false,
+  "validation_checks": {
+    "Finite solution": true,
+    "Native equalities": true,
+    "Variable bounds": true,
+    "Independent replay": true,
+    "Battery limits and periodicity": true
+  },
+  "source_result": "integrated/results/joint_300",
+  "cadre_source": {
+    "repository": "https://github.com/OpenMDAO/CADRE",
+    "reference_revision": "05f008489e34a123637b213419fd980162ccd303",
+    "checkout_revision": "05f008489e34a123637b213419fd980162ccd303",
+    "reference_files_verified": true,
+    "benchmark_sha256": "bafd7902ea1b4b9aae3e2680d02ecf0a738c3b4bde6d0216b9e536b291288ac1"
+  },
+  "model_signature": {
+    "formulation": "joint-cadre-v1",
+    "cases": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "nodes": 600,
+    "controls": 120,
+    "objective_scale": 1.0,
+    "time_grid": "full",
+    "model_source_sha256": "deda7cb3b5bd0a1cfe5c11d243efdb0a30e1ee83458813ae5e58edcbafef9203",
+    "amigo_version": "0.0.1",
+    "cadre_source": {
+      "repository": "https://github.com/OpenMDAO/CADRE",
+      "reference_revision": "05f008489e34a123637b213419fd980162ccd303",
+      "checkout_revision": "05f008489e34a123637b213419fd980162ccd303",
+      "reference_files_verified": true,
+      "benchmark_sha256": "bafd7902ea1b4b9aae3e2680d02ecf0a738c3b4bde6d0216b9e536b291288ac1"
+    }
+  },
+  "nodes_per_case": 600,
+  "controls_per_profile": 120,
+  "duration_hours": 12.0,
+  "objective_scale": 1.0,
+  "design_variables": 10172,
+  "controls_held_fixed": false,
+  "power_and_initial_soc_repaired": true,
+  "native_equality_max_error": 4.48518999718317e-12,
+  "bound_violation": 0.0,
+  "total_downloaded_data": 15762.256738857186,
+  "fin_angle_rad": 1.335217858270369,
+  "antenna_angle_rad": -0.7853971633974483,
+  "cases": [
+    {
+      "case_index": 0,
+      "downloaded_data": 2546.8806281778457,
+      "reference_max_errors": {
+        "angular_velocity": 0.0,
+        "attitude_torque": 0.0,
+        "wheel_speed": 0.0,
+        "wheel_power_W": 0.0,
+        "roll_rad": 0.0,
+        "communication_power_W": 0.0,
+        "solar_current_A": 0.0,
+        "temperature_K": 0.0,
+        "voltage_V": 0.0,
+        "solar_power_W": 0.0,
+        "battery_power_W": 0.0,
+        "SOC": 0.0,
+        "current_A": 0.0,
+        "gain": 0.0,
+        "download_rate": 0.0,
+        "downloaded_data": 0.0
+      },
+      "battery_feasibility": {
+        "SOC_min": 0.20000000009999902,
+        "SOC_max": 0.9999999999000001,
+        "current_min_A": -7.910977791938613,
+        "current_max_A": 0.6078363094651477,
+        "periodicity_error": -1.1102230246251565e-15,
+        "inequality_violation": 0.0
+      }
+    },
+    {
+      "case_index": 1,
+      "downloaded_data": 2137.513130213219,
+      "reference_max_errors": {
+        "angular_velocity": 0.0,
+        "attitude_torque": 0.0,
+        "wheel_speed": 0.0,
+        "wheel_power_W": 0.0,
+        "roll_rad": 0.0,
+        "communication_power_W": 0.0,
+        "solar_current_A": 0.0,
+        "temperature_K": 0.0,
+        "voltage_V": 0.0,
+        "solar_power_W": 0.0,
+        "battery_power_W": 0.0,
+        "SOC": 0.0,
+        "current_A": 0.0,
+        "gain": 0.0,
+        "download_rate": 0.0,
+        "downloaded_data": 0.0
+      },
+      "battery_feasibility": {
+        "SOC_min": 0.20000000010000007,
+        "SOC_max": 0.9999999998999873,
+        "current_min_A": -6.401887334812363,
+        "current_max_A": 1.4595716293512406,
+        "periodicity_error": -1.4845902285287593e-12,
+        "inequality_violation": 0.0
+      }
+    },
+    {
+      "case_index": 2,
+      "downloaded_data": 2384.5132098489075,
+      "reference_max_errors": {
+        "angular_velocity": 0.0,
+        "attitude_torque": 0.0,
+        "wheel_speed": 0.0,
+        "wheel_power_W": 0.0,
+        "roll_rad": 0.0,
+        "communication_power_W": 0.0,
+        "solar_current_A": 0.0,
+        "temperature_K": 0.0,
+        "voltage_V": 0.0,
+        "solar_power_W": 0.0,
+        "battery_power_W": 0.0,
+        "SOC": 0.0,
+        "current_A": 0.0,
+        "gain": 0.0,
+        "download_rate": 0.0,
+        "downloaded_data": 0.0
+      },
+      "battery_feasibility": {
+        "SOC_min": 0.20000000009999894,
+        "SOC_max": 0.9999999998999866,
+        "current_min_A": -7.7531687447078745,
+        "current_max_A": 1.109178228015321,
+        "periodicity_error": -1.5543122344752192e-15,
+        "inequality_violation": 0.0
+      }
+    },
+    {
+      "case_index": 3,
+      "downloaded_data": 2722.3648153555428,
+      "reference_max_errors": {
+        "angular_velocity": 0.0,
+        "attitude_torque": 0.0,
+        "wheel_speed": 0.0,
+        "wheel_power_W": 0.0,
+        "roll_rad": 0.0,
+        "communication_power_W": 0.0,
+        "solar_current_A": 0.0,
+        "temperature_K": 0.0,
+        "voltage_V": 0.0,
+        "solar_power_W": 0.0,
+        "battery_power_W": 0.0,
+        "SOC": 0.0,
+        "current_A": 0.0,
+        "gain": 0.0,
+        "download_rate": 0.0,
+        "downloaded_data": 0.0
+      },
+      "battery_feasibility": {
+        "SOC_min": 0.20000000009999894,
+        "SOC_max": 0.9999999999000004,
+        "current_min_A": -7.883879343080394,
+        "current_max_A": 0.3087258074420043,
+        "periodicity_error": -5.551115123125783e-16,
+        "inequality_violation": 0.0
+      }
+    },
+    {
+      "case_index": 4,
+      "downloaded_data": 2851.7041844795426,
+      "reference_max_errors": {
+        "angular_velocity": 0.0,
+        "attitude_torque": 0.0,
+        "wheel_speed": 0.0,
+        "wheel_power_W": 0.0,
+        "roll_rad": 0.0,
+        "communication_power_W": 0.0,
+        "solar_current_A": 0.0,
+        "temperature_K": 0.0,
+        "voltage_V": 0.0,
+        "solar_power_W": 0.0,
+        "battery_power_W": 0.0,
+        "SOC": 0.0,
+        "current_A": 0.0,
+        "gain": 0.0,
+        "download_rate": 0.0,
+        "downloaded_data": 0.0
+      },
+      "battery_feasibility": {
+        "SOC_min": 0.2000000000999962,
+        "SOC_max": 0.9999999998999419,
+        "current_min_A": -7.79315295521978,
+        "current_max_A": 1.3341520475038233,
+        "periodicity_error": 2.7200464103316335e-15,
+        "inequality_violation": 0.0
+      }
+    },
+    {
+      "case_index": 5,
+      "downloaded_data": 3119.280770782128,
+      "reference_max_errors": {
+        "angular_velocity": 0.0,
+        "attitude_torque": 0.0,
+        "wheel_speed": 0.0,
+        "wheel_power_W": 0.0,
+        "roll_rad": 0.0,
+        "communication_power_W": 0.0,
+        "solar_current_A": 0.0,
+        "temperature_K": 0.0,
+        "voltage_V": 0.0,
+        "solar_power_W": 0.0,
+        "battery_power_W": 0.0,
+        "SOC": 0.0,
+        "current_A": 0.0,
+        "gain": 0.0,
+        "download_rate": 0.0,
+        "downloaded_data": 0.0
+      },
+      "battery_feasibility": {
+        "SOC_min": 0.20000000010000965,
+        "SOC_max": 0.9999999998996962,
+        "current_min_A": -6.471578699939826,
+        "current_max_A": 1.2990807901283594,
+        "periodicity_error": 8.215650382226158e-15,
+        "inequality_violation": 0.0
+      }
+    }
+  ],
+  "checkpoint_round_trip_checked": true
+}

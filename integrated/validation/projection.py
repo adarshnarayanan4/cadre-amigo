@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import amigo as am
 import numpy as np
@@ -15,6 +16,7 @@ from integrated.model.joint import (
     build_directory,
 )
 from integrated.optimization.driver import CadreOptimizer
+from integrated.reference.joint_replay import replay_joint
 from integrated.optimization.checkpoint import project_into_bounds
 from integrated.optimization.joint import initialize_adjoints
 from integrated.solvers.evaluator import ConsistentEvaluator
@@ -25,7 +27,60 @@ from integrated.optimization.projection import (
     BatteryRestorationCase,
     ProjectedEvaluator,
     TrajectoryAdjointProjector,
+    retains_bound_gap,
 )
+
+
+def check_geometry_cache(joint, point, projector):
+    """Compare cached geometry with a fresh replay after each relevant change."""
+    state = joint.model.create_vector()
+    probe = state.get_vector()
+    probe.copy(point)
+    case = joint.cases[0]
+    cache = projector.cached_cases[id(case)].lookups
+
+    def compare():
+        expected = replay_joint(joint, state, collect=True, cases=[case])
+        projector.project(probe, cases=[case])
+        for name, values in expected.items():
+            np.testing.assert_array_equal(
+                probe.get_array()[joint.model.get_indices(name)],
+                np.asarray(values).reshape(joint.model.get_indices(name).shape),
+            )
+
+    compare()
+    hits = cache.hits
+    power = joint.model.get_indices("case0.control_points.CP_P_comm[:]")
+    probe.get_array()[power] *= 0.99
+    probe.copy_host_to_device()
+    compare()
+    assert cache.hits == hits + 1
+    for name in (
+        "case0.control_points.CP_Isetpt[:, :]",
+        "case0.battery_ic.initial_soc[:]",
+        "shared_surface.cellInstd[0, :]",
+    ):
+        hits = cache.hits
+        indices = joint.model.get_indices(name).ravel()
+        probe.get_array()[indices[0]] += 1e-5
+        probe.copy_host_to_device()
+        compare()
+        assert cache.hits == hits + 1
+    for name in (
+        "case0.control_points.CP_gamma[:]",
+        "shared_angles.finAngle[:]",
+        "shared_angles.antAngle[:]",
+    ):
+        hits = cache.hits
+        indices = joint.model.get_indices(name)
+        probe.get_array()[indices[0]] += 1e-5
+        probe.copy_host_to_device()
+        compare()
+        assert cache.hits == hits
+    return {
+        "cached_geometry_matches_fresh_replay": True,
+        "geometry_cache_invalidates_on_roll_and_angles": True,
+    }
 
 
 def check_price_refit(model, point, projector):
@@ -66,7 +121,7 @@ def check_price_refit(model, point, projector):
 
 
 def check_full_power_correction(
-    model, point, projector, *, restore=False, case_position=0
+    model, point, projector, *, restore=False, case_position=0, relative_power=False
 ):
     restorer = BatteryRestorer(projector, full_power=True)
     case = projector.joint.cases[case_position]
@@ -78,6 +133,7 @@ def check_full_power_correction(
         adjust_initial_soc=False,
         full_power=True,
         reference=point.get_array().copy(),
+        relative_power=relative_power,
     )
     zero = np.zeros(case.m)
     oracle.evaluate(zero)
@@ -149,6 +205,128 @@ def check_full_power_correction(
     return report
 
 
+def check_power_start_margin(model, point, projector):
+    """Repair a nearly active power control without recreating a tiny gap."""
+    probe = model.create_vector().get_vector()
+    probe.copy(point)
+    case = projector.joint.cases[0]
+    controls = model.get_indices(f"case{case.case_index}.control_points.CP_P_comm[:]")
+    probe.get_array()[controls[0]] = 2.5e-9
+    probe.copy_host_to_device()
+    projector.project(probe)
+    before = probe.get_array().copy()
+    restorer = BatteryRestorer(projector, interior=True, periodicity_tolerance=1e-10)
+    repair = BatteryRestorationCase(
+        restorer,
+        case,
+        restorer.partitions[0],
+        probe,
+        full_power=True,
+        power_margin=0.001,
+    )
+    np.testing.assert_allclose(
+        (repair.start + repair.mapping @ repair.step_lower)[:-1], 0.001, atol=1e-12
+    )
+    np.testing.assert_allclose(
+        (repair.start + repair.mapping @ repair.step_upper)[:-1], 24.999, atol=1e-12
+    )
+    assert repair.restore(probe, max_iterations=80), repair.message
+    probe.copy_device_to_host()
+    power = probe.get_array()[controls]
+    assert np.min(power) >= 0.001 - 1e-10
+    assert np.max(power) <= 24.999 + 1e-10
+    assert abs(repair.equality[0]) < 1e-10
+    unchanged = np.setdiff1d(projector.joint.design_indices(), repair.controls)
+    np.testing.assert_array_equal(probe.get_array()[unchanged], before[unchanged])
+    # The trajectory may already satisfy the battery tolerances while a
+    # proposed power control is too close to its previous bound. It still
+    # needs a full-profile repair instead of the zero-step early return.
+    reference = probe.get_array().copy()
+    trial = model.create_vector().get_vector()
+    trial.copy(probe)
+    trial.get_array()[controls[0]] *= 0.1
+    trial.copy_host_to_device()
+    projector.project(trial)
+    margin_restorer = BatteryRestorer(projector, periodicity_tolerance=1e-3)
+    margin_repair = BatteryRestorationCase(
+        margin_restorer,
+        case,
+        margin_restorer.partitions[0],
+        trial,
+        adjust_initial_soc=False,
+        full_power=True,
+        reference=reference,
+    )
+    zero = np.zeros(len(controls))
+    margin_repair.evaluate(zero, derivatives=False)
+    assert margin_repair.feasible()
+    assert np.any(zero < margin_repair.step_lower)
+    assert margin_repair.restore(trial, max_iterations=80), margin_repair.message
+    assert margin_repair.within_reference_gaps(reference)
+
+    relative_trial = model.create_vector().get_vector()
+    relative_trial.copy(probe)
+    relative_trial.get_array()[controls[0]] *= 0.1
+    relative_trial.copy_host_to_device()
+    projector.project(relative_trial)
+    relative_repair = BatteryRestorationCase(
+        margin_restorer,
+        case,
+        margin_restorer.partitions[0],
+        relative_trial,
+        adjust_initial_soc=False,
+        full_power=True,
+        reference=reference,
+        relative_power=True,
+    )
+    expected_scale = np.minimum(reference[controls], 25 - reference[controls])
+    np.testing.assert_allclose(np.diag(relative_repair.mapping[:-1]), expected_scale)
+    assert relative_repair.restore(
+        relative_trial, max_iterations=80
+    ), relative_repair.message
+    assert relative_repair.within_reference_gaps(reference)
+    np.testing.assert_array_equal(
+        relative_trial.get_array()[unchanged], before[unchanged]
+    )
+    return {
+        "relative_power_repair_passes_small_case": True,
+        "interior_power_repair_minimum_W": float(np.min(power)),
+        "interior_power_repair_periodicity_error": float(abs(repair.equality[0])),
+        "interior_power_repair_keeps_other_design_controls": True,
+        "feasible_trajectory_still_repairs_power_gap": True,
+    }
+
+
+def check_small_bound_gaps():
+    """A tiny gap must still retain its requested fraction."""
+    old = np.array([1e-14, 1e-8, 1.0])
+    assert retains_bound_gap(old, 0.2 * old, 0.2)
+    assert not retains_bound_gap(old, np.array([1e-16, 2e-9, 0.2]), 0.2)
+    assert not retains_bound_gap(old, np.array([0.0, 2e-9, 0.2]), 0.2)
+
+    class Vector:
+        def __init__(self, values):
+            self.values = values
+
+        def copy_device_to_host(self):
+            pass
+
+        def get_array(self):
+            return self.values
+
+    repair = SimpleNamespace(
+        vector=Vector(np.array([1e-16])),
+        controls=np.array([0]),
+        states=np.array([], dtype=int),
+        lower=np.array([0.0]),
+        upper=np.array([25.0]),
+    )
+    assert not BatteryRestorationCase.within_reference_gaps(repair, np.array([1e-14]))
+    repair.vector.values[0] = 3e-15
+    assert BatteryRestorationCase.within_reference_gaps(repair, np.array([1e-14]))
+    return {"small_bound_gap_fraction_enforced": True}
+
+
 def check_bound_dual_scaling(model, point, projector):
     optimizer = CadreOptimizer(model, model.create_vector())
     probe = model.create_vector()
@@ -189,6 +367,18 @@ def check_bound_dual_scaling(model, point, projector):
     probe.get_vector().copy_host_to_device()
     assert not evaluator.satisfies_gap_fraction(probe.get_vector(), previous)
     probe.get_vector().get_array()[soc] = preserved
+    power = model.get_indices("case0.control_points.CP_P_comm[:]")[0]
+    power_position = np.flatnonzero(primal == power)[0]
+    saved_power = probe.get_vector().get_array()[power]
+    tiny_reference = previous.copy()
+    tiny_reference[power_position] = 1e-14
+    probe.get_vector().get_array()[power] = 1e-16
+    probe.get_vector().copy_host_to_device()
+    assert evaluator.satisfies_gap_fraction(probe.get_vector(), tiny_reference)
+    probe.get_vector().get_array()[power] = 1e-17
+    probe.get_vector().copy_host_to_device()
+    assert not evaluator.satisfies_gap_fraction(probe.get_vector(), tiny_reference)
+    probe.get_vector().get_array()[power] = saved_power
     probe.get_vector().copy_host_to_device()
     errors = []
     current = probe.get_vector().get_array()[primal]
@@ -586,6 +776,7 @@ def main():
             joint, point, projector, interior_start=True
         )
         original = point.get_array().copy()
+    cache_checks = check_geometry_cache(joint, point, projector)
     dual_checks = check_bound_dual_scaling(model, point, projector)
     centered_checks = check_centered_bound_duals(model, point, projector)
     price_checks = check_price_refit(model, point, projector)
@@ -607,6 +798,7 @@ def main():
         assert restored_residual < 1e-7, restored_residual
         restoration["restored_native_constraint_error"] = restored_residual
     report = {
+        **check_power_start_margin(model, point, projector),
         **check_full_power_correction(
             model,
             point,
@@ -624,10 +816,18 @@ def main():
         "accepted_filter_step_retained": True,
         "exhausted_line_search_rejected": True,
         **dual_checks,
+        **cache_checks,
+        **check_small_bound_gaps(),
         **centered_checks,
         **price_checks,
         **restoration,
     }
+    relative_derivatives = check_full_power_correction(
+        model, point, projector, relative_power=True
+    )
+    report["relative_power_correction_derivative_error"] = relative_derivatives[
+        "full_power_correction_derivative_error"
+    ]
     filename = (
         "projection_full_window_validation.json"
         if args.full_window

@@ -17,14 +17,24 @@ Setup and compilation take extra time. Downloaded data was 4,605.910122 CADRE
 units, with a final solver error of 1.000e-9. Battery limits and separate checks
 of the result all passed.
 
-See the [saved results](integrated/results/README.md) and
-[meeting notes](integrated/docs/meeting_result.md) for plots and measurements.
+See the [saved results](integrated/results/README.md) for plots and measurements.
 
 ## What is still unfinished?
 
-The full six-case optimization and the 1,500-node run with all design variables
-free have not converged. A coarse-grid solution can violate battery limits on
-a finer grid, so the 600-node result does not establish a fine-grid solution.
+The six-case model has also converged at 300 time points per case, with 5,132
+design variables. See the [six-case run instructions](integrated/docs/six_case_300.md)
+and the saved result in `integrated/results/joint_300`.
+The target 1,500-node optimization and grid checks are still unfinished.
+Replaying the six-case controls at 600 nodes changes data by −7.79% and fails
+battery SOC checks, so a finer-grid optimization is needed.
+
+A [600-node six-case candidate](integrated/results/joint_300/candidate_600/candidate_overview.png)
+passes the feasibility checks and downloads 24,878.54 data units. The optimizer
+has not converged, so this is a candidate rather than a final optimized result.
+A [1,500-node replay](integrated/results/joint_300/candidate_600/mesh_replay_1500.png)
+exposes battery violations. A [power-profile repair](integrated/results/joint_300/reference_start_1500/reference_start_overview.png)
+passes the 1,500-node reference battery checks with 120 controls per profile.
+It still needs a compiled-model check and the full 300-control optimization.
 
 Our model uses trapezoidal time integration and checks battery bounds at each
 time point. Upstream CADRE uses RK4 and KS aggregation. The

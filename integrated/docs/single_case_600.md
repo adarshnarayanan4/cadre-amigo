@@ -66,6 +66,6 @@ error of **1.000e-9**. You can view its [summary](../results/single_case_600/sum
 [trajectory plot](../results/single_case_600/case_0.png), and
 [convergence plot](../results/single_case_600/convergence.png).
 
-This is one case on a smaller grid. The full six-case optimization is still
-unfinished. Our time integration and battery constraints also differ from
+This is one case on a smaller grid. The six-case model has converged on a 300-node grid, but the full-resolution
+optimization is still unfinished. Our time integration and battery constraints also differ from
 upstream CADRE; see the [model notes](cadre_source.md).

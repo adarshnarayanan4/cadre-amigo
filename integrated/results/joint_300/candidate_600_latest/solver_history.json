@@ -1,0 +1,34 @@
+[
+  {
+    "status": 0,
+    "iteration": 0,
+    "time": 2.686480208998546,
+    "residual": 18.233157341114627,
+    "barrier_param": 0.001,
+    "inertia_delta": 0.0,
+    "inf_pr": 0.05208449347430211,
+    "inf_du": 1.0,
+    "compl": 0.25434803371601855,
+    "nlp_error": 1.0,
+    "objective": -25520.484637726426,
+    "step_norm": 0.0
+  },
+  {
+    "status": 0,
+    "iteration": 1,
+    "time": 336.3489910000062,
+    "residual": 3641.6826538735722,
+    "barrier_param": 0.001,
+    "filter_size": 0,
+    "line_iters": 3,
+    "alpha_x": 0.25,
+    "alpha_z": 0.25,
+    "inertia_delta": 0.0,
+    "inf_pr": 4.632516592550928e-12,
+    "inf_du": 1484.5885833698449,
+    "compl": 0.0010000000000000002,
+    "nlp_error": 475.44719838552385,
+    "objective": -25506.4779692634,
+    "step_norm": 217438.13861924497
+  }
+]

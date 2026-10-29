@@ -1,5 +1,7 @@
 """Keep trial trajectories consistent with the independent design controls."""
 
+from time import perf_counter
+
 import numpy as np
 from amigo.algorithm.line_search.filter_line_search import FilterLineSearch
 from scipy.optimize import minimize
@@ -15,9 +17,54 @@ MINIMUM_GAP_FRACTION = 0.005
 POWER_REPAIR_GAP_FRACTION = 0.2
 
 
+def retains_bound_gap(old_gap, new_gap, fraction):
+    """Check a relative gap without masking small gaps with an absolute tolerance."""
+    tolerance = 8 * np.finfo(float).eps * np.maximum(abs(old_gap), abs(new_gap))
+    return bool(
+        np.all(new_gap > 0) and np.all(new_gap + tolerance >= fraction * old_gap)
+    )
+
+
+class CachedGeometry:
+    """Reuse case geometry only when roll and both shared angles are unchanged."""
+
+    def __init__(self, lookups):
+        self.lookups = lookups
+        self.key = None
+        self.roll = None
+        self.result = None
+        self.hits = 0
+
+    def __getattr__(self, name):
+        return getattr(self.lookups, name)
+
+    def geometry(self, roll, reference=False):
+        key = (self.lookups.fin_angle, self.lookups.antenna_angle, reference)
+        if self.key == key and np.array_equal(self.roll, roll):
+            self.hits += 1
+            return self.result
+        result = self.lookups.geometry(roll, reference=reference)
+        self.key = key
+        self.roll = np.asarray(roll).copy()
+        self.result = result
+        return result
+
+
+class CachedCase:
+    """Expose the original case with a private cache for reference geometry."""
+
+    def __init__(self, case):
+        self.case = case
+        self.lookups = CachedGeometry(case.lookups)
+
+    def __getattr__(self, name):
+        return getattr(self.case, name)
+
+
 class TrajectoryProjector:
     def __init__(self, joint):
         self.joint = joint
+        self.cached_cases = {id(case): CachedCase(case) for case in joint.cases}
         self.buffer = joint.model.create_vector()
         self.lower = joint.model.get_lower().get_vector()
         self.upper = joint.model.get_upper().get_vector()
@@ -29,7 +76,9 @@ class TrajectoryProjector:
 
     def project(self, point, cases=None):
         self.buffer.get_vector().copy(point)
-        trajectories = replay_joint(self.joint, self.buffer, collect=True, cases=cases)
+        selected = self.joint.cases if cases is None else cases
+        cached = [self.cached_cases[id(case)] for case in selected]
+        trajectories = replay_joint(self.joint, self.buffer, collect=True, cases=cached)
         point.copy_device_to_host()
         values = point.get_array()
         for name, array in trajectories.items():
@@ -58,7 +107,12 @@ class BatteryRestorer:
     """
 
     def __init__(
-        self, projector, interior=False, periodicity_tolerance=1e-9, full_power=False
+        self,
+        projector,
+        interior=False,
+        periodicity_tolerance=1e-9,
+        full_power=False,
+        relative_power=False,
     ):
         self.projector = projector
         self.interior = interior
@@ -66,6 +120,7 @@ class BatteryRestorer:
             raise ValueError("Periodicity tolerance must be positive and finite")
         self.periodicity_tolerance = periodicity_tolerance
         self.full_power = full_power
+        self.relative_power = relative_power
         self.full_power_solves = 0
         self.reported_full_power = False
         self.joint = projector.joint
@@ -76,6 +131,7 @@ class BatteryRestorer:
         self.matrix = self.model.create_matrix()
         self.calls = 0
         self.case_solves = 0
+        self.elapsed_time_s = 0.0
         self.last_message = ""
 
     def restore(
@@ -86,12 +142,16 @@ class BatteryRestorer:
         adjust_initial_soc=True,
         reference=None,
     ):
+        started = perf_counter()
         self.calls += 1
         self.last_message = ""
         point.copy_device_to_host()
         original = point.get_array().copy()
         try:
             for case, partition in zip(self.joint.cases, self.partitions):
+                case_started = perf_counter()
+                if verbose:
+                    print(f"  Case {case.case_index}: repairing battery...", flush=True)
                 oracle = BatteryRestorationCase(
                     self, case, partition, point, adjust_initial_soc=adjust_initial_soc
                 )
@@ -103,6 +163,10 @@ class BatteryRestorer:
                     and reference is not None
                 ):
                     success = oracle.within_reference_gaps(reference)
+                    if not success:
+                        oracle.message = (
+                            "Required distance from previous bounds was not retained"
+                        )
                 if not success and self.full_power and not adjust_initial_soc:
                     self.full_power_solves += 1
                     oracle = BatteryRestorationCase(
@@ -113,12 +177,15 @@ class BatteryRestorer:
                         adjust_initial_soc=False,
                         full_power=True,
                         reference=reference,
+                        relative_power=self.relative_power and reference is not None,
                     )
                     success = oracle.restore(
                         point, max_iterations=max(8, max_iterations)
                     )
                     if success and reference is not None:
                         success = oracle.within_reference_gaps(reference)
+                        if not success:
+                            oracle.message = "Required distance from previous bounds was not retained"
                     if success and not self.reported_full_power:
                         self.reported_full_power = True
                         print_status(
@@ -131,7 +198,8 @@ class BatteryRestorer:
                         )
                 if verbose:
                     print(
-                        f"  Case {case.case_index}: SOC periodicity {oracle.equality[0]:.3e}",
+                        f"  Case {case.case_index}: SOC periodicity {oracle.equality[0]:.3e}; "
+                        f"repair time {perf_counter() - case_started:.2f} s",
                         flush=True,
                     )
                 if not success:
@@ -143,6 +211,8 @@ class BatteryRestorer:
                 self.last_message = "Restored trajectory is outside strict bounds"
         except (ValueError, RuntimeError, FloatingPointError, OverflowError) as error:
             self.last_message = str(error)
+        finally:
+            self.elapsed_time_s += perf_counter() - started
         point.get_array()[:] = original
         point.copy_host_to_device()
         return False
@@ -162,7 +232,21 @@ class BatteryRestorationCase:
         adjust_initial_soc=True,
         full_power=False,
         reference=None,
+        power_margin=0.0,
+        relative_power=False,
     ):
+        if (
+            not np.isfinite(power_margin)
+            or power_margin < 0
+            or (power_margin > 0 and not full_power)
+        ):
+            raise ValueError(
+                "Power margins require a finite nonnegative full-profile repair"
+            )
+        if relative_power and (not full_power or reference is None):
+            raise ValueError(
+                "Relative power repair requires a full profile and reference"
+            )
         self.restorer, self.case = restorer, case
         self.reference = reference
         self.reference_fraction = (
@@ -206,6 +290,12 @@ class BatteryRestorationCase:
         upper_gap = self.upper[self.controls] - self.start
         lower_margin = np.minimum(1e-10 * self.width, 0.1 * lower_gap)
         upper_margin = np.minimum(1e-10 * self.width, 0.1 * upper_gap)
+        # A feasible point almost on a power bound can have enormous centered
+        # multipliers. Keep an absolute margin when preparing an interior start.
+        if np.any(2 * power_margin >= self.width[:-1]):
+            raise ValueError("Power margin must be less than half the bound range")
+        lower_margin[:-1] = np.maximum(lower_margin[:-1], power_margin)
+        upper_margin[:-1] = np.maximum(upper_margin[:-1], power_margin)
         if reference is not None:
             lower_margin = np.maximum(
                 lower_margin,
@@ -222,9 +312,20 @@ class BatteryRestorationCase:
         if full_power:
             columns = len(self.controls) - 1 + int(adjust_initial_soc)
             self.mapping = np.zeros((len(self.controls), columns))
-            self.mapping[:-1, : len(self.controls) - 1] = np.diag(self.width[:-1])
-            self.step_lower = lo[:-1] / self.width[:-1]
-            self.step_upper = hi[:-1] / self.width[:-1]
+            power_scale = self.width[:-1].copy()
+            if relative_power:
+                old = reference[self.controls[:-1]]
+                power_scale = np.minimum(
+                    old - self.lower[self.controls[:-1]],
+                    self.upper[self.controls[:-1]] - old,
+                )
+                if np.any(~np.isfinite(power_scale)) or np.any(power_scale <= 0):
+                    raise ValueError(
+                        "Relative power repair requires interior reference controls"
+                    )
+            self.mapping[:-1, : len(self.controls) - 1] = np.diag(power_scale)
+            self.step_lower = lo[:-1] / power_scale
+            self.step_upper = hi[:-1] / power_scale
         else:
             self.mapping = np.zeros(
                 (len(self.controls), 2 if adjust_initial_soc else 1)
@@ -353,7 +454,7 @@ class BatteryRestorationCase:
             finite = np.isfinite(bound)
             old = sign * (reference[indices[finite]] - bound[finite])
             new = sign * (values[finite] - bound[finite])
-            if np.any(new + 1e-14 * np.maximum(1, abs(bound[finite])) < fraction * old):
+            if not retains_bound_gap(old, new, fraction):
                 return False
         return True
 
@@ -365,7 +466,11 @@ class BatteryRestorationCase:
     def restore(self, point, max_iterations=20):
         zero = np.zeros(self.mapping.shape[1])
         self.evaluate(zero, derivatives=False)
-        if self.feasible():
+        if (
+            self.feasible()
+            and np.all(zero >= self.step_lower)
+            and np.all(zero <= self.step_upper)
+        ):
             return True
         self.restorer.case_solves += 1
         try:
@@ -633,10 +738,7 @@ class ProjectedEvaluator(ConsistentEvaluator):
             finite = np.isfinite(bound)
             old_gap = sign * (reference[finite] - bound[finite])
             new_gap = sign * (current[finite] - bound[finite])
-            tolerance = 1e-14 * np.maximum(1, abs(bound[finite]))
-            if np.any(new_gap <= 0) or np.any(
-                new_gap + tolerance < MINIMUM_GAP_FRACTION * old_gap
-            ):
+            if not retains_bound_gap(old_gap, new_gap, MINIMUM_GAP_FRACTION):
                 return False
         return True
 

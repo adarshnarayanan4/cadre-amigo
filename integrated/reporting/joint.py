@@ -108,11 +108,17 @@ def save_joint(joint, args, signature, point, history, solver):
         "solver_time_scope": "solver phase for this segment",
         "linear_solver": args.linear_solver,
         "primal_barrier": args.primal_barrier,
+        "control_step_bounds": getattr(args, "limit_control_steps", False),
+        "symmetric_step_bounds": getattr(
+            getattr(solver, "step_bounds", None), "symmetric", False
+        ),
         "case_workers": getattr(solver, "case_workers", 1),
         "selective_curvature": getattr(solver, "selective_curvature", False),
         "spectral_curvature": getattr(solver, "spectral_curvature", False),
         "box_qp": getattr(solver, "box_qp", False),
         "box_qp_iterations": getattr(solver, "box_qp_iterations", 0),
+        "box_qp_iteration_budget": getattr(solver, "box_qp_iteration_budget", None),
+        "box_qp_fallbacks": getattr(solver, "box_qp_fallbacks", 0),
         "largest_active_step_set": getattr(solver, "largest_active_set", 0),
         "periodicity_price_refits": getattr(solver, "price_refits", 0),
         "projected_trial_rejections": getattr(solver, "trial_rejections", {}),
@@ -123,6 +129,12 @@ def save_joint(joint, args, signature, point, history, solver):
         "full_power_restorations": getattr(solver, "full_power_restorations", 0),
         "initial_battery_restorations": getattr(
             solver, "initial_battery_restorations", 0
+        ),
+        "initial_battery_repair_time_s": getattr(
+            solver, "initial_battery_repair_time_s", 0.0
+        ),
+        "projected_battery_repair_time_s": getattr(
+            solver, "projected_battery_repair_time_s", 0.0
         ),
         "restoration_parameters_per_case": getattr(
             solver, "restoration_parameters_per_case", 0

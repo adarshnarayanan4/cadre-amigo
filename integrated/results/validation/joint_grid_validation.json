@@ -1,4 +1,5 @@
 {
+  "full_space_control_step_option": true,
   "active_box_step_option": true,
   "bounded_control_transfer_and_window_checks": true,
   "control_refitting_repairs_start": true,

@@ -278,6 +278,22 @@ class CheckpointManager:
 
         upper_duals.copy_device_to_host()
 
+        solver = optimizer.solver
+        diagnostics = {
+            name: float(getattr(solver, name))
+            for name in (
+                "curvature_shift",
+                "step_shift",
+                "regularization_max",
+                "max_linear_residual",
+                "largest_design_step_ratio",
+                "box_qp_iterations",
+                "box_qp_iteration_budget",
+                "box_qp_fallbacks",
+            )
+            if hasattr(solver, name)
+        }
+
         np.savez_compressed(
             temporary,
             solution=solution.get_array(),
@@ -289,6 +305,9 @@ class CheckpointManager:
             elapsed_s=time.perf_counter() - self.start_time,
             primal_infeasibility=state.primal_infeas,
             dual_infeasibility=state.dual_infeas,
+            nlp_error=state.kkt_error,
+            complementarity=state.complementarity,
+            linear_solver_diagnostics=json.dumps(diagnostics),
         )
 
         temporary.replace(args.output / "checkpoint.npz")

@@ -1,4 +1,10 @@
 {
+  "relative_power_repair_passes_small_case": true,
+  "interior_power_repair_minimum_W": 0.13925064888692576,
+  "interior_power_repair_periodicity_error": 2.4355295558109447e-11,
+  "interior_power_repair_keeps_other_design_controls": true,
+  "feasible_trajectory_still_repairs_power_gap": true,
+  "full_power_correction_case": 0,
   "full_power_correction_columns": 4,
   "full_power_correction_derivative_error": 1.1851731578018006e-11,
   "nodes": 8,
@@ -14,11 +20,15 @@
   "repaired_trial_state_stationarity_error": 8.881784197001252e-16,
   "repaired_trial_gap_fraction_checked": true,
   "equality_multiplier_uses_primal_step": true,
+  "cached_geometry_matches_fresh_replay": true,
+  "geometry_cache_invalidates_on_roll_and_angles": true,
+  "small_bound_gap_fraction_enforced": true,
   "centered_bound_complementarity_error": 1.6940658945086007e-21,
   "barrier_updates_recenter_duals": true,
   "noninterior_centering_rejected": true,
   "price_refit_design_residual_before": 17.123373626222484,
   "price_refit_design_residual_after": 7.349676423018536e-13,
   "price_refit_state_stationarity_error": 1.1998777333062996e-11,
-  "price_refit_preserves_primals_and_bound_duals": true
+  "price_refit_preserves_primals_and_bound_duals": true,
+  "relative_power_correction_derivative_error": 7.63342127273756e-12
 }

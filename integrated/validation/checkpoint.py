@@ -37,6 +37,9 @@ def main():
             zl=lower_duals,
             zu=upper_duals,
             barrier_param=1e-7,
+            nlp_error=1e-6,
+            complementarity=1e-8,
+            linear_solver_diagnostics=json.dumps({"curvature_shift": 0.1}),
         )
 
         args = parse_args(["--design-physics", "--warm-start", str(checkpoint)])

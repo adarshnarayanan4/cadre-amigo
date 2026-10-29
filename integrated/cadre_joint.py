@@ -63,9 +63,19 @@ def parse_args(argv=None):
         help="Correct negative design modes with case-local matrix updates",
     )
     parser.add_argument(
+        "--limit-control-steps",
+        action="store_true",
+        help="Regularize full-space control and state steps using symmetric bound gaps",
+    )
+    parser.add_argument(
         "--box-qp",
         action="store_true",
         help="Solve an active-bound quadratic step instead of uniform step damping",
+    )
+    parser.add_argument(
+        "--relative-power-repair",
+        action="store_true",
+        help="Experiment with bound-gap-scaled power corrections during trial repair",
     )
     parser.add_argument("--warm-start", type=Path)
     parser.add_argument(
@@ -119,8 +129,16 @@ def parse_args(argv=None):
         parser.error("Require at least one case worker")
     if args.box_qp and not args.primal_barrier:
         parser.error("--box-qp requires --primal-barrier")
+    if args.relative_power_repair and not args.box_qp:
+        parser.error("--relative-power-repair requires --box-qp")
     if args.spectral_curvature and (not args.optimize or args.linear_solver != "block"):
         parser.error("--spectral-curvature requires optimization with the block solver")
+    if args.limit_control_steps and (
+        not args.optimize or not args.full_space_trials or args.linear_solver != "block"
+    ):
+        parser.error(
+            "--limit-control-steps requires full-space optimization with the block solver"
+        )
     if args.primal_barrier:
         if not args.optimize or args.full_space_trials or args.linear_solver != "block":
             parser.error(

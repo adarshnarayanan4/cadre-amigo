@@ -1,16 +1,65 @@
 {
+  "step_capture_and_replay": {
+    "inverse_roundtrip_error": 0.0,
+    "replayed_qp_iterations": 16,
+    "fallback_survives_diagnostic_write_failure": true
+  },
+  "affine_start_outside_box_fallback": {
+    "fallbacks": 1,
+    "equations_and_step_bounds_passed": true
+  },
   "active_box_subproblems": {
+    "active_set_progress_reports": true,
     "exhaustive_qp_comparisons": 20,
     "largest_iterations": 7,
-    "large_cancellation_recovered_by_refactorization": true
+    "large_cancellation_recovered_by_refactorization": true,
+    "dependent_bounds_with_affine_offset": true
+  },
+  "full_space_control_bounds": {
+    "relative_linear_residual": 1.0466637040547092e-15,
+    "box_qp_fallbacks": 0,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "spectral_full_space_control_bounds": {
+    "relative_linear_residual": 8.905257922602648e-16,
+    "box_qp_fallbacks": 0,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
   },
   "active_box_kkt_solve": {
     "relative_linear_residual": 4.610547680820254e-12,
+    "box_qp_fallbacks": 0,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "full_space_active_box_kkt_solve": {
+    "relative_linear_residual": 3.441832809924877e-12,
+    "box_qp_fallbacks": 0,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "full_space_active_box_fallback": {
+    "relative_linear_residual": 8.758576718764173e-13,
+    "box_qp_fallbacks": 1,
     "negative_eigenvalues": 12,
     "expected_negative_eigenvalues": 12
   },
   "spectral_active_box_kkt_solve": {
     "relative_linear_residual": 1.5447168686248587e-11,
+    "box_qp_fallbacks": 0,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "active_box_fallback": {
+    "relative_linear_residual": 6.379780178010617e-13,
+    "box_qp_fallbacks": 1,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "spectral_active_box_fallback": {
+    "relative_linear_residual": 6.199221913352901e-12,
+    "box_qp_fallbacks": 1,
     "negative_eigenvalues": 12,
     "expected_negative_eigenvalues": 12
   },
@@ -20,11 +69,19 @@
   },
   "spectral_indefinite_solve": {
     "relative_linear_residual": 4.522201288821657e-16,
+    "box_qp_fallbacks": 0,
     "negative_eigenvalues": 12,
     "expected_negative_eigenvalues": 12
   },
   "spectral_bound_aware_solve": {
     "relative_linear_residual": 2.1604489239618293e-12,
+    "box_qp_fallbacks": 0,
+    "negative_eigenvalues": 12,
+    "expected_negative_eigenvalues": 12
+  },
+  "spectral_symmetric_bounds_with_equality_defects": {
+    "relative_linear_residual": 8.369292935681824e-11,
+    "box_qp_fallbacks": 0,
     "negative_eigenvalues": 12,
     "expected_negative_eigenvalues": 12
   },
@@ -37,26 +94,31 @@
   },
   "positive_curvature": {
     "relative_linear_residual": 6.9572327520333195e-16,
+    "box_qp_fallbacks": 0,
     "negative_eigenvalues": 12,
     "expected_negative_eigenvalues": 12
   },
   "indefinite_curvature": {
     "relative_linear_residual": 4.1743396512199915e-16,
+    "box_qp_fallbacks": 0,
     "negative_eigenvalues": 12,
     "expected_negative_eigenvalues": 12
   },
   "multiplier_initialization": {
     "relative_linear_residual": 2.2611006444108286e-16,
+    "box_qp_fallbacks": 0,
     "negative_eigenvalues": 12,
     "expected_negative_eigenvalues": 12
   },
   "design_step_limit": {
     "relative_linear_residual": 1.3158425117392184e-15,
+    "box_qp_fallbacks": 0,
     "negative_eigenvalues": 12,
     "expected_negative_eigenvalues": 12
   },
   "design_step_limit_indefinite": {
     "relative_linear_residual": 4.1120078491850575e-16,
+    "box_qp_fallbacks": 0,
     "negative_eigenvalues": 12,
     "expected_negative_eigenvalues": 12
   },
@@ -84,16 +146,19 @@
   },
   "selective_parallel_solve": {
     "relative_linear_residual": 7.652956027236651e-16,
+    "box_qp_fallbacks": 0,
     "negative_eigenvalues": 12,
     "expected_negative_eigenvalues": 12
   },
   "bound_aware_solve": {
     "relative_linear_residual": 7.902456684563844e-13,
+    "box_qp_fallbacks": 0,
     "negative_eigenvalues": 12,
     "expected_negative_eigenvalues": 12
   },
   "bound_aware_indefinite_solve": {
     "relative_linear_residual": 7.343717058016578e-12,
+    "box_qp_fallbacks": 0,
     "negative_eigenvalues": 12,
     "expected_negative_eigenvalues": 12
   }

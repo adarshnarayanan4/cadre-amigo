@@ -1,0 +1,380 @@
+{
+  "checkpoint": "checkpoint.npz",
+  "optimization_run": true,
+  "converged": false,
+  "validated": false,
+  "feasibility_validated": true,
+  "checks": {
+    "finite": true,
+    "native_equalities": true,
+    "variable_bounds": true,
+    "independent_replay": true,
+    "battery_and_periodicity": true
+  },
+  "checkpoint_metrics": {
+    "iteration": 2.0,
+    "nlp_error": 2152.6470151798158,
+    "primal_infeasibility": 4.5811132665107834e-12,
+    "dual_infeasibility": 6979.72465948729,
+    "barrier_param": 0.001
+  },
+  "native_equality_max_error": 4.5811132665107834e-12,
+  "bound_violation": 0.0,
+  "maximum_replay_error": 0.0,
+  "total_downloaded_data": 24878.542032205092,
+  "fin_angle_rad": 1.284950549989757,
+  "antenna_angle_rad": -0.7853980884386015,
+  "cases": [
+    {
+      "case_index": 0,
+      "downloaded_data": 3573.5501597291536,
+      "reference_max_errors": {
+        "angular_velocity": 0.0,
+        "attitude_torque": 0.0,
+        "wheel_speed": 0.0,
+        "wheel_power_W": 0.0,
+        "roll_rad": 0.0,
+        "communication_power_W": 0.0,
+        "solar_current_A": 0.0,
+        "temperature_K": 0.0,
+        "voltage_V": 0.0,
+        "solar_power_W": 0.0,
+        "battery_power_W": 0.0,
+        "SOC": 0.0,
+        "current_A": 0.0,
+        "gain": 0.0,
+        "download_rate": 0.0,
+        "downloaded_data": 0.0
+      },
+      "battery_feasibility": {
+        "SOC_min": 0.2004465069441226,
+        "SOC_max": 0.9998804676323653,
+        "current_min_A": -9.984192340050079,
+        "current_max_A": 0.6350704717303529,
+        "periodicity_error": 4.440892098500626e-16,
+        "inequality_violation": 0.0
+      }
+    },
+    {
+      "case_index": 1,
+      "downloaded_data": 3750.9754784231286,
+      "reference_max_errors": {
+        "angular_velocity": 0.0,
+        "attitude_torque": 0.0,
+        "wheel_speed": 0.0,
+        "wheel_power_W": 0.0,
+        "roll_rad": 0.0,
+        "communication_power_W": 0.0,
+        "solar_current_A": 0.0,
+        "temperature_K": 0.0,
+        "voltage_V": 0.0,
+        "solar_power_W": 0.0,
+        "battery_power_W": 0.0,
+        "SOC": 0.0,
+        "current_A": 0.0,
+        "gain": 0.0,
+        "download_rate": 0.0,
+        "downloaded_data": 0.0
+      },
+      "battery_feasibility": {
+        "SOC_min": 0.20698707149817366,
+        "SOC_max": 0.9945205326294432,
+        "current_min_A": -9.73366405104425,
+        "current_max_A": 1.4817570878886455,
+        "periodicity_error": 4.440892098500626e-16,
+        "inequality_violation": 0.0
+      }
+    },
+    {
+      "case_index": 2,
+      "downloaded_data": 3293.0857704217824,
+      "reference_max_errors": {
+        "angular_velocity": 0.0,
+        "attitude_torque": 0.0,
+        "wheel_speed": 0.0,
+        "wheel_power_W": 0.0,
+        "roll_rad": 0.0,
+        "communication_power_W": 0.0,
+        "solar_current_A": 0.0,
+        "temperature_K": 0.0,
+        "voltage_V": 0.0,
+        "solar_power_W": 0.0,
+        "battery_power_W": 0.0,
+        "SOC": 0.0,
+        "current_A": 0.0,
+        "gain": 0.0,
+        "download_rate": 0.0,
+        "downloaded_data": 0.0
+      },
+      "battery_feasibility": {
+        "SOC_min": 0.20141246721956566,
+        "SOC_max": 0.997284553806826,
+        "current_min_A": -9.881130445961597,
+        "current_max_A": 1.017288896513747,
+        "periodicity_error": 3.3306690738754696e-16,
+        "inequality_violation": 0.0
+      }
+    },
+    {
+      "case_index": 3,
+      "downloaded_data": 4881.6893057900725,
+      "reference_max_errors": {
+        "angular_velocity": 0.0,
+        "attitude_torque": 0.0,
+        "wheel_speed": 0.0,
+        "wheel_power_W": 0.0,
+        "roll_rad": 0.0,
+        "communication_power_W": 0.0,
+        "solar_current_A": 0.0,
+        "temperature_K": 0.0,
+        "voltage_V": 0.0,
+        "solar_power_W": 0.0,
+        "battery_power_W": 0.0,
+        "SOC": 0.0,
+        "current_A": 0.0,
+        "gain": 0.0,
+        "download_rate": 0.0,
+        "downloaded_data": 0.0
+      },
+      "battery_feasibility": {
+        "SOC_min": 0.2367102127570078,
+        "SOC_max": 0.9995424680085682,
+        "current_min_A": -9.94246032094986,
+        "current_max_A": 0.3425796102967524,
+        "periodicity_error": -4.440892098500626e-16,
+        "inequality_violation": 0.0
+      }
+    },
+    {
+      "case_index": 4,
+      "downloaded_data": 4684.510141066443,
+      "reference_max_errors": {
+        "angular_velocity": 0.0,
+        "attitude_torque": 0.0,
+        "wheel_speed": 0.0,
+        "wheel_power_W": 0.0,
+        "roll_rad": 0.0,
+        "communication_power_W": 0.0,
+        "solar_current_A": 0.0,
+        "temperature_K": 0.0,
+        "voltage_V": 0.0,
+        "solar_power_W": 0.0,
+        "battery_power_W": 0.0,
+        "SOC": 0.0,
+        "current_A": 0.0,
+        "gain": 0.0,
+        "download_rate": 0.0,
+        "downloaded_data": 0.0
+      },
+      "battery_feasibility": {
+        "SOC_min": 0.20062800535266526,
+        "SOC_max": 0.9985161563937339,
+        "current_min_A": -9.877388229440355,
+        "current_max_A": 1.3050408607138761,
+        "periodicity_error": -7.216449660063518e-16,
+        "inequality_violation": 0.0
+      }
+    },
+    {
+      "case_index": 5,
+      "downloaded_data": 4694.731176774511,
+      "reference_max_errors": {
+        "angular_velocity": 0.0,
+        "attitude_torque": 0.0,
+        "wheel_speed": 0.0,
+        "wheel_power_W": 0.0,
+        "roll_rad": 0.0,
+        "communication_power_W": 0.0,
+        "solar_current_A": 0.0,
+        "temperature_K": 0.0,
+        "voltage_V": 0.0,
+        "solar_power_W": 0.0,
+        "battery_power_W": 0.0,
+        "SOC": 0.0,
+        "current_A": 0.0,
+        "gain": 0.0,
+        "download_rate": 0.0,
+        "downloaded_data": 0.0
+      },
+      "battery_feasibility": {
+        "SOC_min": 0.20395936372820592,
+        "SOC_max": 0.998853753031128,
+        "current_min_A": -9.787298775200481,
+        "current_max_A": 1.3268255682227483,
+        "periodicity_error": 6.661338147750939e-16,
+        "inequality_violation": 0.0
+      }
+    }
+  ],
+  "result_type": "feasible_checkpoint_not_converged",
+  "cadre_source": {
+    "repository": "https://github.com/OpenMDAO/CADRE",
+    "reference_revision": "05f008489e34a123637b213419fd980162ccd303",
+    "checkout_revision": "05f008489e34a123637b213419fd980162ccd303",
+    "reference_files_verified": true,
+    "benchmark_sha256": "bafd7902ea1b4b9aae3e2680d02ecf0a738c3b4bde6d0216b9e536b291288ac1"
+  },
+  "model_signature": {
+    "formulation": "joint-cadre-v1",
+    "cases": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "nodes": 600,
+    "controls": 120,
+    "objective_scale": 1.0,
+    "time_grid": "full",
+    "model_source_sha256": "deda7cb3b5bd0a1cfe5c11d243efdb0a30e1ee83458813ae5e58edcbafef9203",
+    "amigo_version": "0.0.1",
+    "cadre_source": {
+      "repository": "https://github.com/OpenMDAO/CADRE",
+      "reference_revision": "05f008489e34a123637b213419fd980162ccd303",
+      "checkout_revision": "05f008489e34a123637b213419fd980162ccd303",
+      "reference_files_verified": true,
+      "benchmark_sha256": "bafd7902ea1b4b9aae3e2680d02ecf0a738c3b4bde6d0216b9e536b291288ac1"
+    }
+  },
+  "nodes_per_case": 600,
+  "controls_per_profile": 120,
+  "duration_hours": 12.0,
+  "objective_scale": 1.0,
+  "design_variables": 10172,
+  "surface_allocation": [
+    [
+      0.9999917996753394,
+      0.9999823978914026,
+      0.9999896598354165,
+      0.9999873419522481,
+      0.9999844998166991,
+      0.9999849916317574,
+      0.9999850312619785,
+      0.9999801866426858,
+      0.9999843745670679,
+      0.9999859249099253,
+      0.9999842881380404,
+      0.9999863005439167
+    ],
+    [
+      0.9999925539779037,
+      0.9999836318613345,
+      0.9999908408433024,
+      0.99998776767145,
+      0.9999860256790558,
+      0.9999862666384515,
+      0.9999853628181927,
+      0.9999837689267739,
+      0.9999843635752064,
+      0.999985966541053,
+      0.9999843627164585,
+      0.9999863058105775
+    ],
+    [
+      0.999992750459767,
+      0.999984203545269,
+      0.9999912746236764,
+      0.9999877658188007,
+      0.9999864804604253,
+      0.9999867044917065,
+      0.999985464700856,
+      0.9999853776446759,
+      0.9999843446936734,
+      0.9999859524392293,
+      0.9999843812777055,
+      0.9999862769512339
+    ],
+    [
+      0.9999928272332064,
+      0.9999844974266402,
+      0.9999914901765674,
+      0.9999877567231037,
+      0.9999866479557816,
+      0.9999868554441768,
+      0.9999854971238247,
+      0.9999861102044523,
+      0.999984322126886,
+      0.9999859202363073,
+      0.9999843849711242,
+      0.9999862413954032
+    ],
+    [
+      0.9999928599867478,
+      0.9999846576081393,
+      0.9999916157412196,
+      0.9999877531810678,
+      0.9999867193798956,
+      0.9999868978491528,
+      0.9999855143855095,
+      0.9999864803788103,
+      0.9999843043149058,
+      0.9999858746087098,
+      0.9999843725057931,
+      0.9999861996397015
+    ],
+    [
+      0.9999928729747932,
+      0.9999847560976642,
+      0.9999917066011291,
+      0.9999877532619491,
+      0.9999867607238248,
+      0.9999869001470765,
+      0.9999855058992592,
+      0.9999866754699148,
+      0.9999842915627497,
+      0.9999858375306478,
+      0.9999843530167725,
+      0.999986162707832
+    ],
+    [
+      0.9999928761233599,
+      0.9999848013693985,
+      0.9999917667545829,
+      0.9999877542895123,
+      0.9999867657627428,
+      0.9999868893388698,
+      0.9999855172378825,
+      0.9999867670782064,
+      0.9999843062737829,
+      0.999985850223885,
+      0.9999843271709036,
+      0.9999861758787375
+    ]
+  ],
+  "reference_replay_used_for_projection": true,
+  "replay_note": "The reference replay also forms projected iterates, so its zero differences are expected. The separately compiled native equations were checked.",
+  "comparison_baseline": "integrated/results/joint_300/refined_start_600",
+  "baseline_data": 15762.256738857186,
+  "improvement_over_feasible_start_percent": 57.83616803344156,
+  "iteration_scope": "This warm-start segment; earlier optimization segments are not included.",
+  "source_checkpoint_sha256": "f8a543b52e630ecaa500c5ae216774510cf2cd3d276441bbdcbd0e4761baff97",
+  "validation_checks": {
+    "finite": true,
+    "native_equalities": true,
+    "variable_bounds": true,
+    "independent_replay": true,
+    "battery_and_periodicity": true,
+    "solver_convergence": false
+  },
+  "absolute_gain_over_feasible_start": 9116.285293347906,
+  "saved_controls_reconstruction": {
+    "passed": true,
+    "controls_held_fixed": true,
+    "optimization_run": false,
+    "downloaded_data_difference": 0.0,
+    "native_equality_max_error": 4.5811132665107834e-12
+  },
+  "fixed_controls_replay_1500": {
+    "finite_replay": true,
+    "native_model_checked": false,
+    "optimization_run": false,
+    "all_cases_battery_feasible": false,
+    "downloaded_data": 25021.423719994207,
+    "downloaded_data_difference_percent": 0.5743169660189729,
+    "maximum_soc_bound_violation": 0.00026699447167691237,
+    "maximum_current_violation_A": 0.02182663966047471,
+    "maximum_soc_periodicity_error": 0.0005088217813817852
+  }
+}

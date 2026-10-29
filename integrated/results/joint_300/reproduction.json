@@ -1,0 +1,26 @@
+{
+  "command": [
+    "python",
+    "-m",
+    "integrated.cadre_joint",
+    "--optimize",
+    "--full-space-trials",
+    "--nodes",
+    "300",
+    "--control-points",
+    "60",
+    "--time-grid",
+    "full",
+    "--objective-scale",
+    "1",
+    "--warm-start",
+    "integrated/results/joint_300/checkpoint_central.npz",
+    "--max-iterations",
+    "40",
+    "--output",
+    "/tmp/cadre-six-fullspace-resume"
+  ],
+  "requires_local_checkpoint": true,
+  "fresh_run": false,
+  "note": "The preparation checkpoint is included in the repository. The preceding projected phase is described in continuation.json."
+}

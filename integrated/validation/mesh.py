@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+from time import perf_counter
 from types import SimpleNamespace
 
 import numpy as np
@@ -65,9 +66,18 @@ def prepare_mesh(args):
         point.copy_host_to_device()
     projector = TrajectoryProjector(joint)
     projector.project(point)
+    repair_times = {}
+    power_margin = 0.001 if args.interior_start else 0.0
     if args.repair:
-        restorer = BatteryRestorer(projector, periodicity_tolerance=1e-10)
+        restorer = BatteryRestorer(
+            projector, interior=args.interior_start, periodicity_tolerance=1e-10
+        )
         for case, partition in zip(cases, restorer.partitions):
+            started = perf_counter()
+            print(
+                f"  Case {case.case_index}: repairing power and initial SOC...",
+                flush=True,
+            )
             repair = BatteryRestorationCase(
                 restorer,
                 case,
@@ -75,11 +85,18 @@ def prepare_mesh(args):
                 point,
                 full_power=True,
                 adjust_initial_soc=True,
+                power_margin=power_margin,
             )
             if not repair.restore(point, max_iterations=80):
                 raise RuntimeError(
                     f"Case {case.case_index} mesh repair failed: {repair.message}"
                 )
+            repair_times[str(case.case_index)] = perf_counter() - started
+            print(
+                f"  Case {case.case_index}: repair passed in "
+                f"{repair_times[str(case.case_index)]:.2f} s",
+                flush=True,
+            )
         projector.project(point)
     point.fill_at(model.problem.get_constraint_indices(), 0)
     model.problem.update(point)
@@ -115,6 +132,21 @@ def prepare_mesh(args):
             for case in replay["cases"]
         ),
     }
+    if args.interior_start:
+        power = model.get_indices(
+            [f"case{case.case_index}.control_points.CP_P_comm[:]" for case in cases]
+        )
+        checks["Interior power-control margins"] = bool(
+            np.all(values[power] >= lower.get_array()[power] + power_margin - 1e-8)
+            and np.all(values[power] <= upper.get_array()[power] - power_margin + 1e-8)
+        )
+        checks["Interior battery margins"] = all(
+            case["battery_feasibility"]["SOC_min"] >= 0.215 - 1e-8
+            and case["battery_feasibility"]["SOC_max"] <= 0.985 + 1e-8
+            and case["battery_feasibility"]["current_min_A"] >= -9.85 - 1e-8
+            and case["battery_feasibility"]["current_max_A"] <= 4.85 + 1e-8
+            for case in replay["cases"]
+        )
     passed = all(checks.values())
     summary = {
         "validated_initialization": passed,
@@ -134,6 +166,9 @@ def prepare_mesh(args):
         "controls_held_fixed": not args.repair
         and controls == source["controls_per_profile"],
         "power_and_initial_soc_repaired": args.repair,
+        "interior_battery_margins": args.interior_start,
+        "power_control_margin_W": power_margin,
+        "repair_time_s_by_case": repair_times,
         "native_equality_max_error": native_error,
         "bound_violation": bound_error,
         **replay,
@@ -232,9 +267,17 @@ def main():
     parser.add_argument("--nodes", type=int, default=1500)
     parser.add_argument("--control-points", type=int)
     parser.add_argument("--repair", action="store_true")
+    parser.add_argument(
+        "--interior-start",
+        action="store_true",
+        help="Repair with margins inside power-control and battery limits",
+    )
     parser.add_argument("--reuse-build", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
-    prepare_mesh(parser.parse_args())
+    args = parser.parse_args()
+    if args.interior_start and not args.repair:
+        parser.error("--interior-start requires --repair")
+    prepare_mesh(args)
 
 
 if __name__ == "__main__":

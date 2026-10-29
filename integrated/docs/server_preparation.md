@@ -53,7 +53,8 @@ directories. Generated builds are disposable and ignored by Git.
 ## Transfer results and checkpoints
 
 Keep `summary.json`, `solver_history.json`, and `trajectories.npz` together.
-Transfer checkpoints explicitly; Git ignores them. The retained unfinished runs
+Transfer checkpoints explicitly; Git ignores them except for the included
+300-node preparation checkpoint. The retained unfinished runs
 are listed in the [result index](../results/README.md).
 
 Checkpoint settings must match the model. Single-case checkpoints cannot be
@@ -86,7 +87,8 @@ bounded controls, recomputes trajectories, and repairs the battery before
 optimization. A checkpoint restart requires the original grid instead.
 The experimental `--primal-barrier` mode includes that cold-start repair and
 keeps trial trajectories and SOC periodicity consistent with the controls.
-It has not yet established six-case convergence. Start with one case worker;
+The projected mode prepared the coarse six-case point; the subsequent
+full-space continuation established convergence at 300 nodes. Start with one case worker;
 benchmark `--case-workers N` on the server before assuming it is faster. Set
 `OMP_NUM_THREADS=1`, `OPENBLAS_NUM_THREADS=1`, and `MKL_NUM_THREADS=1` when
 factoring cases concurrently.
